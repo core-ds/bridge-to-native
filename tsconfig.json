@@ -1,0 +1,23 @@
+{
+    "compileOnSave": false,
+    "compilerOptions": {
+        "jsx": "react",
+        "target": "ES2019",
+        "module": "commonjs",
+        "esModuleInterop": true,
+        "incremental": false,
+        "skipLibCheck": true,
+        "noImplicitThis": true,
+        "noImplicitAny": true,
+        "noUnusedParameters": false,
+        "resolveJsonModule": true,
+        "typeRoots": ["src/typings", "./node_modules/@types"],
+        "types": ["jest", "node"],
+        "stripInternal": true,
+        "outDir": "./.publish",
+        "declaration": true,
+        "strict": true,
+        "strictPropertyInitialization": false
+    },
+    "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts"]
+}
