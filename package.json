@@ -5,7 +5,8 @@
     "main": "",
     "scripts": {
         "build": "yarn lib:compile",
-        "lib:compile": "yarn lib:compile:clean && yarn lib:compile:ts && yarn lib:compile:copy-resources",
+        "lib:compile": "yarn lib:compile:clean && yarn lib:compile:ts && yarn lib:compile:copy-resources && yarn lib:compile:copy-package-json",
+        "lib:compile:copy-package-json": "shx cp package.json .publish/package.json",
         "lib:compile:copy-resources": "yarn copyfiles -e \"**/*.{[jt]s*(x),snap}\" -e \"**/stories.module.css\" -e \"**/*.json\" -u 1 \"src/**/*\" .publish",
         "lib:compile:clean": "shx rm -rf .publish",
         "lib:compile:ts": "tsc --project tsconfig.build.json",
@@ -13,8 +14,9 @@
         "lint": "yarn lint:scripts && prettier --check \"./src/*.{ts,tsx,js,jsx,json}\"",
         "lint:fix": "yarn lint:scripts --fix",
         "format": "prettier --write \"./**/*.{ts,tsx,js,jsx,css,json}\"",
-        "lib:test": "jest --collect-coverage",
-        "test": "yarn lib:test"
+        "lib:test": "jest --silent --collect-coverage",
+        "test": "yarn lib:test",
+        "pub:beta": "cd .publish && npm version \"$BETA_VERSION\" --no-git-tag-version && npm publish --userconfig \"../.npmrc\" --tag beta"
     },
     "dependencies": {},
     "devDependencies": {
