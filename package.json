@@ -1,6 +1,6 @@
 {
     "license": "UNLICENSED",
-    "name": "bridge-to-native",
+    "name": "@alfalab/bridge-to-native",
     "version": "0.0.1",
     "main": "",
     "scripts": {
