@@ -5,7 +5,7 @@
     "main": "",
     "scripts": {
         "build": "yarn lib:compile",
-        "lib:compile": "yarn lib:compile:clean && yarn lib:compile:ts && yarn lib:compile:copy-resources && yarn lib:compile:copy-package-json",
+        "lib:compile": "yarn lib:compile:clean && yarn lib:compile:ts && yarn lib:compile:copy-resources",
         "lib:compile:copy-package-json": "shx cp package.json .publish/package.json",
         "lib:compile:copy-resources": "yarn copyfiles -e \"**/*.{[jt]s*(x),snap}\" -e \"**/stories.module.css\" -e \"**/*.json\" -u 1 \"src/**/*\" .publish",
         "lib:compile:clean": "shx rm -rf .publish",
@@ -16,7 +16,13 @@
         "format": "prettier --write \"./**/*.{ts,tsx,js,jsx,css,json}\"",
         "lib:test": "jest --silent --collect-coverage",
         "test": "yarn lib:test",
-        "pub:beta": "cd .publish && npm version \"$BETA_VERSION\" --no-git-tag-version && npm publish --userconfig \"../.npmrc\" --tag beta"
+
+        "lib:release:patch": "yarn lib:compile && yarn standard-version --release-as patch && yarn lib:compile:copy-package-json && yarn lib:pub",
+        "lib:release:minor": "yarn lib:compile && yarn standard-version --release-as minor && yarn lib:compile:copy-package-json && yarn lib:pub",
+        "lib:release:major": "yarn lib:compile && yarn standard-version --release-as major && yarn lib:compile:copy-package-json && yarn lib:pub",
+        "lib:release:beta": "yarn lib:compile && yarn lib:compile:copy-package-json && yarn lib:pub:beta",
+        "lib:pub": "npm publish .publish --userconfig \"../.npmrc\" && git push --follow-tags origin main",
+        "lib:pub:beta": "cd .publish && npm version \"$BETA_VERSION\" --no-git-tag-version && npm publish --userconfig \"../.npmrc\" --tag beta"
     },
     "dependencies": {},
     "devDependencies": {
