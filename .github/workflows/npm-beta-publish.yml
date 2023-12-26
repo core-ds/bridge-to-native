@@ -1,7 +1,29 @@
-name: Publish beta version
+name: Publish to npm
 
 on:
   workflow_dispatch:
+    inputs:
+
+      features:
+        type: text
+        description: changelog features
+
+      bugfixes:
+        type: text
+        description: changelog bugfixes
+
+      breaking-changes:
+        type: text
+        description: changelog breaking changes
+
+      version:
+        type: choice
+        description: Choose which version to release
+        options:
+          - beta
+          - patch
+          - minor
+          - major
 
 jobs:
   build:
@@ -12,7 +34,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -27,15 +49,18 @@ jobs:
         with:
           token: ${{ secrets.NPM_AUTH_TOKEN }}
 
-      - name: Set current commit sha
+      - name: Set last commit sha for beta release
+        if: github.event.inputs.version == 'beta'
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Get current released version
+      - name: Get current version for beta release
+        if: github.event.inputs.version == 'beta'
         id: package-version
         uses: martinbeentjes/npm-get-version-action@v1.3.1
 
-      - name: Publish
-        run: npm run pub:beta
+      - name: Publish beta version
+        if: github.event.inputs.version == 'beta'
+        run: npm run lib:release:beta
         env:
           BETA_VERSION: ${{ steps.package-version.outputs.current-version}}-beta.${{ steps.vars.outputs.sha_short }}
