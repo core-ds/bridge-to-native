@@ -1,0 +1,114 @@
+name: Publish to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+
+      # Input для ввода features changes (для CHANGELOG.md)
+      features:
+        type: text
+        description: changelog features
+        default: ''
+
+      # Input для ввода bugfixes changes (для CHANGELOG.md)
+      bugfixes:
+        type: text
+        description: changelog bugfixes
+        default: ''
+
+      # Input для ввода breaking changes (для CHANGELOG.md)
+      breaking-changes:
+        type: text
+        description: changelog breaking changes
+        default: ''
+
+      # Select для выбора версии
+      version:
+        type: choice
+        description: Choose which version to release
+        required: true
+        options:
+          - beta
+          - patch
+          - minor
+          - major
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      # Переключение на выбранную при запуске action ветку и скачивание файлов в окружение.
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Установка учётных данных bot как gitUser в текущем окружении (для release commit).
+      # Извлечение имени текущей ветки.
+      # Извлечение sha последнего commit из выбранной ветки (нужно для построения версии beta).
+      - name: Git config
+        run: |
+          git config user.name ${{ secrets.BOT_USERNAME }}
+          git config user.email ${{ secrets.BOT_EMAIL }}
+          echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        id: branch
+
+      # Установка зависимостей.
+      - name: Install dependencies
+        run: yarn
+
+      # Прогон тестов
+      #- name: Run tests
+      #  run: yarn test
+
+      # Сборка приложения в /.publish.
+      - name: Build app
+        run: yarn build
+
+      # Установка npm токена для возможности публикации.
+      - name: Set NPM Token
+        uses: filipstefansson/set-npm-token-action@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+
+      # Извлечение текущей версии приложения для выпуска beta пакета.
+      - name: Get current version for beta
+        if: github.event.inputs.version == 'beta'
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+      # Публикация выбранной версии в npm.
+      - name: Publish ${{ github.event.inputs.version }} version
+        run: |
+          yarn release:$SELECTED_VERSION
+          if [[ $SELECTED_VERSION == "beta" ]]
+            then echo "### Выпущена новая версия библиотеки: $BETA_VERSION" >> $GITHUB_STEP_SUMMARY
+          fi
+        env:
+          BETA_VERSION: ${{ steps.package-version.outputs.current-version }}-beta.${{ steps.branch.outputs.sha_short }}
+          BRANCH: ${{ steps.branch.outputs.branch }}
+          SELECTED_VERSION: ${{ github.event.inputs.version }}
+
+      # Извлечение текущей (актуальной) версии приложения для выпуска patch|minor|major пакета.
+      - name: Get current version for release
+        if: github.event.inputs.version != 'beta'
+        id: package-version-for-release
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+      # Заполнение файла changelog и выполнение release commit && push в выбранную ветку.
+      - name: Push changes to ${{ steps.branch.outputs.branch}} branch about release
+        if: github.event.inputs.version != 'beta'
+        run: |
+          yarn changelog
+          yarn create-release-commit
+        env:
+          BRANCH: ${{ steps.branch.outputs.branch }}
+          VERSION: ${{ steps.package-version-for-release.outputs.current-version }}
+          LAST_COMMIT_URL: https://github.com/${{ github.repository }}/commit/${{ steps.branch.outputs.sha_short }}
+          SHA_SHORT: ${{ steps.branch.outputs.sha_short }}
+          SEMANTIC_VERSION: ${{ github.event.inputs.version }}
+          FEATURES: ${{ github.event.inputs.features }}
+          BUGFIXES: ${{ github.event.inputs.bugfixes }}
+          BREAKING_CHANGES: ${{ github.event.inputs.breaking-changes }}
