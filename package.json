@@ -5,9 +5,12 @@
     "main": "src/index.ts",
     "repository": {
         "type": "git",
-        "url": "https://github.com/core-ds/bridge-to-native"
+        "url": "git+https://github.com/core-ds/bridge-to-native"
     },
-    "description": "Утилита для удобной работы веб приложения внутри нативного приложения и коммуникации с ним",
+    "bugs": {
+        "url": "https://github.com/core-ds/bridge-to-native/issues"
+    },
+    "description": "Утилита для удобной работы веб приложения внутри нативного приложения и коммуникации с ним.",
     "scripts": {
         "build": "yarn compile",
         "compile": "yarn compile:clean && yarn compile:ts && yarn compile:copy-resources",
