@@ -4,18 +4,24 @@
     "version": "0.0.1",
     "main": "",
     "scripts": {
-        "build": "yarn lib:compile",
-        "lib:compile": "yarn lib:compile:clean && yarn lib:compile:ts && yarn lib:compile:copy-resources && yarn lib:compile:copy-package-json",
-        "lib:compile:copy-package-json": "shx cp package.json .publish/package.json",
-        "lib:compile:copy-resources": "yarn copyfiles -e \"**/*.{[jt]s*(x),snap}\" -e \"**/stories.module.css\" -e \"**/*.json\" -u 1 \"src/**/*\" .publish",
-        "lib:compile:clean": "shx rm -rf .publish",
-        "lib:compile:ts": "tsc --project tsconfig.build.json",
+        "build": "yarn compile",
+        "compile": "yarn compile:clean && yarn compile:ts && yarn compile:copy-resources",
+        "compile:copy-package-json": "shx cp package.json .publish/package.json",
+        "compile:copy-resources": "yarn copyfiles -e \"**/*.{[jt]s*(x),snap}\" -e \"**/*.json\" -e \"src/mock/**/*\" -u 1 \"src/**/*\" .publish",
+        "compile:clean": "shx rm -rf .publish",
+        "compile:ts": "tsc --project tsconfig.build.json",
         "lint:scripts": "eslint \"**/*.{js,jsx,ts,tsx}\" --ext .js,.jsx,.ts,.tsx",
         "lint": "yarn lint:scripts && prettier --check \"./src/*.{ts,tsx,js,jsx,json}\"",
         "lint:fix": "yarn lint:scripts --fix",
         "format": "prettier --write \"./**/*.{ts,tsx,js,jsx,css,json}\"",
-        "lib:test": "jest --silent --collect-coverage",
-        "test": "yarn lib:test",
+        "test": "jest --silent --collect-coverage",
+        "release:patch": "yarn compile && npm version patch --no-git-tag-version && yarn compile:copy-package-json && yarn pub",
+        "release:minor": "yarn compile && npm version minor --no-git-tag-version && yarn compile:copy-package-json && yarn pub",
+        "release:major": "yarn compile && npm version major --no-git-tag-version && yarn compile:copy-package-json && yarn pub",
+        "release:beta": "yarn compile && yarn compile:copy-package-json && yarn pub:beta",
+        "create-release-commit": "git add package.json CHANGELOG.md && git commit -m \"Выпуск версии $VERSION\" && git push origin \"$BRANCH\"",
+        "changelog": "bash bin/fill-changelog-file.sh",
+        "pub": "npm publish .publish --userconfig \"../.npmrc\"",
         "pub:beta": "cd .publish && npm version \"$BETA_VERSION\" --no-git-tag-version && npm publish --userconfig \"../.npmrc\" --tag beta"
     },
     "dependencies": {},
@@ -46,7 +52,6 @@
         "lint-staged": "^12.5.0",
         "prettier": "^2.7.1",
         "promisify-child-process": "4.1.1",
-        "standard-version": "9.0.0",
         "stylelint": "^14.9.1",
         "stylelint-config-prettier": "^9.0.3",
         "ts-jest": "25.3.1",
@@ -95,10 +100,5 @@
     },
     "commitlint": {
         "extends": "./node_modules/arui-presets-lint/commitlint"
-    },
-    "standard-version": {
-        "scripts": {
-            "postchangelog": "arui-scripts changelog"
-        }
     }
 }
