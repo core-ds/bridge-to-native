@@ -83,7 +83,7 @@ jobs:
             then echo "### Выпущена новая версия библиотеки: $BETA_VERSION" >> $GITHUB_STEP_SUMMARY
           fi
         env:
-          BETA_VERSION: ${{ steps.package-version.outputs.current-version }}-beta.${{ steps.branch.outputs.sha_short }}
+          BETA_VERSION: ${{ steps.package-version.outputs.current-version }}-beta-${{ steps.branch.outputs.sha_short }}
           BRANCH: ${{ steps.branch.outputs.branch }}
           SELECTED_VERSION: ${{ github.event.inputs.version }}
 
