@@ -59,10 +59,6 @@ jobs:
       - name: Install dependencies
         run: yarn
 
-      # Прогон тестов
-      #- name: Run tests
-      #  run: yarn test
-
       # Сборка приложения в /.publish.
       - name: Build app
         run: yarn build
