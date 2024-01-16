@@ -12,24 +12,20 @@
     "description": "Утилита для удобной работы веб приложения внутри нативного приложения и коммуникации с ним.",
     "scripts": {
         "build": "yarn compile",
+        "changelog": "bash bin/fill-changelog-file.sh",
         "compile": "yarn compile:clean && yarn compile:ts && yarn compile:copy-resources",
         "compile:copy-package-json": "shx cp package.json .publish/package.json",
         "compile:copy-resources": "yarn copyfiles -e \"**/*.{[jt]s*(x),snap}\" -e \"**/*.json\" -e \"src/mock/**/*\" -u 1 \"src/**/*\" .publish",
         "compile:clean": "shx rm -rf .publish",
         "compile:ts": "tsc --project tsconfig.build.json",
+        "create-release-commit": "git add package.json CHANGELOG.md && git commit -m \"$MESSAGE\" && git push origin \"$BRANCH\"",
         "lint:scripts": "eslint \"**/*.{js,jsx,ts,tsx}\" --ext .js,.jsx,.ts,.tsx",
         "lint": "yarn lint:scripts && prettier --check \"./src/*.{ts,tsx,js,jsx,json}\"",
         "lint:fix": "yarn lint:scripts --fix",
+        "pub": "npm publish .publish --userconfig \"../.npmrc\" --tag \"$TAG\"",
         "format": "prettier --write \"./**/*.{ts,tsx,js,jsx,css,json}\"",
         "test": "jest --silent --collect-coverage",
-        "release:patch": "yarn compile && npm version patch --no-git-tag-version && yarn compile:copy-package-json && yarn pub",
-        "release:minor": "yarn compile && npm version minor --no-git-tag-version && yarn compile:copy-package-json && yarn pub",
-        "release:major": "yarn compile && npm version major --no-git-tag-version && yarn compile:copy-package-json && yarn pub",
-        "release:beta": "yarn compile && yarn compile:copy-package-json && yarn pub:beta",
-        "create-release-commit": "git add package.json CHANGELOG.md && git commit -m \"Выпуск версии $VERSION\" && git push origin \"$BRANCH\"",
-        "changelog": "bash bin/fill-changelog-file.sh",
-        "pub": "npm publish .publish --userconfig \"../.npmrc\"",
-        "pub:beta": "cd .publish && npm version \"$BETA_VERSION\" --no-git-tag-version && npm publish --userconfig \"../.npmrc\" --tag beta"
+        "release": "yarn compile && npm version \"$VERSION\" --no-git-tag-version && yarn compile:copy-package-json && yarn pub"
     },
     "dependencies": {},
     "devDependencies": {
