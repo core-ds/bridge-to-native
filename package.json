@@ -2,7 +2,12 @@
     "license": "UNLICENSED",
     "name": "@alfalab/bridge-to-native",
     "version": "0.0.1",
-    "main": "",
+    "main": "src/index.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/core-ds/bridge-to-native"
+    },
+    "description": "Утилита для удобной работы веб приложения внутри нативного приложения и коммуникации с ним",
     "scripts": {
         "build": "yarn compile",
         "compile": "yarn compile:clean && yarn compile:ts && yarn compile:copy-resources",
