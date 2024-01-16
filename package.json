@@ -2,10 +2,9 @@
     "license": "UNLICENSED",
     "name": "@alfalab/bridge-to-native",
     "version": "0.0.2",
-    "main": "src/index.ts",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/core-ds/bridge-to-native"
+        "url": "git+https://github.com/core-ds/bridge-to-native.git"
     },
     "bugs": {
         "url": "https://github.com/core-ds/bridge-to-native/issues"
