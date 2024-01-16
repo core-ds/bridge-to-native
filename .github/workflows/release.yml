@@ -34,7 +34,7 @@ on:
           - major
 
 jobs:
-  publish to npm:
+  publish:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
