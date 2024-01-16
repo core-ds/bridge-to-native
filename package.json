@@ -64,9 +64,6 @@
         "shx": "0.3.4"
     },
     "peerDependencies": {},
-    "resolutions": {
-        "postcss-loader": "^4.2.0"
-    },
     "jest": {
         "preset": "arui-scripts",
         "testEnvironment": "jsdom",
