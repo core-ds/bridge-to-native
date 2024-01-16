@@ -67,7 +67,7 @@ jobs:
       - name: Set NPM Token
         uses: filipstefansson/set-npm-token-action@v1
         with:
-          token: ${{ secrets.NPM_AUTH_TOKEN }}
+          token: ${{ secrets.NPM_TOKEN }}
 
       # Извлечение текущей версии приложения для выпуска beta пакета.
       - name: Get current version for beta
