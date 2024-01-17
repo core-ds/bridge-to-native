@@ -91,6 +91,7 @@ jobs:
         env:
           BRANCH: ${{ steps.branch.outputs.branch }}
           SELECTED_VERSION: ${{ github.event.inputs.version }}
+          REGISTRY: https://registry.npmjs.org
 
       # Заполнение файла changelog и выполнение release commit && push в выбранную ветку.
       - name: Push changes to ${{ steps.branch.outputs.branch}} branch about release

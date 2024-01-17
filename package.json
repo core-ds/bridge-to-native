@@ -22,7 +22,7 @@
         "lint:scripts": "eslint \"**/*.{js,jsx,ts,tsx}\" --ext .js,.jsx,.ts,.tsx",
         "lint": "yarn lint:scripts && prettier --check \"./src/*.{ts,tsx,js,jsx,json}\"",
         "lint:fix": "yarn lint:scripts --fix",
-        "pub": "npm publish .publish --userconfig \"../.npmrc\" --tag \"$TAG\"",
+        "pub": "npm publish .publish --userconfig \"../.npmrc\" --tag \"$TAG\" --registry \"$REGISTRY\"",
         "format": "prettier --write \"./**/*.{ts,tsx,js,jsx,css,json}\"",
         "test": "jest --silent --collect-coverage",
         "release": "yarn compile && npm version \"$VERSION\" --no-git-tag-version && yarn compile:copy-package-json && yarn pub"
@@ -100,8 +100,5 @@
     },
     "commitlint": {
         "extends": "./node_modules/arui-presets-lint/commitlint"
-    },
-    "publishConfig": {
-        "registry": "https://registry.npmjs.org"
     }
 }
