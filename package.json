@@ -22,7 +22,7 @@
         "lint:scripts": "eslint \"**/*.{js,jsx,ts,tsx}\" --ext .js,.jsx,.ts,.tsx",
         "lint": "yarn lint:scripts && prettier --check \"./src/*.{ts,tsx,js,jsx,json}\"",
         "lint:fix": "yarn lint:scripts --fix",
-        "pub": "npm publish .publish --userconfig \"../.npmrc\" --tag \"$TAG\" --registry \"$REGISTRY\"",
+        "pub": "npm publish .publish --userconfig \"../.npmrc\" --tag \"$TAG\"",
         "format": "prettier --write \"./**/*.{ts,tsx,js,jsx,css,json}\"",
         "test": "jest --silent --collect-coverage",
         "release": "yarn compile && npm version \"$VERSION\" --no-git-tag-version && yarn compile:copy-package-json && yarn pub"
@@ -41,12 +41,8 @@
         "eslint-config-airbnb-typescript": "^17.0.0",
         "eslint-config-prettier": "^8.5.0",
         "eslint-import-resolver-typescript": "~3.1.5",
-        "eslint-plugin-cypress": "^2.12.1",
         "eslint-plugin-dirnames": "^1.0.3",
         "eslint-plugin-import": "^2.26.0",
-        "eslint-plugin-jsx-a11y": "^6.6.1",
-        "eslint-plugin-react": "^7.30.1",
-        "eslint-plugin-react-hooks": "^4.6.0",
         "eslint-plugin-simple-import-sort": "^7.0.0",
         "eslint-plugin-unicorn": "^42.0.0",
         "husky": "^4.3.8",
@@ -100,5 +96,8 @@
     },
     "commitlint": {
         "extends": "./node_modules/arui-presets-lint/commitlint"
+    },
+    "publishConfig": {
+        "registry": "https://registry.npmjs.org"
     }
 }

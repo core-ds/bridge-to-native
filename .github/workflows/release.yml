@@ -36,10 +36,27 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
+
+      # Проверка прав доступа. Только пользователь из white_list может выполнить релизную сборку.
+      # Остальные могут только выпустить beta версию пакета.
+      - name: Check permissions
+        run: |
+          white_list=("DavidGuryanov","vahrammer","sashabull66")
+
+          if [[ "${white_list[@]}" =~ "${ACTOR}" ]]
+            then echo "Доступ разрешен."
+          elif [[ "${SELECTED_VERSION}" == "beta" ]]
+            then echo "Доступ разрешен только для публикации beta версии пакета."
+          else
+              echo "Вы не можете выполнить выпуск $SELECTED_VERSION версии пакета. Доступ запрещен!"
+              exit 1
+          fi
+        env:
+          SELECTED_VERSION: ${{ github.event.inputs.version }}
+          ACTOR: ${{ github.actor }}
+
       # Переключение на выбранную при запуске action ветку и скачивание файлов в окружение.
       - name: Checkout
         uses: actions/checkout@v3
@@ -91,7 +108,6 @@ jobs:
         env:
           BRANCH: ${{ steps.branch.outputs.branch }}
           SELECTED_VERSION: ${{ github.event.inputs.version }}
-          REGISTRY: https://registry.npmjs.org
 
       # Заполнение файла changelog и выполнение release commit && push в выбранную ветку.
       - name: Push changes to ${{ steps.branch.outputs.branch}} branch about release
