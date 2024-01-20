@@ -56,6 +56,46 @@ fullChangelogInfo="$Title
 $Changelog
 "
 
+# Отправляет информацию о релизе и содержимое .public в github release
+function postReleaseMessage {
+  body=$(echo "$Changelog" | jq -sR '')
+
+  response=$(
+    curl -L \
+        -X POST \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer $BOT_TOKEN" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        "https://api.github.com/repos/$REPOSITORY/releases" \
+        -d "{
+          \"tag_name\": \"$VERSION\",
+          \"target_commitish\": \"$BRANCH\",
+          \"name\": \"$VERSION\",
+          \"body\": $body,
+          \"draft\": false,
+          \"prerelease\": false,
+          \"generate_release_notes\": false
+        }"
+  )
+
+  release_id=$(echo "$response" | jq -r '.id')
+
+  archive_name="release-$VERSION.zip"
+
+  zip -j "$archive_name" .publish/*
+
+  curl -L \
+    -X POST \
+    -H "Accept: application/vnd.github+json" \
+    -H "Authorization: Bearer $BOT_TOKEN" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    -H "Content-Type: application/octet-stream" \
+    "https://uploads.github.com/repos/$REPOSITORY/releases/$release_id/assets?name=$archive_name" \
+    --data-binary "@$archive_name"
+}
+
+postReleaseMessage
+
 echo "$fullChangelogInfo" | cat - "$changelog_file" > temp && mv temp "$changelog_file"
 
 echo "# Выпущена новая версия библиотеки: $VERSION" >> "$GITHUB_STEP_SUMMARY"
