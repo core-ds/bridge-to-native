@@ -139,7 +139,7 @@ jobs:
           REPOSITORY: ${{ github.repository }}
 
       # Создание pull request из релизной ветки в целевую.
-      - name: Create release pull request from ${{ steps.changelog.outputs.RELEASE_BRANCH }} to ${{ github.repository }}
+      - name: Create release pull request from ${{ steps.changelog.outputs.RELEASE_BRANCH }} to ${{ steps.branch.outputs.branch }}
         if: github.event.inputs.version != 'beta'
         run: |
           curl --user "$BOT_USERNAME:$BOT_TOKEN" \
