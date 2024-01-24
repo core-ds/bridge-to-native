@@ -1,3 +1,10 @@
+## 0.2.0 ([e83fbb1](https://github.com/core-ds/bridge-to-native/commit/e83fbb1)) (24-01-2024)
+
+### Features
+- Тестовый выпуск features инфа.
+- Еще инфа.
+- И еще инфа в посл раз
+
 ### 0.1.1 ([a013b1b](https://github.com/core-ds/bridge-to-native/commit/a013b1b)) (24-01-2024)
 
 ### Features
