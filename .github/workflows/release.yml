@@ -109,15 +109,24 @@ jobs:
           BRANCH: ${{ steps.branch.outputs.branch }}
           SELECTED_VERSION: ${{ github.event.inputs.version }}
 
-      # Заполнение файла changelog и выполнение release commit && push в выбранную ветку.
-      - name: Push changes to ${{ steps.branch.outputs.branch}} branch about release
+      # Заполнение файла changelog и выполнение release commit && push в релизную ветку.
+      - name: Fill changelog file and create release branch
         if: github.event.inputs.version != 'beta'
+        id: changelog
         run: |
           export VERSION=$(grep -o '"version": "[^"]*' package.json | awk -F'"' '{print $4}')
+          export RELEASE_BRANCH="release-$VERSION"
           export MESSAGE="Релиз версии $VERSION"
 
+          echo "RELEASE_BRANCH=$RELEASE_BRANCH" >> $GITHUB_OUTPUT
+          echo "MESSAGE=$MESSAGE" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
           yarn changelog
-          yarn create-release-commit
+
+          git checkout -b "$RELEASE_BRANCH"
+          git commit -m "$MESSAGE" package.json CHANGELOG.md
+          git push --set-upstream origin "$RELEASE_BRANCH"
         env:
           BRANCH: ${{ steps.branch.outputs.branch }}
           LAST_COMMIT_URL: https://github.com/${{ github.repository }}/commit/${{ steps.branch.outputs.sha_short }}
@@ -128,3 +137,26 @@ jobs:
           BREAKING_CHANGES: ${{ github.event.inputs.breaking-changes }}
           BOT_TOKEN: ${{ secrets.BOT_AUTH_TOKEN }}
           REPOSITORY: ${{ github.repository }}
+
+      # Создание pull request из релизной ветки в целевую.
+      - name: Create release pull request from ${{ steps.changelog.outputs.RELEASE_BRANCH }} to ${{ steps.branch.outputs.branch }}
+        if: github.event.inputs.version != 'beta'
+        run: |
+          curl --user "$BOT_USERNAME:$BOT_TOKEN" \
+             --request POST \
+             --url "https://api.github.com/repos/$REPOSITORY/pulls" \
+             --header "content-type: application/json" \
+             --data "{
+               \"title\": \"$TITLE\",
+               \"head\": \"$HEAD\",
+               \"base\": \"$BASE\",
+               \"body\": \"$BODY\"
+               }"
+        env:
+          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
+          REPOSITORY: ${{ github.repository }}
+          BOT_TOKEN: ${{ secrets.GH_TOKEN }}
+          TITLE: ${{ steps.changelog.outputs.MESSAGE }}
+          BODY: Этот PR создан автоматически, после публикации версии ${{ steps.changelog.outputs.VERSION }} библиотеки в npm.
+          HEAD: ${{ steps.changelog.outputs.RELEASE_BRANCH }}
+          BASE: ${{ steps.branch.outputs.branch }}
