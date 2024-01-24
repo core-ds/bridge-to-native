@@ -141,11 +141,21 @@ jobs:
       # Создание pull request из релизной ветки в целевую.
       - name: Create release pull request
         run: |
-          git status
+          curl --user "$BOT_USERNAME:$BOT_TOKEN" \
+             --request POST \
+             --url "https://api.github.com/repos/$REPOSITORY/pulls" \
+             --header "content-type: application/json" \
+             --data "{
+               \"title\": \"$TITLE\",
+               \"head\": \"$HEAD\",
+               \"base\": \"$BASE\",
+               \"body\": \"$BODY\"
+               }"
         env:
-          token: ${{ secrets.GH_TOKEN }}
-          commit-message: ${{ steps.changelog.outputs.MESSAGE }}
-          title: ${{ steps.changelog.outputs.MESSAGE }}
-          body: Этот PR создан автоматически, после публикации версии ${{ steps.changelog.outputs.VERSION }} библиотеки в npm.
-          branch: ${{ steps.changelog.outputs.RELEASE_BRANCH }}
-          base: ${{ steps.branch.outputs.branch }}
+          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
+          REPOSITORY: ${{ github.repository }}
+          BOT_TOKEN: ${{ secrets.GH_TOKEN }}
+          TITLE: ${{ steps.changelog.outputs.MESSAGE }}
+          BODY: Этот PR создан автоматически, после публикации версии ${{ steps.changelog.outputs.VERSION }} библиотеки в npm.
+          HEAD: ${{ steps.changelog.outputs.RELEASE_BRANCH }}
+          BASE: ${{ steps.branch.outputs.branch }}
