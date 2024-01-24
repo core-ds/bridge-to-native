@@ -140,9 +140,9 @@ jobs:
 
       # Создание pull request из релизной ветки в целевую.
       - name: Create release pull request
-        if: github.event.inputs.version != 'beta'
-        uses: peter-evans/create-pull-request@v3
-        with:
+        run: |
+          git status
+        env:
           token: ${{ secrets.GH_TOKEN }}
           commit-message: ${{ steps.changelog.outputs.MESSAGE }}
           title: ${{ steps.changelog.outputs.MESSAGE }}
