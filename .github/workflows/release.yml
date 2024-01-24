@@ -137,3 +137,15 @@ jobs:
           BREAKING_CHANGES: ${{ github.event.inputs.breaking-changes }}
           BOT_TOKEN: ${{ secrets.BOT_AUTH_TOKEN }}
           REPOSITORY: ${{ github.repository }}
+
+      # Создание pull request из релизной ветки в целевую.
+      - name: Create release pull request
+        if: github.event.inputs.version != 'beta'
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          commit-message: ${{ steps.changelog.outputs.MESSAGE }}
+          title: ${{ steps.changelog.outputs.MESSAGE }}
+          body: Этот PR создан автоматически, после публикации версии ${{ steps.changelog.outputs.VERSION }} библиотеки в npm.
+          branch: ${{ steps.changelog.outputs.RELEASE_BRANCH }}
+          base: ${{ steps.branch.outputs.branch }}
