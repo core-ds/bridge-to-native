@@ -109,15 +109,25 @@ jobs:
           BRANCH: ${{ steps.branch.outputs.branch }}
           SELECTED_VERSION: ${{ github.event.inputs.version }}
 
-      # Заполнение файла changelog и выполнение release commit && push в выбранную ветку.
-      - name: Push changes to ${{ steps.branch.outputs.branch}} branch about release
+      # Заполнение файла changelog и выполнение release commit && push в релизную ветку.
+      - name: Fill changelog file and create release branch
         if: github.event.inputs.version != 'beta'
+        id: changelog
         run: |
           export VERSION=$(grep -o '"version": "[^"]*' package.json | awk -F'"' '{print $4}')
+          export RELEASE_BRANCH="release-$VERSION"
           export MESSAGE="Релиз версии $VERSION"
 
+          echo "RELEASE_BRANCH=$RELEASE_BRANCH" >> $GITHUB_OUTPUT
+          echo "MESSAGE=$MESSAGE" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
           yarn changelog
-          yarn create-release-commit
+
+          git checkout -b "$RELEASE_BRANCH"
+          git add package.json CHANGELOG.md
+          git commit -m "$MESSAGE"
+          git push --set-upstream origin "$RELEASE_BRANCH"
         env:
           BRANCH: ${{ steps.branch.outputs.branch }}
           LAST_COMMIT_URL: https://github.com/${{ github.repository }}/commit/${{ steps.branch.outputs.sha_short }}
@@ -128,3 +138,15 @@ jobs:
           BREAKING_CHANGES: ${{ github.event.inputs.breaking-changes }}
           BOT_TOKEN: ${{ secrets.BOT_AUTH_TOKEN }}
           REPOSITORY: ${{ github.repository }}
+
+      # Создание pull request из релизной ветки в целевую.
+      - name: Create release pull request
+        if: github.event.inputs.version != 'beta'
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          commit-message: ${{ steps.changelog.outputs.MESSAGE }}
+          title: ${{ steps.changelog.outputs.MESSAGE }}
+          body: Этот PR создан автоматически, после публикации версии ${{ steps.changelog.outputs.VERSION }} библиотеки в npm.
+          branch: ${{ steps.changelog.outputs.RELEASE_BRANCH }}
+          base: ${{ steps.branch.outputs.branch }}
