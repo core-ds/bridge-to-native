@@ -36,4 +36,4 @@ tsconfig.build.tsbuildinfo
 /cypress/screenshots/
 lerna-debug.log
 junit.xml
-release_*.zip
+release-*.zip
