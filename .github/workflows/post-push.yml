@@ -25,6 +25,12 @@ jobs:
       # Выпуск beta версии библиотеки, если в commit message есть вхождение строки "deploy_beta"
       - name: Publish beta version
         if: "contains(github.event.head_commit.message, 'deploy_beta')"
-        uses: ./.github/workflows/release.yml
-        with:
-          version: beta
+        run: |
+          CURRENT_VERSION=$(grep -o '"version": "[^"]*' package.json | awk -F'"' '{print $4}')
+          export TAG="beta"
+          export VERSION="$CURRENT_VERSION-beta-$(git rev-parse --short HEAD)"
+          echo "$CURRENT_VERSION"
+          echo "$VERSION"
+        env:
+          token: ${{ secrets.NPM_TOKEN }}
+
