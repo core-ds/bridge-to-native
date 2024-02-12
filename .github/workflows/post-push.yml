@@ -29,8 +29,12 @@ jobs:
           CURRENT_VERSION=$(grep -o '"version": "[^"]*' package.json | awk -F'"' '{print $4}')
           export TAG="beta"
           export VERSION="$CURRENT_VERSION-beta-$(git rev-parse --short HEAD)"
-          echo "$CURRENT_VERSION"
-          echo "$VERSION"
+
+          echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
+
+          touch .npmrc
+
+          echo "### Выпущена новая версия библиотеки: $VERSION" >> $GITHUB_STEP_SUMMARY
         env:
-          token: ${{ secrets.NPM_TOKEN }}
+          TOKEN: ${{ secrets.NPM_TOKEN }}
 
