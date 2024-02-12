@@ -32,7 +32,7 @@ jobs:
 
           echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
 
-          touch .npmrc
+          yarn release
 
           echo "### Выпущена новая версия библиотеки: $VERSION" >> $GITHUB_STEP_SUMMARY
         env:
