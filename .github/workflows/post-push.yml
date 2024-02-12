@@ -30,7 +30,7 @@ jobs:
           export TAG="beta"
           export VERSION="$CURRENT_VERSION-beta-$(git rev-parse --short HEAD)"
 
-          echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
+          echo "//registry.npmjs.org/:_authToken=$TOKEN" > .npmrc
 
           yarn release
 
