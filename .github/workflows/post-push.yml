@@ -6,8 +6,6 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
       # Переключение на выбранную при запуске action ветку и скачивание файлов в окружение.
