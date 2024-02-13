@@ -1,7 +1,7 @@
 {
     "license": "UNLICENSED",
     "name": "@alfalab/bridge-to-native",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/core-ds/bridge-to-native.git"
