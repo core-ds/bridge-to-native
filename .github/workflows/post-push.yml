@@ -3,12 +3,9 @@ name: Post push check
 on:
   push
 
-
 jobs:
   check:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
       # Переключение на выбранную при запуске action ветку и скачивание файлов в окружение.
@@ -22,3 +19,20 @@ jobs:
       # Прогон тестов
       - name: Run tests
         run: yarn test
+
+      # Выпуск beta версии библиотеки, если в commit message есть вхождение строки "deploy_beta"
+      - name: Publish beta version
+        if: "contains(github.event.head_commit.message, 'deploy_beta')"
+        run: |
+          CURRENT_VERSION=$(grep -o '"version": "[^"]*' package.json | awk -F'"' '{print $4}')
+          export TAG="beta"
+          export VERSION="$CURRENT_VERSION-beta-$(git rev-parse --short HEAD)"
+
+          echo "//registry.npmjs.org/:_authToken=$TOKEN" > .npmrc
+
+          yarn release
+
+          echo "### Выпущена новая версия библиотеки: $VERSION" >> $GITHUB_STEP_SUMMARY
+        env:
+          TOKEN: ${{ secrets.NPM_TOKEN }}
+
