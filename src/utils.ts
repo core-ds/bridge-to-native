@@ -115,7 +115,7 @@ export const checkAndroidAllowOpenInNewWebview = (
 
 export const getAppId = (environment: Environment, iosAppId?: string) => {
     if (environment === 'android') {
-        return ANDROID_APP_ID;
+        return atob(ANDROID_APP_ID);
     }
 
     if (environment === 'ios' && iosAppId && typeof iosAppId === 'string') {
