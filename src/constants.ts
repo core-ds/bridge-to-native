@@ -1,11 +1,12 @@
 import { NativeFeaturesFromVersion } from './types';
 
+export const START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW = '10.35.0';
+export const ANDROID_APP_ID = 'alfabank';
 export const CLOSE_WEBVIEW_SEARCH_KEY = 'closeWebView';
 export const CLOSE_WEBVIEW_SEARCH_VALUE = 'true';
 export const PREVIOUS_B2N_STATE_STORAGE_KEY = 'previousBridgeToNativeState';
 export const PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY =
     'previousNativeNavigationAndTitleState';
-
 
 export const versionToIosAppId = {
     '0.0.0': 'YWxmYWJhbms=',
