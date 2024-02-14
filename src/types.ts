@@ -49,3 +49,8 @@ export type PreviousNativeNavigationAndTitleState = {
     nativeHistoryStack: string[];
     title: string;
 };
+
+export type ExternalNavigationOptions = {
+    onClick?: () => void;
+    forceOpenInWebview?: boolean;
+};

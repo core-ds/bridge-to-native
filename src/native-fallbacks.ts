@@ -1,5 +1,5 @@
 import type {BridgeToNative} from '.';
-import {PdfType} from './types';
+import {ExternalNavigationOptions, PdfType} from './types';
 import {checkAndroidAllowOpenInNewWebview, getAppId, getUrlInstance} from './utils';
 
 /**
@@ -31,13 +31,16 @@ export class NativeFallbacks {
      *  навигации с приложением. Это «фолбэк-сценарий» с плохим UX (сайт полностью выпадает из истории), но другого способа нет.
      *
      * @param link Строка - валидный урл.
-     * @param forceOpenInWebview Boolean - по умолчанию = false, если передать true,
+     * @param options - опции
+     * @param options.forceOpenInWebview Boolean - по умолчанию = false, если передать true,
      * все ссылки будут открываться в рамках webview, иначе открытие по возможности будет происходить в браузере.
-     * @param onClick Дополнительный обработчик на клик, например, для отправки метрики.
+     * @param options.onClick Дополнительный обработчик на клик, например, для отправки метрики.
      *  Внимание! Не факт, что в «фолбэк-сценарии» асинхронная операция будет выполнена (метрика отправлена)!
      * @returns Пропсы для ссылки в вебвью окружении.
      */
-    public getExternalLinkProps(link: string, onClick?: () => void, forceOpenInWebview = false) {
+
+    public getExternalLinkProps(link: string, options: ExternalNavigationOptions = {}) {
+        const { onClick, forceOpenInWebview } = options;
         const { iosAppId, environment, appVersion } = this.b2n;
         const url = getUrlInstance(link);
         const appId = getAppId(environment, iosAppId);
@@ -53,7 +56,7 @@ export class NativeFallbacks {
                 href: `${appId}://webFeature?type=recommendation&url=${encodeURIComponent(
                     url.href,
                 )}`,
-                onClick,
+                onClick: options?.onClick,
             };
         }
 
