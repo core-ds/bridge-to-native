@@ -15,9 +15,7 @@ export type NativeFeatureKey =
     // Возможность открыть ссылку в браузере.
     | 'linksInBrowser';
 
-type NativeFeaturesParams = Readonly<
-    Record<NativeFeatureKey, { fromVersion: string }>
->;
+type NativeFeaturesParams = Readonly<Record<NativeFeatureKey, { fromVersion: string }>>;
 export type NativeFeaturesFromVersion = Readonly<{
     android: NativeFeaturesParams;
     ios: NativeFeaturesParams;
@@ -46,3 +44,11 @@ export type PreviousNativeNavigationAndTitleState = {
     nativeHistoryStack: string[];
     title: string;
 };
+
+export type SyncPurpose = 'initialization' | 'navigation' | 'title-replacing';
+
+export type HandleRedirect = (
+    appName: string,
+    path?: string,
+    params?: Record<string, string>,
+) => void;

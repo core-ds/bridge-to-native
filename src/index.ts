@@ -8,8 +8,14 @@ import {
     versionToIosAppId,
 } from './constants';
 import { NativeFallbacks } from './native-fallbacks';
-import { HandleRedirect, NativeNavigationAndTitle } from './native-navigation-and-title';
-import type { Environment, NativeFeatureKey, NativeParams, WebViewWindow } from './types';
+import { NativeNavigationAndTitle } from './native-navigation-and-title';
+import type {
+    Environment,
+    HandleRedirect,
+    NativeFeatureKey,
+    NativeParams,
+    WebViewWindow,
+} from './types';
 import { PreviousBridgeToNativeState } from './types';
 import { isValidVersionFormat } from './utils';
 

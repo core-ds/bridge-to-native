@@ -1,19 +1,13 @@
-import { PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY } from './constants';
-import { PreviousNativeNavigationAndTitleState } from './types';
+import {
+    DEEP_LINK_PATTERN,
+    PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
+} from './constants';
+import { HandleRedirect, PreviousNativeNavigationAndTitleState, SyncPurpose } from './types';
 import { extractAppNameRouteAndQuery } from './utils';
 import { BridgeToNative } from '.';
 
-type SyncPurpose = 'initialization' | 'navigation' | 'title-replacing';
-
-export type HandleRedirect = (
-    appName: string,
-    path?: string,
-    params?: Record<string, string>,
-) => void;
-
 /**
- * Класс, отвечающий за взаимодействие с нативными элементами в приложении – заголовком
- * и нативной кнопкой назад.
+ * Класс, отвечающий за взаимодействие с нативными элементами в приложении – заголовком и нативной кнопкой назад.
  */
 export class NativeNavigationAndTitle {
     private nativeHistoryStack: string[] = [''];
@@ -24,7 +18,7 @@ export class NativeNavigationAndTitle {
     // Просто, чтобы не слать одинаковые сигналы в приложение.
     private lastSetPageSettingsParams = '';
 
-    private readonly handleWindowRedirect: HandleRedirect;
+    private readonly _handleWindowRedirect: HandleRedirect;
 
     constructor(
         private b2n: BridgeToNative,
@@ -33,7 +27,7 @@ export class NativeNavigationAndTitle {
         handleWindowRedirect: HandleRedirect,
     ) {
         this.handleBack = this.handleBack.bind(this);
-        this.handleWindowRedirect = handleWindowRedirect;
+        this._handleWindowRedirect = handleWindowRedirect;
         const previousState = !!sessionStorage.getItem(
             PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
         );
@@ -118,7 +112,7 @@ export class NativeNavigationAndTitle {
         params?: Record<string, string>,
     ) {
         if (appName) {
-            this.handleWindowRedirect(appName, path, params);
+            this._handleWindowRedirect(appName, path, params);
         } else {
             const {
                 appName: extractedAppName,
@@ -126,7 +120,7 @@ export class NativeNavigationAndTitle {
                 query: extractedQuery,
             } = extractAppNameRouteAndQuery(pageTitleOrPath);
 
-            this.handleWindowRedirect(extractedAppName, extractedPath, extractedQuery);
+            this._handleWindowRedirect(extractedAppName, extractedPath, extractedQuery);
         }
 
         const title = appName ? pageTitleOrPath : '';
@@ -169,7 +163,9 @@ export class NativeNavigationAndTitle {
      */
     public navigateInsideASharedSession(url: string) {
         if (this.b2n.environment === 'ios') {
-            this.b2n.nativeFallbacks.visitExternalResource(url);
+            const nativeDeeplink = `/webFeature?type=recommendation&url=${encodeURIComponent(url)}`;
+
+            this.handleNativeDeeplink(nativeDeeplink);
 
             return;
         }
@@ -192,6 +188,37 @@ export class NativeNavigationAndTitle {
         this.handleRedirect(this.b2n._blankPagePath);
 
         this.goBack();
+    }
+
+    /**
+     * Вызывает обработчик deeplinks в нативе (АМ) и передает туда переданный deeplink.
+     * На Android текущее webview будет закрыто из-за технических особенностей.
+     * На IOS нативная фича открывается в следующем по стеку экране и при выходе из нее пользователь вернется обратно в webview.
+     * На IOS есть возможность закрыть webview перед открытием нативной фичи, передав второй параметр closeIOSWebviewBeforeCallNativeDeeplinkHandler = true
+     * @param deeplink диплинк на нативную АМ фичу в AM
+     * @param [closeIOSWebviewBeforeCallNativeDeeplinkHandler = false] закрыть текущее webview после открытия нативной фичи (применимо только для IOS на Android по техническим причинам webview всегда будет закрываться)
+     */
+    public handleNativeDeeplink(
+        deeplink: string,
+        closeIOSWebviewBeforeCallNativeDeeplinkHandler = false,
+    ) {
+        const clearedDeeplinkPath = deeplink.replace(DEEP_LINK_PATTERN, '');
+
+        if (this.b2n.environment === 'ios') {
+            if (closeIOSWebviewBeforeCallNativeDeeplinkHandler) {
+                this.b2n.closeWebview();
+
+                setTimeout(
+                    () => window.location.replace(`${this.b2n.iosAppId}://${clearedDeeplinkPath}`),
+                    0,
+                );
+
+                return;
+            }
+            window.location.replace(`${this.b2n.iosAppId}://${clearedDeeplinkPath}`);
+        } else {
+            window.location.replace(`alfabank://${clearedDeeplinkPath}`);
+        }
     }
 
     /**

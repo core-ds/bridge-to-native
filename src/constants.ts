@@ -6,7 +6,6 @@ export const PREVIOUS_B2N_STATE_STORAGE_KEY = 'previousBridgeToNativeState';
 export const PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY =
     'previousNativeNavigationAndTitleState';
 
-
 export const versionToIosAppId = {
     '0.0.0': 'YWxmYWJhbms=',
     '12.22.0': 'YWNvbmNpZXJnZQ==',
@@ -28,3 +27,6 @@ export const nativeFeaturesFromVersion: NativeFeaturesFromVersion = {
         geolocation: { fromVersion: '0.0.0' },
     },
 } as const;
+
+export const DEEP_LINK_PATTERN =
+    /^(\/|\x61\x6c\x66\x61\x62\x61\x6e\x6b:\/{3}dashboard\/|\x61\x6c\x66\x61\x62\x61\x6e\x6b:\/{3}|\x61\x6c\x66\x61\x62\x61\x6e\x6b:\/{2}|https:\/{2}\x6f\x6e\x6c\x69\x6e\x65\x2e\x61\x6c\x66\x61\x62\x61\x6e\x6b\x2e\x72\x75\/)/;
