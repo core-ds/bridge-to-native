@@ -1,6 +1,7 @@
 import type {BridgeToNative} from '.';
 import {ExternalNavigationOptions, PdfType} from './types';
-import {checkAndroidAllowOpenInNewWebview, getAppId, getUrlInstance} from './utils';
+
+import {getAppId, getUrlInstance} from './utils';
 
 /**
  * Класс содержит реализацию обходных путей для веб-фич, которые не работают в нативном-вебвью.
@@ -41,7 +42,7 @@ export class NativeFallbacks {
 
     public getExternalLinkProps(link: string, options: ExternalNavigationOptions = {}) {
         const { onClick, forceOpenInWebview } = options;
-        const { iosAppId, environment, appVersion } = this.b2n;
+        const { iosAppId, environment, appVersion, checkAndroidAllowOpenInNewWebview } = this.b2n;
         const url = getUrlInstance(link);
         const appId = getAppId(environment, iosAppId);
 
@@ -51,7 +52,7 @@ export class NativeFallbacks {
             return { href: url.href, onClick };
         }
 
-        if (iosAppId || checkAndroidAllowOpenInNewWebview(environment, appVersion)) {
+        if (iosAppId || checkAndroidAllowOpenInNewWebview()) {
             return {
                 href: `${appId}://webFeature?type=recommendation&url=${encodeURIComponent(
                     url.href,
@@ -118,7 +119,7 @@ export class NativeFallbacks {
      * все ссылки будут открываться в рамках webview, иначе открытие по возможности будет происходить в браузере.
      */
     public visitExternalResource(link: string, forceOpenInWebview = false) {
-        const { iosAppId, appVersion, environment } = this.b2n;
+        const { iosAppId, appVersion, environment, checkAndroidAllowOpenInNewWebview } = this.b2n;
         const url = getUrlInstance(link);
         const appId = getAppId(environment, iosAppId);
 
@@ -126,7 +127,7 @@ export class NativeFallbacks {
             url.searchParams.append('openInBrowser', 'true');
 
             window.location.replace(url.href);
-        } else if (iosAppId || checkAndroidAllowOpenInNewWebview(environment, appVersion)) {
+        } else if (iosAppId || checkAndroidAllowOpenInNewWebview()) {
             window.location.replace(
                 `${appId}://webFeature?type=recommendation&url=${encodeURIComponent(url.href)}`,
             );

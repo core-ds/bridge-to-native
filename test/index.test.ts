@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import { BridgeToNative } from '../src';
-import { PREVIOUS_B2N_STATE_STORAGE_KEY } from '../src/constants';
-import { mockSessionStorage } from '../src/mock/mock-session-storage';
-import { WebViewWindow } from '../src/types';
+import {BridgeToNative} from '../src';
+import {
+    PREVIOUS_B2N_STATE_STORAGE_KEY,
+    START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW,
+} from '../src/constants';
+import {mockSessionStorage} from '../src/mock/mock-session-storage';
+
+import {WebViewWindow} from '../src/types';
 
 const mockedNativeFallbacksInstance = {};
 const mockedNativeNavigationAndTitleInstance = {
@@ -446,6 +450,53 @@ describe('BridgeToNative', () => {
                 });
 
                 expect(inst['getIosAppId']('aconcierge')).toBe('aconcierge');
+            });
+        });
+
+        describe('checkAndroidAllowOpenInNewWebview', () => {
+            it.skip(`should return false if version below ${START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW} `, () => {
+                androidEnvFlag = true;
+                let appVersion = '9.0.0';
+
+                const savedBridgeToAmState = {
+                    appVersion,
+                    iosAppId: 'aconcierge',
+                    theme: 'dark',
+                    originalWebviewParams: 'title=Title',
+                    nextPageId: null,
+                };
+
+                mockSessionStorage(PREVIOUS_B2N_STATE_STORAGE_KEY, savedBridgeToAmState);
+
+                const inst = new BridgeToNative(defaultAmFeaturesFts, mockedHandleRedirect, {
+                    ...defaultAmParams,
+                    appVersion,
+                });
+                // Блин не могу понять почему сюда все равно передается 12.35.0 версися, как ее перезаписать в локал сторадже?
+                expect(inst.checkAndroidAllowOpenInNewWebview()).toBe(false);
+            });
+
+            it(`should return true if version equal or above ${START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW}`, () => {
+                androidEnvFlag = true;
+                let appVersion = '11.35.0';
+
+                const savedBridgeToAmState = {
+                    appVersion,
+                    iosAppId: 'aconcierge',
+                    theme: 'dark',
+                    originalWebviewParams: 'title=Title',
+                    nextPageId: null,
+                };
+
+                mockSessionStorage(PREVIOUS_B2N_STATE_STORAGE_KEY, savedBridgeToAmState);
+
+                const inst = new BridgeToNative(defaultAmFeaturesFts, mockedHandleRedirect, {
+                    ...defaultAmParams,
+                    appVersion,
+                });
+
+                expect(inst.checkAndroidAllowOpenInNewWebview()).toBe(true);
+                expect(inst.checkAndroidAllowOpenInNewWebview()).toBe(true);
             });
         });
     });

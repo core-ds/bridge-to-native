@@ -5,10 +5,11 @@ import {
     CLOSE_WEBVIEW_SEARCH_VALUE,
     nativeFeaturesFromVersion,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
+    START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW,
     versionToIosAppId,
 } from './constants';
-import { NativeFallbacks } from './native-fallbacks';
-import { HandleRedirect, NativeNavigationAndTitle } from './native-navigation-and-title';
+import {NativeFallbacks} from './native-fallbacks';
+import {HandleRedirect, NativeNavigationAndTitle} from './native-navigation-and-title';
 import type {
     Environment,
     NativeFeatureKey,
@@ -16,8 +17,8 @@ import type {
     NativeParams,
     WebViewWindow,
 } from './types';
-import { PreviousBridgeToNativeState } from './types';
-import { isValidVersionFormat } from './utils';
+import {PreviousBridgeToNativeState} from './types';
+import {isValidVersionFormat} from './utils';
 
 type Theme = 'light' | 'dark';
 
@@ -50,7 +51,10 @@ export class BridgeToNative {
     private _handleRedirect: HandleRedirect;
 
     constructor(
-        public nativeFeaturesFts: NativeFeaturesFts = {'linksInBrowserAndroid': true, 'linksInBrowserIos': true},
+        public nativeFeaturesFts: NativeFeaturesFts = {
+            linksInBrowserAndroid: true,
+            linksInBrowserIos: true,
+        },
         handleRedirect: HandleRedirect,
         nativeParams?: NativeParams,
     ) {
@@ -158,6 +162,14 @@ export class BridgeToNative {
         }
 
         return true;
+    }
+
+    public checkAndroidAllowOpenInNewWebview() {
+        const comparisonResult = this.isCurrentVersionHigherOrEqual(
+            START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW,
+        );
+
+        return this.environment === 'android' && comparisonResult;
     }
 
     /**
