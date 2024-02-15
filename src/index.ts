@@ -9,12 +9,7 @@ import {
 } from './constants';
 import { NativeFallbacks } from './native-fallbacks';
 import { HandleRedirect, NativeNavigationAndTitle } from './native-navigation-and-title';
-import type {
-    Environment,
-    NativeFeatureKey,
-    NativeParams,
-    WebViewWindow,
-} from './types';
+import type { Environment, NativeFeatureKey, NativeParams, WebViewWindow } from './types';
 import { PreviousBridgeToNativeState } from './types';
 import { isValidVersionFormat } from './utils';
 
@@ -48,10 +43,7 @@ export class BridgeToNative {
 
     private _handleRedirect: HandleRedirect;
 
-    constructor(
-        handleRedirect: HandleRedirect,
-        nativeParams?: NativeParams,
-    ) {
+    constructor(handleRedirect: HandleRedirect, nativeParams?: NativeParams) {
         const previousState = !!sessionStorage.getItem(PREVIOUS_B2N_STATE_STORAGE_KEY);
 
         if (previousState) {
@@ -106,8 +98,7 @@ export class BridgeToNative {
      * @param feature Название функциональности, которую нужно проверить.
      */
     public canUseNativeFeature(feature: NativeFeatureKey) {
-        const { fromVersion } =
-            nativeFeaturesFromVersion[this.environment][feature];
+        const { fromVersion } = nativeFeaturesFromVersion[this.environment][feature];
 
         return this.isCurrentVersionHigherOrEqual(fromVersion);
     }

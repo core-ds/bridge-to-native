@@ -110,10 +110,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
-            const inst = new BridgeToNative(
-                mockedHandleRedirect,
-                defaultAmParams,
-            );
+            const inst = new BridgeToNative(mockedHandleRedirect, defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
             inst.closeWebview = mockedCloseWebview;
@@ -143,10 +140,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `setInitialView`', async () => {
-            const inst = new BridgeToNative(
-                mockedHandleRedirect,
-                defaultAmParams,
-            );
+            const inst = new BridgeToNative(mockedHandleRedirect, defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
             inst.closeWebview = mockedCloseWebview;
@@ -238,10 +232,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
-            const inst = new BridgeToNative(
-                mockedHandleRedirect,
-                defaultAmParams,
-            );
+            const inst = new BridgeToNative(mockedHandleRedirect, defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
             inst.closeWebview = mockedCloseWebview;
@@ -273,10 +264,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `setInitialView`', async () => {
-            const inst = new BridgeToNative(
-                mockedHandleRedirect,
-                defaultAmParams,
-            );
+            const inst = new BridgeToNative(mockedHandleRedirect, defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
             inst.closeWebview = mockedCloseWebview;
