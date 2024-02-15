@@ -41,12 +41,6 @@ jest.mock('../src', () => ({
 
 describe('AmNavigationAndTitle', () => {
     describe('sessionStorage interaction', () => {
-        // const mockedSessionStorage = mockSessionStorage({
-        //     [PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY]: {
-        //         nativeHistoryStack: ['page1', 'page2', 'lastPage'],
-        //         title: 'lastPage',
-        //     },
-        // });
         const mockedSessionStorage = mockSessionStorage(
             PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
             {

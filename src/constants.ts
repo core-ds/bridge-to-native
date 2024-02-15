@@ -17,14 +17,12 @@ export const versionToIosAppId = {
 export const nativeFeaturesFromVersion: NativeFeaturesFromVersion = {
     android: {
         linksInBrowser: {
-            nativeFeatureFtKey: 'linksInBrowserAndroid',
             fromVersion: '11.71.0',
         },
         geolocation: { fromVersion: '11.71.0' },
     },
     ios: {
         linksInBrowser: {
-            nativeFeatureFtKey: 'linksInBrowserIos',
             fromVersion: '13.3.0',
         },
         geolocation: { fromVersion: '0.0.0' },

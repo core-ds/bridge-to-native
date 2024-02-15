@@ -5,13 +5,13 @@ import { PdfType } from '../src/types';
 
 let androidEnvFlag = false;
 let iosAppId: string | undefined;
-let linksInBrowserFeatureFlag = false;
+let canOpenLinksInBrowser = false;
 let mockedHandleRedirect: any;
 let mockedSetInitialView: any;
 
 const mockedBridgeToAmInstance = {
     canUseNativeFeature() {
-        return linksInBrowserFeatureFlag;
+        return canOpenLinksInBrowser;
     },
     get environment() {
         return androidEnvFlag ? 'android' : 'ios';
@@ -54,7 +54,7 @@ describe('AmFallbacks', () => {
     afterEach(() => {
         androidEnvFlag = false;
         iosAppId = undefined;
-        linksInBrowserFeatureFlag = false;
+        canOpenLinksInBrowser = false;
 
         windowSpy.mockRestore();
         jest.resetAllMocks();
@@ -68,7 +68,7 @@ describe('AmFallbacks', () => {
             "should return href with link with 'openInBrowser' query for '%s' app v. >= '%s'",
             (platform) => {
                 androidEnvFlag = platform === 'android';
-                linksInBrowserFeatureFlag = true;
+                canOpenLinksInBrowser = true;
 
                 const inst = new NativeFallbacks(mockedBridgeToAmInstance);
 
@@ -197,7 +197,7 @@ describe('AmFallbacks', () => {
             ['android', nativeFeaturesFromVersion.android.linksInBrowser.fromVersion],
         ])("should visit link with 'openInBrowser' query for '%s' app v. >= '%s'", (platform) => {
             androidEnvFlag = platform === 'android';
-            linksInBrowserFeatureFlag = true;
+            canOpenLinksInBrowser = true;
 
             const inst = new NativeFallbacks(mockedBridgeToAmInstance);
 

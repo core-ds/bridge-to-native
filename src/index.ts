@@ -12,7 +12,6 @@ import { HandleRedirect, NativeNavigationAndTitle } from './native-navigation-an
 import type {
     Environment,
     NativeFeatureKey,
-    NativeFeaturesFts,
     NativeParams,
     WebViewWindow,
 } from './types';
@@ -50,7 +49,6 @@ export class BridgeToNative {
     private _handleRedirect: HandleRedirect;
 
     constructor(
-        public nativeFeaturesFts: NativeFeaturesFts = {'linksInBrowserAndroid': true, 'linksInBrowserIos': true},
         handleRedirect: HandleRedirect,
         nativeParams?: NativeParams,
     ) {
@@ -108,12 +106,8 @@ export class BridgeToNative {
      * @param feature Название функциональности, которую нужно проверить.
      */
     public canUseNativeFeature(feature: NativeFeatureKey) {
-        const { nativeFeatureFtKey, fromVersion } =
+        const { fromVersion } =
             nativeFeaturesFromVersion[this.environment][feature];
-
-        if (nativeFeatureFtKey && !this.nativeFeaturesFts[nativeFeatureFtKey]) {
-            return false;
-        }
 
         return this.isCurrentVersionHigherOrEqual(fromVersion);
     }

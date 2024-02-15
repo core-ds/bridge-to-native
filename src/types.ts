@@ -9,9 +9,6 @@ export type NativeParams = {
     originalWebviewParams: string;
 };
 
-type NativeFeatureFtKey = 'linksInBrowserAndroid' | 'linksInBrowserIos';
-export type NativeFeaturesFts = Record<NativeFeatureFtKey, boolean>;
-
 export type NativeFeatureKey =
     // Возможность работы с геолокацией.
     | 'geolocation'
@@ -19,7 +16,7 @@ export type NativeFeatureKey =
     | 'linksInBrowser';
 
 type NativeFeaturesParams = Readonly<
-    Record<NativeFeatureKey, { nativeFeatureFtKey?: NativeFeatureFtKey; fromVersion: string }>
+    Record<NativeFeatureKey, { fromVersion: string }>
 >;
 export type NativeFeaturesFromVersion = Readonly<{
     android: NativeFeaturesParams;

@@ -3,11 +3,6 @@
 import { BridgeToNative } from '../src';
 
 describe('BridgeToNative integration testing', () => {
-    const defaultAmFeaturesFts = {
-        linksInBrowserAndroid: true,
-        linksInBrowserIos: true,
-    };
-
     const defaultAmParams = {
         appVersion: '12.0.0',
         theme: 'light',
@@ -57,7 +52,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should use AM interface correctly when moving forward and then backward', async () => {
-            const inst = new BridgeToNative(defaultAmFeaturesFts, mockedHandleRedirect, {
+            const inst = new BridgeToNative(mockedHandleRedirect, {
                 ...defaultAmParams,
                 title: 'Initial Title',
             });
@@ -116,7 +111,6 @@ describe('BridgeToNative integration testing', () => {
 
         it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
             const inst = new BridgeToNative(
-                defaultAmFeaturesFts,
                 mockedHandleRedirect,
                 defaultAmParams,
             );
@@ -150,7 +144,6 @@ describe('BridgeToNative integration testing', () => {
 
         it('should act and use AM interface correctly when using `setInitialView`', async () => {
             const inst = new BridgeToNative(
-                defaultAmFeaturesFts,
                 mockedHandleRedirect,
                 defaultAmParams,
             );
@@ -179,7 +172,7 @@ describe('BridgeToNative integration testing', () => {
 
     describe('iOS environment', () => {
         it('should use AM interface correctly when moving forward and then backward', async () => {
-            const inst = new BridgeToNative(defaultAmFeaturesFts, mockedHandleRedirect, {
+            const inst = new BridgeToNative(mockedHandleRedirect, {
                 ...defaultAmParams,
                 title: 'Initial Title',
             });
@@ -246,7 +239,6 @@ describe('BridgeToNative integration testing', () => {
 
         it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
             const inst = new BridgeToNative(
-                defaultAmFeaturesFts,
                 mockedHandleRedirect,
                 defaultAmParams,
             );
@@ -282,7 +274,6 @@ describe('BridgeToNative integration testing', () => {
 
         it('should act and use AM interface correctly when using `setInitialView`', async () => {
             const inst = new BridgeToNative(
-                defaultAmFeaturesFts,
                 mockedHandleRedirect,
                 defaultAmParams,
             );
