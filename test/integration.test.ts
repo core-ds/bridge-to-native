@@ -52,7 +52,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should use AM interface correctly when moving forward and then backward', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, {
+            const inst = new BridgeToNative(mockedHandleRedirect, '/', {
                 ...defaultAmParams,
                 title: 'Initial Title',
             });
@@ -110,7 +110,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, defaultAmParams);
+            const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
             inst.closeWebview = mockedCloseWebview;
@@ -140,7 +140,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `setInitialView`', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, defaultAmParams);
+            const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
             inst.closeWebview = mockedCloseWebview;
@@ -166,7 +166,7 @@ describe('BridgeToNative integration testing', () => {
 
     describe('iOS environment', () => {
         it('should use AM interface correctly when moving forward and then backward', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, {
+            const inst = new BridgeToNative(mockedHandleRedirect, '/', {
                 ...defaultAmParams,
                 title: 'Initial Title',
             });
@@ -232,7 +232,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, defaultAmParams);
+            const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
             inst.closeWebview = mockedCloseWebview;
@@ -264,7 +264,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `setInitialView`', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, defaultAmParams);
+            const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
             inst.closeWebview = mockedCloseWebview;

@@ -16,7 +16,7 @@ import { isValidVersionFormat } from './utils';
 type Theme = 'light' | 'dark';
 
 /**
- * Этот класс - абстракция для связи веб приложения с нативом и предназначен ТОЛЬКО
+ * Этот класс — абстракция для связи веб приложения с нативом и предназначен ТОЛЬКО
  * для использования в вебвью окружении.
  */
 export class BridgeToNative {
@@ -41,14 +41,21 @@ export class BridgeToNative {
 
     private _theme: Theme;
 
-    private _handleRedirect: HandleRedirect;
+    private readonly _blankPagePath: string;
 
-    constructor(handleRedirect: HandleRedirect, nativeParams?: NativeParams) {
+    private readonly _handleRedirect: HandleRedirect;
+
+    constructor(
+        handleRedirect: HandleRedirect,
+        blankPagePath: string,
+        nativeParams?: NativeParams,
+    ) {
         const previousState = !!sessionStorage.getItem(PREVIOUS_B2N_STATE_STORAGE_KEY);
 
         if (previousState) {
             this.restorePreviousState();
             this.nativeFallbacks = new NativeFallbacks(this);
+            this._blankPagePath = blankPagePath;
 
             return;
         }
@@ -70,6 +77,7 @@ export class BridgeToNative {
 
         this.nextPageId = nativeParams ? nativeParams.nextPageId : null;
         this.nativeFallbacks = new NativeFallbacks(this);
+        this._blankPagePath = blankPagePath;
     }
 
     get theme() {

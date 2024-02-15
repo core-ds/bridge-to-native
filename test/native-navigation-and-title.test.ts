@@ -16,6 +16,9 @@ const mockedBridgeToAmInstance = {
     get environment() {
         return androidEnvFlag ? 'android' : 'ios';
     },
+    get _blankPagePath() {
+        return '/blank?reload=true';
+    },
     get originalWebviewParams() {
         return 'title=superTitle';
     },
@@ -916,8 +919,10 @@ describe('AmNavigationAndTitle', () => {
             });
         });
 
-        describe('method `reloadPage`', () => {
-            it('should call `b2n.saveCurrentState` and location.reload', () => {
+        describe('method `pseudoReloadPage`', () => {
+            it('should call `handleRedirect` and `goBack`', () => {
+                const mockedGoBack = jest.fn();
+
                 const inst = new NativeNavigationAndTitle(
                     mockedBridgeToAmInstance,
                     44,
@@ -925,10 +930,12 @@ describe('AmNavigationAndTitle', () => {
                     mockedHandleRedirect,
                 );
 
-                inst.reloadPage();
+                inst['goBack'] = mockedGoBack;
 
-                expect(inst['b2n']['saveCurrentState']).toBeCalled();
-                expect(mockedLocationReload).toBeCalled();
+                inst.pseudoReloadPage();
+
+                expect(mockedHandleRedirect).toBeCalledWith('blank', '', { reload: 'true' });
+                expect(mockedGoBack).toBeCalled();
             });
         });
     });
