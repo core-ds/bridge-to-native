@@ -100,7 +100,7 @@ describe('getAppId', () => {
         expect(getAppId('ios', undefined)).toBe(null);
     });
 
-    it(`should return ${ANDROID_APP_ID} for android`, () => {
-        expect(getAppId('android')).toBe(ANDROID_APP_ID);
+    it(`should return ${atob(ANDROID_APP_ID)} for android`, () => {
+        expect(getAppId('android')).toBe(atob(ANDROID_APP_ID));
     });
 });
