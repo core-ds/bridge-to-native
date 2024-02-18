@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import { BridgeToNative } from '../src';
+import { BridgeToNative } from '../src/bridge-to-native';
 import {
     CLOSE_WEBVIEW_SEARCH_KEY,
     CLOSE_WEBVIEW_SEARCH_VALUE,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
 } from '../src/constants';
-import { mockSessionStorage } from '../src/mock/mock-session-storage';
+import { mockSessionStorage } from './mock/mock-session-storage';
 import { WebViewWindow } from '../src/types';
 
 const mockedNativeFallbacksInstance = {};

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import type { BridgeToNative } from '../src';
+import type { BridgeToNative } from '../src/bridge-to-native';
 import { PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY } from '../src/constants';
-import { mockSessionStorage } from '../src/mock/mock-session-storage';
+import { mockSessionStorage } from './mock/mock-session-storage';
 import { NativeNavigationAndTitle } from '../src/native-navigation-and-title';
 
 let androidEnvFlag = false;
@@ -36,7 +36,7 @@ Object.defineProperty(global, 'handleRedirect', {
     configurable: true,
 });
 
-jest.mock('../src', () => ({
+jest.mock('../src/bridge-to-native', () => ({
     __esModule: true,
     BridgeToNative: function MockedBridgeToAmConstructor() {
         return mockedBridgeToNativeInstance;

@@ -4,7 +4,7 @@ import {
 } from './constants';
 import { HandleRedirect, PreviousNativeNavigationAndTitleState, SyncPurpose } from './types';
 import { extractAppNameRouteAndQuery } from './utils';
-import { BridgeToNative } from '.';
+import { BridgeToNative } from './bridge-to-native';
 
 /**
  * Класс, отвечающий за взаимодействие с нативными элементами в приложении – заголовком и нативной кнопкой назад.

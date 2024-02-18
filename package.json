@@ -15,7 +15,7 @@
         "changelog": "bash bin/fill-changelog-file-and-notify-github.sh",
         "compile": "yarn compile:clean && yarn compile:ts && yarn compile:copy-resources",
         "compile:copy-package-json": "shx cp package.json .publish/package.json",
-        "compile:copy-resources": "yarn copyfiles -e \"**/*.{[jt]s*(x),snap}\" -e \"**/*.json\" -e \"src/mock/**/*\" -u 1 \"src/**/*\" .publish",
+        "compile:copy-resources": "yarn copyfiles -e \"**/*.{[jt]s*(x),snap}\" -e \"**/*.json\" -u 1 \"src/**/*\" .publish",
         "compile:clean": "shx rm -rf .publish",
         "compile:ts": "tsc --project tsconfig.build.json",
         "lint:scripts": "eslint \"**/*.{js,jsx,ts,tsx}\" --ext .js,.jsx,.ts,.tsx",
@@ -67,13 +67,15 @@
         ],
         "coveragePathIgnorePatterns": [
             "/node_modules/",
-            "/test/"
+            "/test/",
+            "/src/index.ts"
         ],
         "transformIgnorePatterns": [
             "node_modules/(?!(uuid)/)"
         ],
         "testPathIgnorePatterns": [
-            "/node_modules/"
+            "/node_modules/",
+            "/test/mock"
         ],
         "reporters": [
             "jest-junit",

@@ -52,3 +52,5 @@ export type HandleRedirect = (
     path?: string,
     params?: Record<string, string>,
 ) => void;
+
+export type Theme = 'light' | 'dark';

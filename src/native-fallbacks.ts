@@ -1,6 +1,6 @@
-import type { BridgeToNative } from '.';
 import { PdfType } from './types';
 import { getUrlInstance } from './utils';
+import type { BridgeToNative } from './bridge-to-native';
 
 /**
  * Класс содержит реализацию обходных путей для веб-фич, которые не работают в нативном-вебвью.

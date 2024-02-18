@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import { BridgeToNative } from '../src';
+import { BridgeToNative } from '../src/bridge-to-native';
 
 describe('BridgeToNative integration testing', () => {
     const defaultAmParams = {

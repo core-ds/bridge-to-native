@@ -1,4 +1,4 @@
-import type { BridgeToNative } from '../src';
+import type { BridgeToNative } from '../src/bridge-to-native';
 import { nativeFeaturesFromVersion } from '../src/constants';
 import { NativeFallbacks } from '../src/native-fallbacks';
 import { PdfType } from '../src/types';
@@ -24,7 +24,7 @@ const mockedBridgeToAmInstance = {
     },
 } as unknown as BridgeToNative;
 
-jest.mock('../src', () => ({
+jest.mock('../src/bridge-to-native', () => ({
     __esModule: true,
     BridgeToNative: function MockedBridgeToAmConstructor() {
         return mockedBridgeToAmInstance;
