@@ -1,18 +1,19 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import {BridgeToNative} from '../src';
+import { BridgeToNative } from '../src';
 import {
     PREVIOUS_B2N_STATE_STORAGE_KEY,
     START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW,
 } from '../src/constants';
-import {mockSessionStorage} from '../src/mock/mock-session-storage';
+import { mockSessionStorage } from '../src/mock/mock-session-storage';
 
-import {WebViewWindow} from '../src/types';
+import { WebViewWindow } from '../src/types';
 
 const mockedNativeFallbacksInstance = {};
 const mockedNativeNavigationAndTitleInstance = {
     saveCurrentState: jest.fn(),
 };
+
 const MockedNativeNavigationAndTitleConstructor = jest.fn(
     () => mockedNativeNavigationAndTitleInstance,
 );

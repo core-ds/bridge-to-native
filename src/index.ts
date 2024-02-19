@@ -8,8 +8,8 @@ import {
     START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW,
     versionToIosAppId,
 } from './constants';
-import {NativeFallbacks} from './native-fallbacks';
-import {HandleRedirect, NativeNavigationAndTitle} from './native-navigation-and-title';
+import { NativeFallbacks } from './native-fallbacks';
+import { HandleRedirect, NativeNavigationAndTitle } from './native-navigation-and-title';
 import type {
     Environment,
     NativeFeatureKey,
@@ -17,8 +17,8 @@ import type {
     NativeParams,
     WebViewWindow,
 } from './types';
-import {PreviousBridgeToNativeState} from './types';
-import {isValidVersionFormat} from './utils';
+import { PreviousBridgeToNativeState } from './types';
+import { isValidVersionFormat } from './utils';
 
 type Theme = 'light' | 'dark';
 
@@ -35,19 +35,6 @@ export class BridgeToNative {
     public readonly nativeFallbacks: NativeFallbacks;
 
     private nextPageId: number | null;
-
-    private _nativeNavigationAndTitle: NativeNavigationAndTitle;
-
-    private _originalWebviewParams: string;
-
-    // В формате `x.x.x`.
-    private _appVersion: string;
-
-    // Необходимо для формирования диплинка.
-    private _iosAppId?: string;
-
-    private _theme: Theme;
-
     private _handleRedirect: HandleRedirect;
 
     constructor(
@@ -86,24 +73,36 @@ export class BridgeToNative {
         this.nativeFallbacks = new NativeFallbacks(this);
     }
 
-    get theme() {
-        return this._theme;
-    }
-
-    get appVersion() {
-        return this._appVersion;
-    }
-
-    get iosAppId() {
-        return this._iosAppId;
-    }
+    private _nativeNavigationAndTitle: NativeNavigationAndTitle;
 
     get nativeNavigationAndTitle() {
         return this._nativeNavigationAndTitle;
     }
 
+    private _originalWebviewParams: string;
+
     get originalWebviewParams() {
         return this._originalWebviewParams;
+    }
+
+    // В формате `x.x.x`.
+    private _appVersion: string;
+
+    get appVersion() {
+        return this._appVersion;
+    }
+
+    // Необходимо для формирования диплинка.
+    private _iosAppId?: string;
+
+    get iosAppId() {
+        return this._iosAppId;
+    }
+
+    private _theme: Theme;
+
+    get theme() {
+        return this._theme;
     }
 
     /**

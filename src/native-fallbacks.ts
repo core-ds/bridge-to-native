@@ -1,7 +1,7 @@
-import type {BridgeToNative} from '.';
-import {ExternalNavigationOptions, PdfType} from './types';
+import type { BridgeToNative } from '.';
+import { ExternalNavigationOptions, PdfType } from './types';
 
-import {getAppId, getUrlInstance} from './utils';
+import { getAppId, getUrlInstance } from './utils';
 
 /**
  * Класс содержит реализацию обходных путей для веб-фич, которые не работают в нативном-вебвью.

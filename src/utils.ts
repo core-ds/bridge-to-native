@@ -1,5 +1,5 @@
-import {Environment} from './types';
-import {ANDROID_APP_ID} from './constants';
+import { Environment } from './types';
+import { ANDROID_APP_ID } from './constants';
 
 /**
  * Разделяет веб ссылку на компоненты
