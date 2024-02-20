@@ -8,8 +8,13 @@ let iosAppId: string | undefined;
 let canOpenLinksInBrowser = false;
 let mockedHandleRedirect: any;
 let mockedSetInitialView: any;
+let appVersion = '10.0.0';
+let mockAndroidAllowOpenInWebview = false;
 
 const mockedBridgeToAmInstance = {
+    get appVersion() {
+        return appVersion;
+    },
     canUseNativeFeature() {
         return canOpenLinksInBrowser;
     },
@@ -21,6 +26,9 @@ const mockedBridgeToAmInstance = {
     },
     get nativeNavigationAndTitle() {
         return { setInitialView: mockedSetInitialView, handleRedirect: mockedHandleRedirect };
+    },
+    checkAndroidAllowOpenInNewWebview() {
+        return mockAndroidAllowOpenInWebview;
     },
 } as unknown as BridgeToNative;
 
@@ -52,10 +60,11 @@ describe('AmFallbacks', () => {
     });
 
     afterEach(() => {
+        appVersion = '10.0.0';
         androidEnvFlag = false;
         iosAppId = undefined;
         canOpenLinksInBrowser = false;
-
+        mockAndroidAllowOpenInWebview = false;
         windowSpy.mockRestore();
         jest.resetAllMocks();
     });
@@ -88,6 +97,7 @@ describe('AmFallbacks', () => {
 
         it('should return href with link and onClick for android', () => {
             androidEnvFlag = true;
+            appVersion = '10.0.0';
 
             const inst = new NativeFallbacks(mockedBridgeToAmInstance);
 
@@ -97,6 +107,52 @@ describe('AmFallbacks', () => {
             );
 
             expect(typeof inst.getExternalLinkProps('https://ya.ru').onClick).toBe('function');
+        });
+
+        it('should return deeplink for android if appVersion above 10.35.0', () => {
+            androidEnvFlag = true;
+            appVersion = '12.0.0';
+            mockAndroidAllowOpenInWebview = true;
+
+            const inst = new NativeFallbacks(mockedBridgeToAmInstance);
+
+            expect(inst.getExternalLinkProps('https://ya.ru')).toHaveProperty(
+                'href',
+                'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
+            );
+
+            expect(typeof inst.getExternalLinkProps('https://ya.ru').onClick).toBe('undefined');
+        });
+
+        it('should return href with query ?openInBrowser=true for android if linksInBrowserFeature is true', () => {
+            androidEnvFlag = true;
+            canOpenLinksInBrowser = true;
+            appVersion = '12.0.0';
+
+            const inst = new NativeFallbacks(mockedBridgeToAmInstance);
+
+            expect(inst.getExternalLinkProps('https://ya.ru')).toHaveProperty(
+                'href',
+                'https://ya.ru/?openInBrowser=true',
+            );
+
+            expect(typeof inst.getExternalLinkProps('https://ya.ru').onClick).toBe('undefined');
+        });
+
+        it('should return deeplink if linksInBrowserFeature is true and forceOpenInWebview = true', () => {
+            androidEnvFlag = true;
+            appVersion = '12.0.0';
+            mockAndroidAllowOpenInWebview = true;
+            const inst = new NativeFallbacks(mockedBridgeToAmInstance);
+
+            expect(
+                inst.getExternalLinkProps('https://ya.ru', { forceOpenInWebview: true }),
+            ).toHaveProperty(
+                'href',
+                'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
+            );
+
+            expect(typeof inst.getExternalLinkProps('https://ya.ru').onClick).toBe('undefined');
         });
 
         it.each([
@@ -218,6 +274,33 @@ describe('AmFallbacks', () => {
             inst.visitExternalResource('https://ya.ru/');
             expect(mockedLocationReplace).toBeCalledWith('https://ya.ru/');
             expect(mockedSetInitialView).toBeCalledWith('');
+        });
+
+        it('should visit deeplink for android for appVersion >= 10.35.0', () => {
+            androidEnvFlag = true;
+            appVersion = '10.35.0';
+            mockAndroidAllowOpenInWebview = true;
+            const inst = new NativeFallbacks(mockedBridgeToAmInstance);
+
+            inst.visitExternalResource('https://ya.ru/');
+            expect(mockedLocationReplace).toBeCalledWith(
+                'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
+            );
+            expect(mockedSetInitialView).not.toBeCalled();
+        });
+
+        it('should visit deeplink  if linksInBrowserFeature is true and forceOpenInWebview = true', () => {
+            androidEnvFlag = true;
+            appVersion = '10.35.0';
+            mockAndroidAllowOpenInWebview = true;
+
+            const inst = new NativeFallbacks(mockedBridgeToAmInstance);
+
+            inst.visitExternalResource('https://ya.ru/');
+            expect(mockedLocationReplace).toBeCalledWith(
+                'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
+            );
+            expect(mockedSetInitialView).not.toBeCalled();
         });
 
         it.each([

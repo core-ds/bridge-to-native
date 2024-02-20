@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import type { BridgeToNative } from '../src/bridge-to-native';
+import type { BridgeToNative } from '../src';
+
 import { PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY } from '../src/constants';
 import { mockSessionStorage } from './mock/mock-session-storage';
 import { NativeNavigationAndTitle } from '../src/native-navigation-and-title';

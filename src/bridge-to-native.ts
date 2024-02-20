@@ -5,6 +5,7 @@ import {
     CLOSE_WEBVIEW_SEARCH_VALUE,
     nativeFeaturesFromVersion,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
+    START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
     versionToIosAppId,
 } from './constants';
 import { NativeFallbacks } from './native-fallbacks';
@@ -33,21 +34,7 @@ export class BridgeToNative {
     public readonly nativeFallbacks: NativeFallbacks;
 
     private nextPageId: number | null;
-
-    private _nativeNavigationAndTitle: NativeNavigationAndTitle;
-
-    private _originalWebviewParams: string;
-
-    // В формате `x.x.x`.
-    private _appVersion: string;
-
-    // Необходимо для формирования диплинка.
-    private _iosAppId?: string;
-
-    private _theme: Theme;
-
     private readonly _blankPagePath: string;
-
     private readonly _handleRedirect: HandleRedirect;
 
     constructor(
@@ -85,24 +72,36 @@ export class BridgeToNative {
         this._blankPagePath = blankPagePath;
     }
 
-    get theme() {
-        return this._theme;
-    }
-
-    get appVersion() {
-        return this._appVersion;
-    }
-
-    get iosAppId() {
-        return this._iosAppId;
-    }
+    private _nativeNavigationAndTitle: NativeNavigationAndTitle;
 
     get nativeNavigationAndTitle() {
         return this._nativeNavigationAndTitle;
     }
 
+    private _originalWebviewParams: string;
+
     get originalWebviewParams() {
         return this._originalWebviewParams;
+    }
+
+    // В формате `x.x.x`.
+    private _appVersion: string;
+
+    get appVersion() {
+        return this._appVersion;
+    }
+
+    // Необходимо для формирования диплинка.
+    private _iosAppId?: string;
+
+    get iosAppId() {
+        return this._iosAppId;
+    }
+
+    private _theme: Theme;
+
+    get theme() {
+        return this._theme;
     }
 
     /**
@@ -156,6 +155,14 @@ export class BridgeToNative {
         }
 
         return true;
+    }
+
+    public checkAndroidAllowOpenInNewWebview() {
+        const comparisonResult = this.isCurrentVersionHigherOrEqual(
+            START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
+        );
+
+        return this.environment === 'android' && comparisonResult;
     }
 
     /**

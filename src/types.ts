@@ -54,3 +54,8 @@ export type HandleRedirect = (
 ) => void;
 
 export type Theme = 'light' | 'dark';
+
+export type ExternalNavigationOptions = {
+    onClick?: () => void;
+    forceOpenInWebview?: boolean;
+};

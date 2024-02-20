@@ -1,4 +1,10 @@
-import { extractAppNameRouteAndQuery, getUrlInstance, isValidVersionFormat } from '../src/utils';
+import {
+    extractAppNameRouteAndQuery,
+    getAppId,
+    getUrlInstance,
+    isValidVersionFormat,
+} from '../src/utils';
+import { ANDROID_APP_ID } from '../src/constants';
 
 describe('extractAppNameRouteAndQuery', () => {
     it('should extract app-name without path and query', () => {
@@ -75,5 +81,26 @@ describe('isValidVersionFormat', () => {
         ['10.infinity.1', false],
     ])('should check version `%s` and return `%s`', (version, result) => {
         expect(isValidVersionFormat(version)).toBe(result);
+    });
+});
+
+describe('getAppId', () => {
+    const iosAppId = 'aconcierge';
+
+    it('should return iosAppId for ios', () => {
+        expect(getAppId('ios', iosAppId)).toBe(iosAppId);
+    });
+
+    it('should return null for ios if iosAppId not provided', () => {
+        expect(getAppId('ios')).toBe(null);
+    });
+
+    it('should return null for ios if iosAppId not valid', () => {
+        expect(getAppId('ios', 123 as unknown as string)).toBe(null);
+        expect(getAppId('ios', undefined)).toBe(null);
+    });
+
+    it(`should return ${atob(ANDROID_APP_ID)} for android`, () => {
+        expect(getAppId('android')).toBe(atob(ANDROID_APP_ID));
     });
 });

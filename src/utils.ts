@@ -1,3 +1,6 @@
+import { Environment } from './types';
+import { ANDROID_APP_ID } from './constants';
+
 /**
  * Разделяет веб ссылку на компоненты
  * @param route внутренний путь для навигации
@@ -60,4 +63,16 @@ export const isValidVersionFormat = (version?: string) => {
     const versionPattern = /^\d+\.\d+\.\d+$/;
 
     return versionPattern.test(version);
+};
+
+export const getAppId = (environment: Environment, iosAppId?: string) => {
+    if (environment === 'android') {
+        return atob(ANDROID_APP_ID);
+    }
+
+    if (environment === 'ios' && iosAppId && typeof iosAppId === 'string') {
+        return iosAppId;
+    }
+
+    return null;
 };

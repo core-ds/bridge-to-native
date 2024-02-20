@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import { BridgeToNative } from '../src/bridge-to-native';
+import { BridgeToNative } from '../src';
 import {
     CLOSE_WEBVIEW_SEARCH_KEY,
     CLOSE_WEBVIEW_SEARCH_VALUE,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
+    START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
 } from '../src/constants';
 import { mockSessionStorage } from './mock/mock-session-storage';
 import { WebViewWindow } from '../src/types';
@@ -401,6 +402,31 @@ describe('BridgeToNative', () => {
                 });
 
                 expect(inst['getIosAppId']('aconcierge')).toBe('aconcierge');
+            });
+        });
+
+        describe('checkAndroidAllowOpenInNewWebview', () => {
+            it(`should return true if version equal or above ${START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW}`, () => {
+                androidEnvFlag = true;
+                let appVersion = '11.35.0';
+
+                const savedBridgeToAmState = {
+                    appVersion,
+                    iosAppId: 'aconcierge',
+                    theme: 'dark',
+                    originalWebviewParams: 'title=Title',
+                    nextPageId: null,
+                };
+
+                mockSessionStorage(PREVIOUS_B2N_STATE_STORAGE_KEY, savedBridgeToAmState);
+
+                const inst = new BridgeToNative(mockedHandleRedirect, '/', {
+                    ...defaultAmParams,
+                    appVersion,
+                });
+
+                expect(inst.checkAndroidAllowOpenInNewWebview()).toBe(true);
+                expect(inst.checkAndroidAllowOpenInNewWebview()).toBe(true);
             });
         });
     });
