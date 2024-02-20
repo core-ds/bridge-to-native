@@ -5,7 +5,7 @@ import {
     CLOSE_WEBVIEW_SEARCH_VALUE,
     nativeFeaturesFromVersion,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
-    START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW,
+    START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
     versionToIosAppId,
 } from './constants';
 import { NativeFallbacks } from './native-fallbacks';
@@ -159,7 +159,7 @@ export class BridgeToNative {
 
     public checkAndroidAllowOpenInNewWebview() {
         const comparisonResult = this.isCurrentVersionHigherOrEqual(
-            START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW,
+            START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
         );
 
         return this.environment === 'android' && comparisonResult;

@@ -5,7 +5,7 @@ import {
     CLOSE_WEBVIEW_SEARCH_KEY,
     CLOSE_WEBVIEW_SEARCH_VALUE,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
-    START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW,
+    START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
 } from '../src/constants';
 import { mockSessionStorage } from './mock/mock-session-storage';
 import { WebViewWindow } from '../src/types';
@@ -406,7 +406,7 @@ describe('BridgeToNative', () => {
         });
 
         describe('checkAndroidAllowOpenInNewWebview', () => {
-            it(`should return true if version equal or above ${START_VERSION_ANDROID_AM_ALLOW_OPEN_NEW_WEBVIEW}`, () => {
+            it(`should return true if version equal or above ${START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW}`, () => {
                 androidEnvFlag = true;
                 let appVersion = '11.35.0';
 
