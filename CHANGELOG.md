@@ -3,11 +3,11 @@
 ### Features
 - Дополнен файл CODEOWNERS.
 - Покрыт тестом метод closeWebview.
-- Перенесен метод handleNativeDeeplink.
+- Добавлен метод handleNativeDeeplink.
 - Исправлены импорты необходимых модулей на один уровень.
 ### BREAKING CHANGES
 - Убрано property nativeFeaturesFts и все что с ним связано.
-- Перенесен актуальный метод pseudoReloadPage вместо reloadPage.
+- Добавлен метод pseudoReloadPage вместо неработающего reloadPage.
 
 ### 0.0.7 ([ac71c88](https://github.com/core-ds/bridge-to-native/commit/ac71c88)) (13-02-2024)
 
