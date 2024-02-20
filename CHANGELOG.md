@@ -1,3 +1,9 @@
+### 0.0.9 ([528ed6b](https://github.com/core-ds/bridge-to-native/commit/528ed6b)) (20-02-2024)
+
+### Features
+- Улучшена работы методов visitExternalUrl и getExternalLinkProps в android > 10.35.0.
+- Добавлен новый метод checkAndroidAllowOpenInNewWebview
+
 ### 0.0.8 ([7a01c27](https://github.com/core-ds/bridge-to-native/commit/7a01c27)) (20-02-2024)
 
 ### Features
