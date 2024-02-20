@@ -1,8 +1,4 @@
-import {
-    extractAppNameRouteAndQuery,
-    getUrlInstance,
-    isValidVersionFormat,
-} from '../src/utils';
+import { extractAppNameRouteAndQuery, getUrlInstance, isValidVersionFormat } from '../src/utils';
 
 describe('extractAppNameRouteAndQuery', () => {
     it('should extract app-name without path and query', () => {

@@ -1,19 +1,13 @@
-import { PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY } from './constants';
-import { PreviousNativeNavigationAndTitleState } from './types';
+import {
+    DEEP_LINK_PATTERN,
+    PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
+} from './constants';
+import { HandleRedirect, PreviousNativeNavigationAndTitleState, SyncPurpose } from './types';
 import { extractAppNameRouteAndQuery } from './utils';
-import { BridgeToNative } from '.';
-
-type SyncPurpose = 'initialization' | 'navigation' | 'title-replacing';
-
-export type HandleRedirect = (
-    appName: string,
-    path?: string,
-    params?: Record<string, string>,
-) => void;
+import { BridgeToNative } from './bridge-to-native';
 
 /**
- * Класс, отвечающий за взаимодействие с нативными элементами в приложении – заголовком
- * и нативной кнопкой назад.
+ * Класс, отвечающий за взаимодействие с нативными элементами в приложении – заголовком и нативной кнопкой назад.
  */
 export class NativeNavigationAndTitle {
     private nativeHistoryStack: string[] = [''];
@@ -24,7 +18,7 @@ export class NativeNavigationAndTitle {
     // Просто, чтобы не слать одинаковые сигналы в приложение.
     private lastSetPageSettingsParams = '';
 
-    private handleWindowRedirect: HandleRedirect;
+    private readonly _handleWindowRedirect: HandleRedirect;
 
     constructor(
         private b2n: BridgeToNative,
@@ -33,7 +27,7 @@ export class NativeNavigationAndTitle {
         handleWindowRedirect: HandleRedirect,
     ) {
         this.handleBack = this.handleBack.bind(this);
-        this.handleWindowRedirect = handleWindowRedirect;
+        this._handleWindowRedirect = handleWindowRedirect;
         const previousState = !!sessionStorage.getItem(
             PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
         );
@@ -57,15 +51,15 @@ export class NativeNavigationAndTitle {
 
     /**
      * Метод, вызывающий history.go(-колл. шагов назад) и модифицирует внутреннее
-     * состояние, чтобы в дальнейшем зарегистририровать этот переход в приложении.
+     * состояние, чтобы в дальнейшем зарегистрировать этот переход в приложении.
      *
      * @param stepsNumber Количество шагов назад.
      *  Возможно передача как положительного, так и отрицательного числа.
      *  0 будет проигнорирован.
-     * @param autocloseWebview Флаг – закрывать ли вебвью автоматически,
-     *  если переданное кол-во шагов будет больше, чем записей в истории.
+     * @param autoCloseWebview Флаг – закрывать ли вебвью автоматически,
+     * если переданное кол-во шагов будет больше чем записей в истории.
      */
-    public goBackAFewSteps(stepsNumber: number, autocloseWebview = false) {
+    public goBackAFewSteps(stepsNumber: number, autoCloseWebview = false) {
         if (!stepsNumber) {
             return;
         }
@@ -74,7 +68,7 @@ export class NativeNavigationAndTitle {
         const maxStepsToBack = this.nativeHistoryStack.length - 1;
 
         if (stepsToBack > maxStepsToBack) {
-            if (autocloseWebview) {
+            if (autoCloseWebview) {
                 this.b2n.closeWebview();
 
                 return;
@@ -118,7 +112,7 @@ export class NativeNavigationAndTitle {
         params?: Record<string, string>,
     ) {
         if (appName) {
-            this.handleWindowRedirect(appName, path, params);
+            this._handleWindowRedirect(appName, path, params);
         } else {
             const {
                 appName: extractedAppName,
@@ -126,7 +120,7 @@ export class NativeNavigationAndTitle {
                 query: extractedQuery,
             } = extractAppNameRouteAndQuery(pageTitleOrPath);
 
-            this.handleWindowRedirect(extractedAppName, extractedPath, extractedQuery);
+            this._handleWindowRedirect(extractedAppName, extractedPath, extractedQuery);
         }
 
         const title = appName ? pageTitleOrPath : '';
@@ -137,7 +131,7 @@ export class NativeNavigationAndTitle {
 
     /**
      * Информирует натив, что веб находится на первом экране (сбрасывает историю переходов, не влияя на браузерную
-     * историю), а значит следующее нажатие на кнопку "Назад" в нативне закроет вебвью.
+     * историю), а значит следующее нажатие на кнопку "Назад" в нативе закроет вебвью.
      *
      * @param pageTitle Заголовок, который нужно отрисовать в нативе.
      */
@@ -159,17 +153,19 @@ export class NativeNavigationAndTitle {
     }
 
     /**
-     * Метод для открытия второго web приложения в рамках
-     * одной вебвью сессии
-     * сохраняет все текущее состояние текущего экземпляра bridgeToAm и AmNavigationAndTitle в sessionStorage, а
+     * Метод для открытия второго web приложения в рамках одной вебвью сессии.
+     * Сохраняет все текущее состояние текущего экземпляра bridgeToAm и AmNavigationAndTitle в sessionStorage, а
      * так же наполняет url необходимыми query параметрами. Работает только в Android окружении.
      * В IOS окружении будет открыто новое webview поверх текущего.
-     * @param url адрес второго web приложения к которому перед переходом на него будут добавлены
+     *
+     * @param url адрес второго web приложения, к которому перед переходом на него будут добавлены
      * все initial query параметры от натива и параметр nextPageId (Android)
      */
     public navigateInsideASharedSession(url: string) {
         if (this.b2n.environment === 'ios') {
-            this.b2n.nativeFallbacks.visitExternalResource(url);
+            const nativeDeeplink = `/webFeature?type=recommendation&url=${encodeURIComponent(url)}`;
+
+            this.handleNativeDeeplink(nativeDeeplink);
 
             return;
         }
@@ -183,20 +179,46 @@ export class NativeNavigationAndTitle {
     }
 
     /**
-     * ПОКА НЕ ИСПОЛЬЗОВАТЬ В ПРОДЕ (МЕТОД НЕ РАБОТАЕТ КОРРЕКТНО НА ANDROID)
-     * НА ANDROID ПРИ ПЕРЕЗАГРУЗКЕ СТРАНИЦЫ В ИСТРИЮ ЛОЖИТСЯ + ЕЩЕ ОДИН ЛИШНИЙ ЭЛЕМЕНТ
-     * Данный метод будет дорабатываться отдельной задачей
      * Безопасный способ для перезагрузки страницы.
-     * Производит предварительное сохранение текущего состояния
-     * BridgeToNative и NativeNavigationAndTitle перед вызовом location.reload()
      */
-    public reloadPage() {
+    public pseudoReloadPage() {
         // В b2n этот метод отмечен модификатором доступа private, но тут его нужно вызвать
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        this.b2n.saveCurrentState();
+        this.handleRedirect(this.b2n._blankPagePath);
 
-        window.location.reload();
+        this.goBack();
+    }
+
+    /**
+     * Вызывает обработчик deeplinks в нативе (АМ) и передает туда переданный deeplink.
+     * На Android текущее webview будет закрыто из-за технических особенностей.
+     * На IOS нативная фича открывается в следующем по стеку экране и при выходе из нее пользователь вернется обратно в webview.
+     * На IOS есть возможность закрыть webview перед открытием нативной фичи, передав второй параметр closeIOSWebviewBeforeCallNativeDeeplinkHandler = true
+     * @param deeplink диплинк на нативную АМ фичу в AM
+     * @param [closeIOSWebviewBeforeCallNativeDeeplinkHandler = false] закрыть текущее webview после открытия нативной фичи (применимо только для IOS на Android по техническим причинам webview всегда будет закрываться)
+     */
+    public handleNativeDeeplink(
+        deeplink: string,
+        closeIOSWebviewBeforeCallNativeDeeplinkHandler = false,
+    ) {
+        const clearedDeeplinkPath = deeplink.replace(DEEP_LINK_PATTERN, '');
+
+        if (this.b2n.environment === 'ios') {
+            if (closeIOSWebviewBeforeCallNativeDeeplinkHandler) {
+                this.b2n.closeWebview();
+
+                setTimeout(
+                    () => window.location.replace(`${this.b2n.iosAppId}://${clearedDeeplinkPath}`),
+                    0,
+                );
+
+                return;
+            }
+            window.location.replace(`${this.b2n.iosAppId}://${clearedDeeplinkPath}`);
+        } else {
+            window.location.replace(`alfabank://${clearedDeeplinkPath}`);
+        }
     }
 
     /**
@@ -269,7 +291,7 @@ export class NativeNavigationAndTitle {
         const stackSize = this.nativeHistoryStack.length;
 
         // Нажимая на кнопку назад, можно дойти до "первой" страницы,
-        // в iOS для "первой" страницы не нужно слать `pageId`
+        // в iOS для "первой" страницы не нужно слать `pageId`.
         return this.b2n.environment === 'ios' && stackSize <= 1 ? null : stackSize;
     }
 
@@ -401,7 +423,7 @@ export class NativeNavigationAndTitle {
      * рамках одной вебвью сессии
      * @param url - url иного веб приложения
      * @return подготовленная согласно контракту ссылка на иное веб приложение с initial query
-     * параметрами от нативе, а так же nextPageId
+     * параметрами от натива, а так же nextPageId.
      */
     private prepareExternalLinkBeforeOpen(url: string) {
         const currentPageId = this.nativeHistoryStack.length;
