@@ -1,11 +1,11 @@
-import type { BridgeToNative } from '../src';
+import type { BridgeToNative } from '../src/bridge-to-native';
 import { nativeFeaturesFromVersion } from '../src/constants';
 import { NativeFallbacks } from '../src/native-fallbacks';
 import { PdfType } from '../src/types';
 
 let androidEnvFlag = false;
 let iosAppId: string | undefined;
-let linksInBrowserFeatureFlag = false;
+let canOpenLinksInBrowser = false;
 let mockedHandleRedirect: any;
 let mockedSetInitialView: any;
 let appVersion = '10.0.0';
@@ -16,7 +16,7 @@ const mockedBridgeToAmInstance = {
         return appVersion;
     },
     canUseNativeFeature() {
-        return linksInBrowserFeatureFlag;
+        return canOpenLinksInBrowser;
     },
     get environment() {
         return androidEnvFlag ? 'android' : 'ios';
@@ -32,7 +32,7 @@ const mockedBridgeToAmInstance = {
     },
 } as unknown as BridgeToNative;
 
-jest.mock('../src', () => ({
+jest.mock('../src/bridge-to-native', () => ({
     __esModule: true,
     BridgeToNative: function MockedBridgeToAmConstructor() {
         return mockedBridgeToAmInstance;
@@ -63,7 +63,7 @@ describe('AmFallbacks', () => {
         appVersion = '10.0.0';
         androidEnvFlag = false;
         iosAppId = undefined;
-        linksInBrowserFeatureFlag = false;
+        canOpenLinksInBrowser = false;
         mockAndroidAllowOpenInWebview = false;
         windowSpy.mockRestore();
         jest.resetAllMocks();
@@ -77,7 +77,7 @@ describe('AmFallbacks', () => {
             "should return href with link with 'openInBrowser' query for '%s' app v. >= '%s'",
             (platform) => {
                 androidEnvFlag = platform === 'android';
-                linksInBrowserFeatureFlag = true;
+                canOpenLinksInBrowser = true;
 
                 const inst = new NativeFallbacks(mockedBridgeToAmInstance);
 
@@ -126,7 +126,7 @@ describe('AmFallbacks', () => {
 
         it('should return href with query ?openInBrowser=true for android if linksInBrowserFeature is true', () => {
             androidEnvFlag = true;
-            linksInBrowserFeatureFlag = true;
+            canOpenLinksInBrowser = true;
             appVersion = '12.0.0';
 
             const inst = new NativeFallbacks(mockedBridgeToAmInstance);
@@ -141,7 +141,6 @@ describe('AmFallbacks', () => {
 
         it('should return deeplink if linksInBrowserFeature is true and forceOpenInWebview = true', () => {
             androidEnvFlag = true;
-            linksInBrowserFeatureFlag = true;
             appVersion = '12.0.0';
             mockAndroidAllowOpenInWebview = true;
             const inst = new NativeFallbacks(mockedBridgeToAmInstance);
@@ -254,7 +253,7 @@ describe('AmFallbacks', () => {
             ['android', nativeFeaturesFromVersion.android.linksInBrowser.fromVersion],
         ])("should visit link with 'openInBrowser' query for '%s' app v. >= '%s'", (platform) => {
             androidEnvFlag = platform === 'android';
-            linksInBrowserFeatureFlag = true;
+            canOpenLinksInBrowser = true;
 
             const inst = new NativeFallbacks(mockedBridgeToAmInstance);
 

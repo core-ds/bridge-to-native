@@ -1,5 +1,5 @@
-import type { BridgeToNative } from '.';
 import { ExternalNavigationOptions, PdfType } from './types';
+import type { BridgeToNative } from './bridge-to-native';
 
 import { getAppId, getUrlInstance } from './utils';
 

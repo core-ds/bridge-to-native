@@ -1,24 +1,29 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
 import type { BridgeToNative } from '../src';
+
 import { PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY } from '../src/constants';
-import { mockSessionStorage } from '../src/mock/mock-session-storage';
+import { mockSessionStorage } from './mock/mock-session-storage';
 import { NativeNavigationAndTitle } from '../src/native-navigation-and-title';
 
 let androidEnvFlag = false;
 let mockedSetPageSettings: unknown;
 
 const mockedHandleRedirect = jest.fn();
-const mockedBridgeToAmInstance = {
+const mockedBridgeToNativeInstance = {
     get AndroidBridge() {
         return androidEnvFlag ? { setPageSettings: mockedSetPageSettings } : undefined;
     },
     get environment() {
         return androidEnvFlag ? 'android' : 'ios';
     },
+    get _blankPagePath() {
+        return '/blank?reload=true';
+    },
     get originalWebviewParams() {
         return 'title=superTitle';
     },
+    iosAppId: 'assistmekz',
     closeWebview: jest.fn(),
     saveCurrentState: jest.fn(),
     restorePreviousState: jest.fn(),
@@ -32,21 +37,15 @@ Object.defineProperty(global, 'handleRedirect', {
     configurable: true,
 });
 
-jest.mock('../src', () => ({
+jest.mock('../src/bridge-to-native', () => ({
     __esModule: true,
     BridgeToNative: function MockedBridgeToAmConstructor() {
-        return mockedBridgeToAmInstance;
+        return mockedBridgeToNativeInstance;
     },
 }));
 
 describe('AmNavigationAndTitle', () => {
     describe('sessionStorage interaction', () => {
-        // const mockedSessionStorage = mockSessionStorage({
-        //     [PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY]: {
-        //         nativeHistoryStack: ['page1', 'page2', 'lastPage'],
-        //         title: 'lastPage',
-        //     },
-        // });
         const mockedSessionStorage = mockSessionStorage(
             PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
             {
@@ -62,7 +61,7 @@ describe('AmNavigationAndTitle', () => {
 
                 NativeNavigationAndTitle.prototype['restorePreviousState'] = jest.fn();
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -82,7 +81,7 @@ describe('AmNavigationAndTitle', () => {
             describe('method `handleBack`', () => {
                 it('should restore previous state and unblock itself if property isPopstateListenerBlocked=true', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         1,
                         '',
                         mockedHandleRedirect,
@@ -93,7 +92,7 @@ describe('AmNavigationAndTitle', () => {
                         PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
                     );
 
-                    expect(mockedBridgeToAmInstance['restorePreviousState']).toBeCalled();
+                    expect(mockedBridgeToNativeInstance['restorePreviousState']).toBeCalled();
                 });
             });
 
@@ -109,7 +108,7 @@ describe('AmNavigationAndTitle', () => {
                         title: titleExample,
                     }));
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         1,
                         '',
                         mockedHandleRedirect,
@@ -142,7 +141,7 @@ describe('AmNavigationAndTitle', () => {
                     };
 
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         1,
                         '',
                         mockedHandleRedirect,
@@ -222,7 +221,7 @@ describe('AmNavigationAndTitle', () => {
 
                 NativeNavigationAndTitle.prototype['supportSharedSession'] = jest.fn();
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     2,
                     'example',
                     mockedHandleRedirect,
@@ -236,7 +235,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should call `setInitialView` method', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -247,7 +246,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should set initial AM title', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     'My Title',
                     mockedHandleRedirect,
@@ -267,7 +266,7 @@ describe('AmNavigationAndTitle', () => {
                 [-5, -4],
             ])('should work correctly with `%p` as argument', (stepsNumber, expected) => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -287,7 +286,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should work correctly with `0` as argument', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -309,7 +308,7 @@ describe('AmNavigationAndTitle', () => {
         describe('method `handleRedirect`', () => {
             it('should pass 2th, 3th and 4th params to `handleRedirect`', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -325,7 +324,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should work with 1 parameter', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -356,7 +355,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should modify inner history stack correctly', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -373,7 +372,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should call `syncHistoryWithNative` method correctly', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -391,7 +390,7 @@ describe('AmNavigationAndTitle', () => {
         describe('method `setInitialView`', () => {
             it('should reset inner history stack', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -408,7 +407,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should call `syncHistoryWithNative` method correctly', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -424,7 +423,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should refresh popstate event listener when method is called', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -444,7 +443,7 @@ describe('AmNavigationAndTitle', () => {
         describe('method `setTitle`', () => {
             it('should modify inner history stack correctly', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -460,7 +459,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should call `syncHistoryWithNative` method correctly', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -482,7 +481,7 @@ describe('AmNavigationAndTitle', () => {
 
                 it('should calculate pageId for `initialization` purpose correctly', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -494,7 +493,7 @@ describe('AmNavigationAndTitle', () => {
 
                 it('should calculate pageId for `navigation` purpose correctly', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -514,7 +513,7 @@ describe('AmNavigationAndTitle', () => {
 
                 it('should calculate pageId for `title-replacing` purpose correctly', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -532,7 +531,7 @@ describe('AmNavigationAndTitle', () => {
             describe('iOS environment', () => {
                 it('should calculate pageId for `initialization` purpose correctly', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -544,7 +543,7 @@ describe('AmNavigationAndTitle', () => {
 
                 it('should calculate pageId for `navigation` purpose correctly', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -564,7 +563,7 @@ describe('AmNavigationAndTitle', () => {
 
                 it('should calculate pageId for `title-replacing` purpose correctly', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -587,23 +586,23 @@ describe('AmNavigationAndTitle', () => {
         describe('method `handleBack`', () => {
             it('should close webview when its inner history stack is empty', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
                 );
 
                 inst['handleBack']();
-                expect(mockedBridgeToAmInstance.closeWebview).toBeCalledTimes(1);
+                expect(mockedBridgeToNativeInstance.closeWebview).toBeCalledTimes(1);
 
                 inst['nativeHistoryStack'] = ['Title 1', 'Title 2'];
                 inst['handleBack']();
-                expect(mockedBridgeToAmInstance.closeWebview).toBeCalledTimes(1);
+                expect(mockedBridgeToNativeInstance.closeWebview).toBeCalledTimes(1);
             });
 
             it('should modify inner history stack correctly', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -613,16 +612,16 @@ describe('AmNavigationAndTitle', () => {
 
                 inst['handleBack']();
                 expect(inst['nativeHistoryStack']).toEqual(['Title 1', 'Title 2']);
-                expect(mockedBridgeToAmInstance.closeWebview).not.toBeCalled();
+                expect(mockedBridgeToNativeInstance.closeWebview).not.toBeCalled();
 
                 inst['handleBack']();
                 expect(inst['nativeHistoryStack']).toEqual(['Title 1']);
-                expect(mockedBridgeToAmInstance.closeWebview).not.toBeCalled();
+                expect(mockedBridgeToNativeInstance.closeWebview).not.toBeCalled();
             });
 
             it('should modify inner history stack after multiple steps back', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -636,7 +635,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should call `syncHistoryWithNative` method correctly', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -660,7 +659,7 @@ describe('AmNavigationAndTitle', () => {
 
             it('should reset `numOfBackSteps`', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -676,7 +675,7 @@ describe('AmNavigationAndTitle', () => {
         describe('method `syncHistoryWithNative`', () => {
             it('should pass `purpose` argument to `getNativePageId` method', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -702,7 +701,7 @@ describe('AmNavigationAndTitle', () => {
 
                 it('should use AM interface with `pageId` correctly', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -723,7 +722,7 @@ describe('AmNavigationAndTitle', () => {
 
                 it('should use AM interface without `pageId` correctly', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -736,7 +735,7 @@ describe('AmNavigationAndTitle', () => {
 
                 it('should not send two identical signals in a row to AM', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -752,7 +751,7 @@ describe('AmNavigationAndTitle', () => {
             describe('iOS environment', () => {
                 it('should use correctly AM interface with `pageId`', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -773,7 +772,7 @@ describe('AmNavigationAndTitle', () => {
 
                 it('should use correctly AM interface without `pageId`', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -788,7 +787,7 @@ describe('AmNavigationAndTitle', () => {
 
                 it('should not send two identical signals in a row to AM', () => {
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         null,
                         '',
                         mockedHandleRedirect,
@@ -808,7 +807,7 @@ describe('AmNavigationAndTitle', () => {
                 const mockedReassignPopstateListener = jest.fn();
 
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -828,7 +827,7 @@ describe('AmNavigationAndTitle', () => {
         describe('method `reassignPopstateListener`', () => {
             it('should remove and add listener in correct priority', () => {
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
@@ -847,7 +846,7 @@ describe('AmNavigationAndTitle', () => {
 
         describe('method `prepareExternalLinkBeforeOpen`', () => {
             const inst = new NativeNavigationAndTitle(
-                mockedBridgeToAmInstance,
+                mockedBridgeToNativeInstance,
                 44,
                 '',
                 mockedHandleRedirect,
@@ -883,7 +882,7 @@ describe('AmNavigationAndTitle', () => {
                     );
 
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         1,
                         '',
                         mockedHandleRedirect,
@@ -906,35 +905,117 @@ describe('AmNavigationAndTitle', () => {
                 it('should call b2n.nativeFallbacks.visitExternalResource if current environment IOS', () => {
                     const externalUrlExample = 'https://ya.ru/';
 
+                    const mockedHandleNativeDeeplink = jest.fn();
+
                     const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToAmInstance,
+                        mockedBridgeToNativeInstance,
                         1,
                         '',
                         mockedHandleRedirect,
                     );
 
+                    inst['handleNativeDeeplink'] = mockedHandleNativeDeeplink;
+
                     inst.navigateInsideASharedSession(externalUrlExample);
 
-                    expect(inst['b2n']['nativeFallbacks']['visitExternalResource']).toBeCalledWith(
-                        externalUrlExample,
+                    expect(mockedHandleNativeDeeplink).toBeCalledWith(
+                        `/webFeature?type=recommendation&url=${encodeURIComponent(
+                            externalUrlExample,
+                        )}`,
                     );
                 });
             });
         });
 
-        describe('method `reloadPage`', () => {
-            it('should call `b2n.saveCurrentState` and location.reload', () => {
+        describe('method `pseudoReloadPage`', () => {
+            it('should call `handleRedirect` and `goBack`', () => {
+                const mockedGoBack = jest.fn();
+
                 const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToAmInstance,
+                    mockedBridgeToNativeInstance,
                     44,
                     '',
                     mockedHandleRedirect,
                 );
 
-                inst.reloadPage();
+                inst['goBack'] = mockedGoBack;
 
-                expect(inst['b2n']['saveCurrentState']).toBeCalled();
-                expect(mockedLocationReload).toBeCalled();
+                inst.pseudoReloadPage();
+
+                expect(mockedHandleRedirect).toBeCalledWith('blank', '', { reload: 'true' });
+                expect(mockedGoBack).toBeCalled();
+            });
+        });
+
+        describe('method `handleNativeDeeplink`', () => {
+            const root = atob('YWxmYWJhbms6');
+
+            describe('Android environment', () => {
+                beforeEach(() => {
+                    androidEnvFlag = true;
+                });
+
+                it.each([
+                    [
+                        'webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app',
+                        `${root}//webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app`,
+                    ],
+                    [`${root}///dashboard/deeplink_template`, `${root}//deeplink_template`],
+                    [`${root}///deeplink_template`, `${root}//deeplink_template`],
+                    [`${root}//deeplink_template`, `${root}//deeplink_template`],
+                    ['/deeplink_template', `${root}//deeplink_template`],
+                ])(
+                    'should modify input deeplink `%s` and call locationReplace with `%s`',
+                    (deeplink, expectedValue) => {
+                        const inst = new NativeNavigationAndTitle(
+                            mockedBridgeToNativeInstance,
+                            null,
+                            '',
+                            mockedHandleRedirect,
+                        );
+
+                        inst['handleNativeDeeplink'](deeplink);
+
+                        expect(mockedLocationReplace).toBeCalledWith(expectedValue);
+                    },
+                );
+            });
+
+            describe('IOS environment', () => {
+                beforeEach(() => {
+                    androidEnvFlag = false;
+                    jest.useFakeTimers();
+                });
+
+                it.each([
+                    [
+                        'webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app',
+                        'assistmekz://webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app',
+                    ],
+                    [`${root}///dashboard/deeplink_template`, 'assistmekz://deeplink_template'],
+                    [`${root}///deeplink_template`, 'assistmekz://deeplink_template'],
+                    [`${root}//deeplink_template`, 'assistmekz://deeplink_template'],
+                    ['/deeplink_template', 'assistmekz://deeplink_template'],
+                ])(
+                    'should modify input deeplink `%s` and call locationReplace with `%s`',
+                    (deeplink, expectedValue) => {
+                        const inst = new NativeNavigationAndTitle(
+                            mockedBridgeToNativeInstance,
+                            null,
+                            '',
+                            mockedHandleRedirect,
+                        );
+
+                        inst['handleNativeDeeplink'](deeplink);
+
+                        expect(mockedLocationReplace).toBeCalledWith(expectedValue);
+
+                        inst['handleNativeDeeplink'](deeplink, true);
+
+                        expect(mockedLocationReplace).toBeCalledWith(expectedValue);
+                        expect(inst['b2n']['closeWebview']).toBeCalled();
+                    },
+                );
             });
         });
     });

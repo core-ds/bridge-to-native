@@ -19,16 +19,17 @@ export const versionToIosAppId = {
 export const nativeFeaturesFromVersion: NativeFeaturesFromVersion = {
     android: {
         linksInBrowser: {
-            nativeFeatureFtKey: 'linksInBrowserAndroid',
             fromVersion: '11.71.0',
         },
         geolocation: { fromVersion: '11.71.0' },
     },
     ios: {
         linksInBrowser: {
-            nativeFeatureFtKey: 'linksInBrowserIos',
             fromVersion: '13.3.0',
         },
         geolocation: { fromVersion: '0.0.0' },
     },
 } as const;
+
+export const DEEP_LINK_PATTERN =
+    /^(\/|\x61\x6c\x66\x61\x62\x61\x6e\x6b:\/{3}dashboard\/|\x61\x6c\x66\x61\x62\x61\x6e\x6b:\/{3}|\x61\x6c\x66\x61\x62\x61\x6e\x6b:\/{2}|https:\/{2}\x6f\x6e\x6c\x69\x6e\x65\x2e\x61\x6c\x66\x61\x62\x61\x6e\x6b\x2e\x72\x75\/)/;

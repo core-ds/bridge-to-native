@@ -7,5 +7,5 @@
         "composite": false,
         "removeComments": false
     },
-    "exclude": ["test/**/*.*", "src/mock/*.*"]
+    "exclude": ["test/**/*.*"]
 }
