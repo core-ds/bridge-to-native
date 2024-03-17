@@ -7,7 +7,7 @@ import { getAppId, getUrlInstance } from './utils';
  * Класс содержит реализацию обходных путей для веб-фич, которые не работают в нативном-вебвью.
  */
 export class NativeFallbacks {
-    constructor(private b2n: BridgeToNative) {}
+    constructor(private readonly b2n: BridgeToNative) {}
 
     /**
      * Метод, возвращающий пропсы для ссылок, ведущих на ВНЕШНИЙ ресурс. Которые просто
@@ -42,7 +42,7 @@ export class NativeFallbacks {
 
     public getExternalLinkProps(link: string, options: ExternalNavigationOptions = {}) {
         const { onClick, forceOpenInWebview } = options;
-        const { iosAppId, environment, appVersion, checkAndroidAllowOpenInNewWebview } = this.b2n;
+        const { iosAppId, environment, checkAndroidAllowOpenInNewWebview } = this.b2n;
         const url = getUrlInstance(link);
         const appId = getAppId(environment, iosAppId);
 
@@ -119,7 +119,7 @@ export class NativeFallbacks {
      * все ссылки будут открываться в рамках webview, иначе открытие по возможности будет происходить в браузере.
      */
     public visitExternalResource(link: string, forceOpenInWebview = false) {
-        const { iosAppId, appVersion, environment, checkAndroidAllowOpenInNewWebview } = this.b2n;
+        const { iosAppId, environment, checkAndroidAllowOpenInNewWebview } = this.b2n;
         const url = getUrlInstance(link);
         const appId = getAppId(environment, iosAppId);
 

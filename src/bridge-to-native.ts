@@ -1,5 +1,3 @@
-/* eslint-disable no-underscore-dangle */
-
 import {
     CLOSE_WEBVIEW_SEARCH_KEY,
     CLOSE_WEBVIEW_SEARCH_VALUE,
@@ -34,20 +32,17 @@ export class BridgeToNative {
     public readonly nativeFallbacks: NativeFallbacks;
 
     private nextPageId: number | null;
-    private readonly _blankPagePath: string;
-    private readonly _handleRedirect: HandleRedirect;
 
     constructor(
-        handleRedirect: HandleRedirect,
-        blankPagePath: string,
-        nativeParams?: NativeParams,
+        private readonly handleRedirect: HandleRedirect,
+        private readonly blankPagePath: string,
+        private readonly nativeParams?: NativeParams,
     ) {
         const previousState = !!sessionStorage.getItem(PREVIOUS_B2N_STATE_STORAGE_KEY);
 
         if (previousState) {
             this.restorePreviousState();
             this.nativeFallbacks = new NativeFallbacks(this);
-            this._blankPagePath = blankPagePath;
 
             return;
         }
@@ -61,15 +56,12 @@ export class BridgeToNative {
         this._originalWebviewParams = nativeParams?.originalWebviewParams || '';
         this._nativeNavigationAndTitle = new NativeNavigationAndTitle(
             this,
-            nativeParams ? nativeParams.nextPageId : null,
+            nativeParams?.nextPageId || null,
             nativeParams?.title,
             handleRedirect,
         );
-        this._handleRedirect = handleRedirect;
-
         this.nextPageId = nativeParams ? nativeParams.nextPageId : null;
         this.nativeFallbacks = new NativeFallbacks(this);
-        this._blankPagePath = blankPagePath;
     }
 
     private _nativeNavigationAndTitle: NativeNavigationAndTitle;
@@ -179,7 +171,7 @@ export class BridgeToNative {
             appVersion: this._appVersion,
             theme: this._theme,
             nextPageId: this.nextPageId,
-            originalWebviewParams: this._originalWebviewParams || '',
+            originalWebviewParams: this.originalWebviewParams,
             iosAppId: this._iosAppId,
         };
 
@@ -227,7 +219,7 @@ export class BridgeToNative {
             this,
             previousState.nextPageId,
             '',
-            this._handleRedirect,
+            this.handleRedirect,
         );
 
         sessionStorage.removeItem(PREVIOUS_B2N_STATE_STORAGE_KEY);

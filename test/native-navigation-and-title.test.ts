@@ -17,12 +17,10 @@ const mockedBridgeToNativeInstance = {
     get environment() {
         return androidEnvFlag ? 'android' : 'ios';
     },
-    get _blankPagePath() {
-        return '/blank?reload=true';
-    },
     get originalWebviewParams() {
         return 'title=superTitle';
     },
+    blankPagePath: '/blank?reload=true',
     iosAppId: 'assistmekz',
     closeWebview: jest.fn(),
     saveCurrentState: jest.fn(),
@@ -31,11 +29,6 @@ const mockedBridgeToNativeInstance = {
         visitExternalResource: jest.fn(),
     },
 } as unknown as BridgeToNative;
-
-Object.defineProperty(global, 'handleRedirect', {
-    value: mockedHandleRedirect,
-    configurable: true,
-});
 
 jest.mock('../src/bridge-to-native', () => ({
     __esModule: true,

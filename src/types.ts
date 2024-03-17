@@ -27,11 +27,6 @@ export type WebViewWindow = Window & {
     Android?: {
         setPageSettings: (params: string) => void;
     };
-    handleRedirect?: (
-        appName: string,
-        path?: string,
-        params?: Record<string, string>,
-    ) => VoidFunction;
 };
 
 export type PdfType = 'pdfFile' | 'base64' | 'binary';

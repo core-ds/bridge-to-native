@@ -18,16 +18,13 @@ export class NativeNavigationAndTitle {
     // Просто, чтобы не слать одинаковые сигналы в приложение.
     private lastSetPageSettingsParams = '';
 
-    private readonly _handleWindowRedirect: HandleRedirect;
-
     constructor(
-        private b2n: BridgeToNative,
-        pageId: number | null,
-        initialNativeTitle = '',
-        handleWindowRedirect: HandleRedirect,
+        private readonly b2n: BridgeToNative,
+        private readonly pageId: number | null,
+        private readonly initialNativeTitle = '',
+        private readonly handleWindowRedirect: HandleRedirect,
     ) {
         this.handleBack = this.handleBack.bind(this);
-        this._handleWindowRedirect = handleWindowRedirect;
         const previousState = !!sessionStorage.getItem(
             PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
         );
@@ -101,8 +98,8 @@ export class NativeNavigationAndTitle {
         params?: Record<string, string>,
     ): void;
     /**
-     * Метод вызывает `src/shared/utils/handle-redirect` из `newclick-host-ui`
-     * и регистрирует этот переход в приложении, чтобы кнопка «Назад» в Нативе вызывала
+     * Метод вызывает handle-redirect и регистрирует этот переход в
+     * приложении, чтобы кнопка «Назад» в Нативе вызывала
      * переход назад в вебе.
      */
     public handleRedirect(
@@ -112,7 +109,7 @@ export class NativeNavigationAndTitle {
         params?: Record<string, string>,
     ) {
         if (appName) {
-            this._handleWindowRedirect(appName, path, params);
+            this.handleWindowRedirect(appName, path, params);
         } else {
             const {
                 appName: extractedAppName,
@@ -120,7 +117,7 @@ export class NativeNavigationAndTitle {
                 query: extractedQuery,
             } = extractAppNameRouteAndQuery(pageTitleOrPath);
 
-            this._handleWindowRedirect(extractedAppName, extractedPath, extractedQuery);
+            this.handleWindowRedirect(extractedAppName, extractedPath, extractedQuery);
         }
 
         const title = appName ? pageTitleOrPath : '';
@@ -185,7 +182,7 @@ export class NativeNavigationAndTitle {
         // В b2n этот метод отмечен модификатором доступа private, но тут его нужно вызвать
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        this.handleRedirect(this.b2n._blankPagePath);
+        this.handleRedirect(this.b2n.blankPagePath);
 
         this.goBack();
     }
