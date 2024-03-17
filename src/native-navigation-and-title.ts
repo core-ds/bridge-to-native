@@ -374,7 +374,7 @@ export class NativeNavigationAndTitle {
             const paramsToSend = `ios:setPageSettings/${pageTitleStr + pageIdStr}`;
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
-                window.location.replace(paramsToSend);
+                // window.location.replace(paramsToSend);
                 this.lastSetPageSettingsParams = paramsToSend;
             }
         }
