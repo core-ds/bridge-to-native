@@ -306,7 +306,7 @@ describe('AmNavigationAndTitle', () => {
         });
 
         describe('method `handleRedirect`', () => {
-            it('should pass 2th, 3th and 4th params to `handleRedirect`', () => {
+            it('should pass 2th, 3th, 4th and 5th params to `handleRedirect`', () => {
                 const inst = new NativeNavigationAndTitle(
                     mockedBridgeToNativeInstance,
                     null,
@@ -314,23 +314,34 @@ describe('AmNavigationAndTitle', () => {
                     mockedHandleRedirect,
                 );
 
-                inst.handleRedirect('New Title', 'app-name', 'path', { test: 'test' });
+                inst.handleRedirect('New Title', 'app-name', 'path', { test: 'test' }, { id: 1 });
 
                 expect(mockedHandleRedirect).toBeCalledTimes(1);
-                expect(mockedHandleRedirect).toHaveBeenCalledWith('app-name', 'path', {
-                    test: 'test',
-                });
+                expect(mockedHandleRedirect).toHaveBeenCalledWith(
+                    'app-name',
+                    'path',
+                    {
+                        test: 'test',
+                    },
+                    { id: 1 },
+                );
             });
 
-            it('should work with 1 parameter', () => {
+            it('should work with 2 parameters (path and history state)', () => {
                 const inst = new NativeNavigationAndTitle(
                     mockedBridgeToNativeInstance,
                     null,
                     '',
                     mockedHandleRedirect,
                 );
+                const historyState = {
+                    test: 1,
+                };
 
-                inst.handleRedirect('/app-name/main-path/sub-path?query=test&query1=test1');
+                inst.handleRedirect(
+                    '/app-name/main-path/sub-path?query=test&query1=test1',
+                    historyState,
+                );
 
                 expect(mockedHandleRedirect).toBeCalledTimes(1);
                 expect(mockedHandleRedirect).toHaveBeenCalledWith(
@@ -340,6 +351,7 @@ describe('AmNavigationAndTitle', () => {
                         query: 'test',
                         query1: 'test1',
                     },
+                    historyState,
                 );
 
                 inst.handleRedirect('app-name/main-path');
@@ -347,10 +359,16 @@ describe('AmNavigationAndTitle', () => {
                     'app-name',
                     'main-path',
                     undefined,
+                    undefined,
                 );
 
                 inst.handleRedirect('app-name');
-                expect(mockedHandleRedirect).toHaveBeenCalledWith('app-name', '', undefined);
+                expect(mockedHandleRedirect).toHaveBeenCalledWith(
+                    'app-name',
+                    '',
+                    undefined,
+                    undefined,
+                );
             });
 
             it('should modify inner history stack correctly', () => {
@@ -942,7 +960,12 @@ describe('AmNavigationAndTitle', () => {
 
                 inst.pseudoReloadPage();
 
-                expect(mockedHandleRedirect).toBeCalledWith('blank', '', { reload: 'true' });
+                expect(mockedHandleRedirect).toBeCalledWith(
+                    'blank',
+                    '',
+                    { reload: 'true' },
+                    undefined,
+                );
                 expect(mockedGoBack).toBeCalled();
             });
         });
