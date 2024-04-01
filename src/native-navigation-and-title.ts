@@ -115,16 +115,13 @@ export class NativeNavigationAndTitle {
         params?: Record<string, string>,
         historyState?: Record<string, unknown>,
     ) {
-        console.log('@@@@@@@@@');
         const checkAppNameArgument = (argument: unknown): argument is string =>
             Boolean(appNameOrHistoryState && typeof appNameOrHistoryState === 'string');
         const isAppNameArgument = checkAppNameArgument(appNameOrHistoryState);
-        console.log('@@@2222222222');
+
         if (isAppNameArgument) {
             this._handleWindowRedirect(appNameOrHistoryState, path, params, historyState);
-            console.log('@@@334343434343');
         } else {
-            console.log('else');
             const {
                 appName: extractedAppName,
                 path: extractedPath,
@@ -140,7 +137,6 @@ export class NativeNavigationAndTitle {
         }
 
         const title = isAppNameArgument ? pageTitleOrPath : '';
-        console.log('test', this.nativeHistoryStack, this.syncHistoryWithNative);
         this.nativeHistoryStack.push(title);
         this.syncHistoryWithNative(title, 'navigation');
     }
