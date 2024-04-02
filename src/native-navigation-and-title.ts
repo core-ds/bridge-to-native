@@ -84,8 +84,9 @@ export class NativeNavigationAndTitle {
 
     /**
      * @param path Путь для перехода на функциональность внутри приложения.
+     * @param historyState (https://developer.mozilla.org/en-US/docs/Web/API/History/state) для новой записи в истории.
      */
-    handleRedirect(path: string): void;
+    handleRedirect(path: string, historyState?: Record<string, unknown>): void;
     /**
      * В этом варианте аргументы 2,3,4 соответствуют аргументам 1,2,3 метода `src/shared/utils/handle-redirect`.
      *
@@ -93,12 +94,14 @@ export class NativeNavigationAndTitle {
      * @param appName См. первый параметр `src/handle-redirect.ts`.
      * @param path См. второй параметр `src/handle-redirect.ts`.
      * @param params См. третий параметр `src/handle-redirect.ts`.
+     * @param historyState (https://developer.mozilla.org/en-US/docs/Web/API/History/state) для новой записи в истории.
      */
     handleRedirect(
         pageTitle: string,
         appName: string,
         path?: string,
         params?: Record<string, string>,
+        historyState?: Record<string, unknown>,
     ): void;
     /**
      * Метод вызывает `src/shared/utils/handle-redirect` из `newclick-host-ui`
@@ -107,12 +110,17 @@ export class NativeNavigationAndTitle {
      */
     public handleRedirect(
         pageTitleOrPath: string,
-        appName?: string,
+        appNameOrHistoryState?: string | Record<string, unknown>,
         path?: string,
         params?: Record<string, string>,
+        historyState?: Record<string, unknown>,
     ) {
-        if (appName) {
-            this._handleWindowRedirect(appName, path, params);
+        const checkAppNameArgument = (argument: unknown): argument is string =>
+            Boolean(appNameOrHistoryState && typeof appNameOrHistoryState === 'string');
+        const isAppNameArgument = checkAppNameArgument(appNameOrHistoryState);
+
+        if (isAppNameArgument) {
+            this._handleWindowRedirect(appNameOrHistoryState, path, params, historyState);
         } else {
             const {
                 appName: extractedAppName,
@@ -120,11 +128,15 @@ export class NativeNavigationAndTitle {
                 query: extractedQuery,
             } = extractAppNameRouteAndQuery(pageTitleOrPath);
 
-            this._handleWindowRedirect(extractedAppName, extractedPath, extractedQuery);
+            this._handleWindowRedirect(
+                extractedAppName,
+                extractedPath,
+                extractedQuery,
+                appNameOrHistoryState,
+            );
         }
 
-        const title = appName ? pageTitleOrPath : '';
-
+        const title = isAppNameArgument ? pageTitleOrPath : '';
         this.nativeHistoryStack.push(title);
         this.syncHistoryWithNative(title, 'navigation');
     }

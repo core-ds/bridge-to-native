@@ -51,6 +51,7 @@ export type HandleRedirect = (
     appName: string,
     path?: string,
     params?: Record<string, string>,
+    historyState?: Record<string, unknown>,
 ) => void;
 
 export type Theme = 'light' | 'dark';
