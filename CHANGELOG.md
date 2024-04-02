@@ -1,3 +1,8 @@
+### 0.0.10 ([1acbaee](https://github.com/core-ds/bridge-to-native/commit/1acbaee)) (02-04-2024)
+
+### Features
+- Интерфейс утилиты  handleRedirect дополнен еще одним необязательным параметром **historyState**
+
 ### 0.0.9 ([528ed6b](https://github.com/core-ds/bridge-to-native/commit/528ed6b)) (20-02-2024)
 
 ### Features
