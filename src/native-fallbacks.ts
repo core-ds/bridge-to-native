@@ -42,9 +42,9 @@ export class NativeFallbacks {
 
     public getExternalLinkProps(link: string, options: ExternalNavigationOptions = {}) {
         const { onClick, forceOpenInWebview } = options;
-        const { iosAppId, environment, appVersion, checkAndroidAllowOpenInNewWebview } = this.b2n;
+
         const url = getUrlInstance(link);
-        const appId = getAppId(environment, iosAppId);
+        const appId = getAppId(this.b2n.environment, this.b2n.iosAppId);
 
         if (!forceOpenInWebview && this.b2n.canUseNativeFeature('linksInBrowser')) {
             url.searchParams.append('openInBrowser', 'true');
@@ -52,7 +52,7 @@ export class NativeFallbacks {
             return { href: url.href, onClick };
         }
 
-        if (iosAppId || checkAndroidAllowOpenInNewWebview()) {
+        if (this.b2n.iosAppId || this.b2n.checkAndroidAllowOpenInNewWebview()) {
             return {
                 href: `${appId}://webFeature?type=recommendation&url=${encodeURIComponent(
                     url.href,

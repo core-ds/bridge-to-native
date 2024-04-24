@@ -158,7 +158,7 @@ export class BridgeToNative {
     }
 
     public checkAndroidAllowOpenInNewWebview() {
-        const comparisonResult = this?.isCurrentVersionHigherOrEqual(
+        const comparisonResult = this.isCurrentVersionHigherOrEqual(
             START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
         );
 
