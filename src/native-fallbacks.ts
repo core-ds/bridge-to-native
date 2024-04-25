@@ -42,9 +42,9 @@ export class NativeFallbacks {
 
     public getExternalLinkProps(link: string, options: ExternalNavigationOptions = {}) {
         const { onClick, forceOpenInWebview } = options;
-        const { iosAppId, environment, appVersion, checkAndroidAllowOpenInNewWebview } = this.b2n;
+
         const url = getUrlInstance(link);
-        const appId = getAppId(environment, iosAppId);
+        const appId = getAppId(this.b2n.environment, this.b2n.iosAppId);
 
         if (!forceOpenInWebview && this.b2n.canUseNativeFeature('linksInBrowser')) {
             url.searchParams.append('openInBrowser', 'true');
@@ -52,7 +52,7 @@ export class NativeFallbacks {
             return { href: url.href, onClick };
         }
 
-        if (iosAppId || checkAndroidAllowOpenInNewWebview()) {
+        if (this.b2n.iosAppId || this.b2n.checkAndroidAllowOpenInNewWebview()) {
             return {
                 href: `${appId}://webFeature?type=recommendation&url=${encodeURIComponent(
                     url.href,
@@ -93,16 +93,14 @@ export class NativeFallbacks {
         let replaceUrl = url;
         const paramsStr = params.toString();
 
-        const { environment, iosAppId } = this.b2n;
-
-        if (environment === 'ios') {
-            replaceUrl = `${iosAppId}:///dashboard/pdf_viewer?${paramsStr}`;
+        if (this.b2n.environment === 'ios') {
+            replaceUrl = `${this.b2n.iosAppId}:///dashboard/pdf_viewer?${paramsStr}`;
         }
 
         // У андройда через диплинк открывается, но предыдущий экран затирается.
         // Поэтому мы открываем base64 через конвертирование в бинарный pdf (через ручки сервиса)
         // Это позволяет перейти назад к вебвью
-        if (environment === 'android' && type === 'base64') {
+        if (this.b2n.environment === 'android' && type === 'base64') {
             replaceUrl = `/services/base64-to-pdf?${paramsStr}`;
         }
 
@@ -119,15 +117,14 @@ export class NativeFallbacks {
      * все ссылки будут открываться в рамках webview, иначе открытие по возможности будет происходить в браузере.
      */
     public visitExternalResource(link: string, forceOpenInWebview = false) {
-        const { iosAppId, appVersion, environment, checkAndroidAllowOpenInNewWebview } = this.b2n;
         const url = getUrlInstance(link);
-        const appId = getAppId(environment, iosAppId);
+        const appId = getAppId(this.b2n.environment, this.b2n.iosAppId);
 
         if (!forceOpenInWebview && this.b2n.canUseNativeFeature('linksInBrowser')) {
             url.searchParams.append('openInBrowser', 'true');
 
             window.location.replace(url.href);
-        } else if (iosAppId || checkAndroidAllowOpenInNewWebview()) {
+        } else if (this.b2n.iosAppId || this.b2n.checkAndroidAllowOpenInNewWebview()) {
             window.location.replace(
                 `${appId}://webFeature?type=recommendation&url=${encodeURIComponent(url.href)}`,
             );
