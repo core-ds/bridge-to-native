@@ -1,3 +1,8 @@
+### 0.0.11 ([56b4422](https://github.com/core-ds/bridge-to-native/commit/56b4422)) (25-04-2024)
+
+### Bug Fixes
+- Пофикшен баг с потерей контекста в утилите getExternalLinkProps
+
 ### 0.0.10 ([1acbaee](https://github.com/core-ds/bridge-to-native/commit/1acbaee)) (02-04-2024)
 
 ### Features
