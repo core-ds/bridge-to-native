@@ -104,7 +104,10 @@ export class NativeFallbacks {
             replaceUrl = `/services/base64-to-pdf?${paramsStr}`;
         }
 
-        window.open(replaceUrl);
+        const windowObjectReference = window.open(replaceUrl);
+        if (windowObjectReference === null) {
+            window.location.replace(replaceUrl);
+        }
     }
 
     /**
