@@ -1,7 +1,7 @@
 ### 0.0.12 ([4f99466](https://github.com/core-ds/bridge-to-native/commit/4f99466)) (30-05-2024)
 
 ### Bug Fixes
-- Добавлен fallback для открытия pdf через метод  window.location.replace так как b2n.nativeFallbacks.openPdf открывал PDF файлы глобальным методом window.open что на IOS не отрабатывало.
+- Добавлен fallback для открытия pdf через метод window.location.replace так как b2n.nativeFallbacks.openPdf открывал PDF файлы глобальным методом window.open что на IOS не отрабатывало.
 
 ### 0.0.11 ([56b4422](https://github.com/core-ds/bridge-to-native/commit/56b4422)) (25-04-2024)
 
