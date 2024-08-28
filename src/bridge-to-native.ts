@@ -45,6 +45,7 @@ export class BridgeToNative {
         const previousState = !!sessionStorage.getItem(PREVIOUS_B2N_STATE_STORAGE_KEY);
 
         if (previousState) {
+            this._handleRedirect = handleRedirect;
             this.restorePreviousState();
             this.nativeFallbacks = new NativeFallbacks(this);
             this._blankPagePath = blankPagePath;
