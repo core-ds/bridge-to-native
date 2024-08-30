@@ -1,3 +1,8 @@
+### 0.0.13 ([c1d56d9](https://github.com/core-ds/bridge-to-native/commit/c1d56d9)) (29-08-2024)
+
+### Bug Fixes
+- Починен метод b2n.restorePreviousState, который ранее не восстанавливал ссылку на handleRedirect.
+
 ### 0.0.12 ([4f99466](https://github.com/core-ds/bridge-to-native/commit/4f99466)) (30-05-2024)
 
 ### Bug Fixes
