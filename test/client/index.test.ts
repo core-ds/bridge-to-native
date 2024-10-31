@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import { BridgeToNative } from '../src';
+import { BridgeToNative } from '../../src';
 import {
     CLOSE_WEBVIEW_SEARCH_KEY,
     CLOSE_WEBVIEW_SEARCH_VALUE,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
     START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
-} from '../src/constants';
+} from '../../src/client/constants';
 import { mockSessionStorage } from './mock/mock-session-storage';
-import { WebViewWindow } from '../src/types';
+import { WebViewWindow } from '../../src/client/types';
 
 const mockedNativeFallbacksInstance = {};
 const mockedNativeNavigationAndTitleInstance = {
@@ -18,14 +18,14 @@ const MockedNativeNavigationAndTitleConstructor = jest.fn(
     () => mockedNativeNavigationAndTitleInstance,
 );
 
-jest.mock('../src/native-fallbacks', () => ({
+jest.mock('../../src/client/native-fallbacks', () => ({
     __esModule: true,
     NativeFallbacks: function MockedNativeFallbacksConstructor() {
         return mockedNativeFallbacksInstance;
     },
 }));
 
-jest.mock('../src/native-navigation-and-title', () => ({
+jest.mock('../../src/client/native-navigation-and-title', () => ({
     __esModule: true,
     get NativeNavigationAndTitle() {
         return MockedNativeNavigationAndTitleConstructor;

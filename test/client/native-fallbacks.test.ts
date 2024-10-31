@@ -1,7 +1,7 @@
-import type { BridgeToNative } from '../src/bridge-to-native';
-import { nativeFeaturesFromVersion } from '../src/constants';
-import { NativeFallbacks } from '../src/native-fallbacks';
-import { PdfType } from '../src/types';
+import type { BridgeToNative } from '../../src/client/bridge-to-native';
+import { nativeFeaturesFromVersion } from '../../src/client/constants';
+import { NativeFallbacks } from '../../src/client/native-fallbacks';
+import { PdfType } from '../../src/client/types';
 
 let androidEnvFlag = false;
 let iosAppId: string | undefined;
@@ -32,7 +32,7 @@ const mockedBridgeToAmInstance = {
     },
 } as unknown as BridgeToNative;
 
-jest.mock('../src/bridge-to-native', () => ({
+jest.mock('../../src/client/bridge-to-native', () => ({
     __esModule: true,
     BridgeToNative: function MockedBridgeToAmConstructor() {
         return mockedBridgeToAmInstance;
