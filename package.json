@@ -75,7 +75,7 @@
         ],
         "testPathIgnorePatterns": [
             "/node_modules/",
-            "/test/mock"
+            "/test/.*/mock/"
         ],
         "reporters": [
             "jest-junit",
