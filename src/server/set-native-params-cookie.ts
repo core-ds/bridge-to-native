@@ -1,6 +1,7 @@
-import {NATIVE_PARAMS_COOKIE_NAME} from "./constants";
+import { NATIVE_PARAMS_COOKIE_NAME } from "./constants";
+import { WebviewParams } from "./types";
 
-export const setNativeParamsCookie = (params: Record<string, string>, setCookie: (name: string, value: string) => void): void => {
+export const setNativeParamsCookie = (params: WebviewParams, setCookie: (name: string, value: string) => void): void => {
     setCookie(NATIVE_PARAMS_COOKIE_NAME, encodeURIComponent(JSON.stringify(params)))
 }
 

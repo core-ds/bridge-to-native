@@ -11,7 +11,7 @@ import { extractAppVersion } from './utils';
 
 import { extractAndJoinOriginalWebviewParams } from './extract-and-join-original-webview-params';
 import { iosAppIdPattern, versionPattern } from './reg-exp-patterns';
-import { WebViewParams, RequestHeaderType } from "./types";
+import { WebviewParams, RequestHeaderType } from "./types";
 import { isWebviewEnvironment } from "./is-webview-environment";
 
 /**
@@ -22,7 +22,7 @@ import { isWebviewEnvironment } from "./is-webview-environment";
 
 export const extractNativeParams = (
     request: RequestHeaderType
-): WebViewParams | null => {
+): WebviewParams | null => {
 
     if(!isWebviewEnvironment(request)) {
         return null;
@@ -78,7 +78,7 @@ export const extractNativeParams = (
         withoutLayout: withoutLayoutQuery === 'true',
         originalWebviewParams,
         nextPageId: nextPageId ? Number(nextPageId) : null,
-    } as WebViewParams;
+    } as WebviewParams;
 
     return nativeParams;
 };
