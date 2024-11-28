@@ -18,11 +18,11 @@ const webviewInitParamsDictionary = [
 ];
 
 /**
- * Данная утилита извлекает из Fastify.Query все известные
+ * Данная утилита извлекает из запроса все известные
  * сервисные query параметры которые добавляются к url внутри
  * webview при первой инициализации и собирает их в query строку.
  *
- * @param query - Fastify.Query в формате объекта
+ * @param query - Query в формате объекта
  * @return строка query параметров в формате: "title=Title&theme=dark..."
  * */
 export const extractAndJoinOriginalWebviewParams = (

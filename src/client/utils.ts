@@ -1,5 +1,6 @@
 import { Environment } from './types';
 import { ANDROID_APP_ID } from './constants';
+import { extractNativeParamsFromCookies } from "../shared/utils";
 
 /**
  * Разделяет веб ссылку на компоненты
@@ -76,3 +77,8 @@ export const getAppId = (environment: Environment, iosAppId?: string) => {
 
     return null;
 };
+
+/**
+ * Возвращает объект с `webview-параметрами` из cookies
+ */
+export const getNativeParamsFromCookies = (): Record<string, unknown> | null => extractNativeParamsFromCookies(document.cookie);

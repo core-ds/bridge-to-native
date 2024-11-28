@@ -23,7 +23,7 @@ const fastifyRequestQueryExample = {
     final: 'dddd',
 };
 
-describe('extractAndJoinOriginalAlfaMobileWebviewParams', () => {
+describe('extractAndJoinOriginalWebviewParams', () => {
     it('should return empty string if no original webview query', () => {
         const otherParams = {
             first: 'sdas',

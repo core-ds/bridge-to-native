@@ -5,15 +5,14 @@ import {
     WEBVIEW_IOS_APP_VERSION_QUERY,
     WEBVIEW_NEXT_PAGE_ID_QUERY,
     WEBVIEW_WITHOUT_LAYOUT_QUERY,
-    NATIVE_PARAMS_COOKIE_NAME
 } from './constants';
 
 import { extractAppVersion } from './utils';
 
 import { extractAndJoinOriginalWebviewParams } from './extract-and-join-original-webview-params';
-import { checkIsWebview } from './check-is-webview';
 import { iosAppIdPattern, versionPattern } from './reg-exp-patterns';
 import { EmptyNativeParams, NativeParams, RequestHeaderType } from "./types";
+import {isWebviewEnvironment} from "./is-webview-environment";
 
 /**
  * Вытаскивает из query и headers все детали для вебвью.
@@ -21,20 +20,17 @@ import { EmptyNativeParams, NativeParams, RequestHeaderType } from "./types";
  * @returns Примечание по `appVersion`: В вебвью окружении версия всегда имеет формат `x.x.x`.
  */
 
-export const detectAndExtractNativeParams = (
-    request: RequestHeaderType,
-    addCookie?: (cookieKey: string, cookieValue: string) => void
-): EmptyNativeParams | NativeParams => {
-    const isWebview = checkIsWebview(request);
+export const extractNativeParams = (
+    request: RequestHeaderType
+):  NativeParams | null => {
 
-    if (!isWebview) {
-        return { isWebview } as EmptyNativeParams;
+    if(!isWebviewEnvironment(request)) {
+        return null;
     }
 
     const {
         [THEME_QUERY]: themeQuery,
-        // При желании через диплинк на вебвью можно передать желаемый заголовок,
-        // который АО установит в верхней АМ панели при загрузке АО.
+        // При желании через диплинк на вебвью можно передать желаемый заголовок
         // По умолчанию нужна именно пустая строка.
         [TITLE]: title = '',
         // Говорят, этого может и не быть в урле. Формат `com.xxxxxxxxx.app`.
@@ -57,7 +53,7 @@ export const detectAndExtractNativeParams = (
         iosAppId = appIdSubsting;
     }
 
-    // Определяем версию АМ из query или заголовка.
+    // Определяем версию приложения из query или заголовка.
     let appVersion = '0.0.0';
 
     const appVersionFromHeaders = extractAppVersion(request);
@@ -76,17 +72,13 @@ export const detectAndExtractNativeParams = (
     const nativeParams = {
         appVersion,
         iosAppId,
-        isWebview,
+        isWebview: true,
         theme: themeQuery === 'dark' ? 'dark' : 'light',
         title,
         withoutLayout: withoutLayoutQuery === 'true',
         originalWebviewParams,
         nextPageId: nextPageId ? Number(nextPageId) : null,
     } as NativeParams;
-
-    if(addCookie) {
-        addCookie(NATIVE_PARAMS_COOKIE_NAME, encodeURIComponent(JSON.stringify(nativeParams)));
-    }
 
     return nativeParams;
 };

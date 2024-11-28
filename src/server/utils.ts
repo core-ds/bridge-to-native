@@ -1,10 +1,5 @@
-import {
-    CAPSULE_UA_SUBSTR,
-    AKEY_UA_SUBSTR,
-    VOSKHOD_UA_SUBSTR,
-    NATIVE_PARAMS_COOKIE_NAME
-} from './constants';
 import { RequestHeaderType } from './types';
+import { extractNativeParamsFromCookies } from "../shared/utils";
 
 /**
  * Заголовок с версией приложения, который посылает вебвью из AM Android
@@ -28,32 +23,6 @@ export function extractUserAgent(request: RequestHeaderType): string {
 /**
  * Возвращает объект с `webview-параметрами` из cookies
  */
-export function extractNativeParamsFromCookies(request: RequestHeaderType): Record<string, string> | null {
-    const cookieHeader = request.headers['cookie'];
-
-    if (!cookieHeader) {
-        return {};
-    }
-
-    const cookiesArray = cookieHeader.split('; ');
-    const cookieString = cookiesArray.find((cookie: string) => cookie.startsWith(`${NATIVE_PARAMS_COOKIE_NAME}=`));
-
-    if (!cookieString) return null;
-
-    const [, value] = cookieString.split('=');
-
-    try {
-        return JSON.parse(decodeURIComponent(value));
-    } catch {
-        return null;
-    }
+export function extractNativeParamsFromCookieHeader(request: RequestHeaderType): Record<string, unknown> | null {
+    return extractNativeParamsFromCookies(request.headers['cookie'])
 }
-
-
-/**
- * Проверка по юзерагенту на сервере
- */
-export const isAkeyWebview = (userAgent: string) =>
-    userAgent.includes(CAPSULE_UA_SUBSTR) ||
-    userAgent.includes(AKEY_UA_SUBSTR) ||
-    userAgent.includes(VOSKHOD_UA_SUBSTR);
