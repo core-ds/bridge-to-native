@@ -1,11 +1,11 @@
 import type { NativeParamsType } from '../shared/types';
 export type RequestHeaderType = Record<string, any>;
 
-export type EmptyNativeParams = {
+export type EmptyWebViewParams = {
     isWebview: false;
 };
 
-export type NativeParams = NativeParamsType & {
+export type WebViewParams = NativeParamsType & {
     isWebview: true;
     withoutLayout: boolean;
 };

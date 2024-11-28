@@ -11,8 +11,8 @@ import { extractAppVersion } from './utils';
 
 import { extractAndJoinOriginalWebviewParams } from './extract-and-join-original-webview-params';
 import { iosAppIdPattern, versionPattern } from './reg-exp-patterns';
-import { EmptyNativeParams, NativeParams, RequestHeaderType } from "./types";
-import {isWebviewEnvironment} from "./is-webview-environment";
+import { WebViewParams, RequestHeaderType } from "./types";
+import { isWebviewEnvironment } from "./is-webview-environment";
 
 /**
  * Вытаскивает из query и headers все детали для вебвью.
@@ -22,7 +22,7 @@ import {isWebviewEnvironment} from "./is-webview-environment";
 
 export const extractNativeParams = (
     request: RequestHeaderType
-):  NativeParams | null => {
+): WebViewParams | null => {
 
     if(!isWebviewEnvironment(request)) {
         return null;
@@ -78,7 +78,7 @@ export const extractNativeParams = (
         withoutLayout: withoutLayoutQuery === 'true',
         originalWebviewParams,
         nextPageId: nextPageId ? Number(nextPageId) : null,
-    } as NativeParams;
+    } as WebViewParams;
 
     return nativeParams;
 };
