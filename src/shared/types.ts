@@ -1,4 +1,4 @@
-export type NativeParamsType = {
+export type NativeParams = {
     appVersion: string;
     title?: string;
     // В ранних версиях iOS приложение не пробрасывет схему приложения в URL в прод окружении.

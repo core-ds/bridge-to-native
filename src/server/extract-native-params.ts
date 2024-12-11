@@ -4,15 +4,15 @@ import {
     WEBVIEW_IOS_APP_ID_QUERY,
     WEBVIEW_IOS_APP_VERSION_QUERY,
     WEBVIEW_NEXT_PAGE_ID_QUERY,
-    WEBVIEW_WITHOUT_LAYOUT_QUERY,
 } from './constants';
 
 import { extractAppVersion } from './utils';
 
 import { extractAndJoinOriginalWebviewParams } from './extract-and-join-original-webview-params';
 import { iosAppIdPattern, versionPattern } from './reg-exp-patterns';
-import { WebviewParams, RequestHeaderType } from "./types";
+import { RequestHeaderType } from "./types";
 import { isWebviewEnvironment } from "./is-webview-environment";
+import {NativeParams} from "../shared/types";
 
 /**
  * Вытаскивает из query и headers все детали для вебвью.
@@ -22,7 +22,7 @@ import { isWebviewEnvironment } from "./is-webview-environment";
 
 export const extractNativeParams = (
     request: RequestHeaderType
-): WebviewParams | null => {
+): NativeParams | null => {
 
     if(!isWebviewEnvironment(request)) {
         return null;
@@ -36,7 +36,6 @@ export const extractNativeParams = (
         // Говорят, этого может и не быть в урле. Формат `com.xxxxxxxxx.app`.
         [WEBVIEW_IOS_APP_ID_QUERY]: iosAppIdQuery,
         [WEBVIEW_IOS_APP_VERSION_QUERY]: iosAppVersionQuery,
-        [WEBVIEW_WITHOUT_LAYOUT_QUERY]: withoutLayoutQuery,
         [WEBVIEW_NEXT_PAGE_ID_QUERY]: nextPageId,
     } = request.query as Record<string, string>;
 
@@ -71,14 +70,12 @@ export const extractNativeParams = (
 
     const nativeParams = {
         appVersion,
-        iosAppId,
-        isWebview: true,
-        theme: themeQuery === 'dark' ? 'dark' : 'light',
         title,
-        withoutLayout: withoutLayoutQuery === 'true',
-        originalWebviewParams,
+        iosAppId,
+        theme: themeQuery === 'dark' ? 'dark' : 'light',
         nextPageId: nextPageId ? Number(nextPageId) : null,
-    } as WebviewParams;
+        originalWebviewParams,
+    };
 
     return nativeParams;
 };

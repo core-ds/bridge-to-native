@@ -14,10 +14,10 @@ import type {
     Environment,
     HandleRedirect,
     NativeFeatureKey,
-    NativeParams,
     Theme,
     WebViewWindow,
 } from './types';
+import type { NativeParams } from '../shared/types'
 import { PreviousBridgeToNativeState } from './types';
 import { isValidVersionFormat } from './utils';
 

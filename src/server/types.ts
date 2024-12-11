@@ -1,11 +1,12 @@
-import type { NativeParamsType } from '../shared/types';
-export type RequestHeaderType = Record<string, any>;
+import {IncomingHttpHeaders, IncomingMessage} from 'http';
 
-export type EmptyWebviewParams = {
-    isWebview: false;
-};
-
-export type WebviewParams = NativeParamsType & {
-    isWebview: true;
-    withoutLayout: boolean;
+export type RequestHeaderType = IncomingMessage & {
+    headers: IncomingHttpHeaders & {
+        'app-version'?: string,
+        'user-agent': string,
+    },
+    params?: Record<string, string>;
+    query?: Record<string, string | string[]>;
+    body?: unknown;
+    url?: string;
 };

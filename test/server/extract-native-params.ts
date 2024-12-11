@@ -1,5 +1,7 @@
 import { extractNativeParams } from '../../src/server/extract-native-params';
-import {isWebviewEnvironment} from "../../src/server";
+import { isWebviewEnvironment, RequestHeaderType } from "../../src/server";
+import { IncomingMessage } from "http";
+import { Socket } from "net";
 
 const UA_IPHONE =
     'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1';
@@ -7,6 +9,10 @@ const UA_WEBVIEW =
     'Mozilla/5.0 (iPhone; CPU iPhone OS 16_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
 
 let mockedUa = UA_WEBVIEW;
+
+const mockSocket = {} as Socket;
+
+const requestParams = { ...Object.create(new IncomingMessage(mockSocket)), headers: {} };
 
 
 const originalUtils = jest.requireActual('../../src/server/utils');
@@ -36,18 +42,18 @@ describe('extractNativeParams', () => {
         });
 
         it.each([
-            ['appVersion from query', { headers: {}, query: { device_app_version: '10.10.10' } }],
+            ['appVersion from query', { ...requestParams, query: { device_app_version: '10.10.10' } }],
             [
                 'iosAppId from query',
                 {
-                    headers: {},
+                    ...requestParams,
                     query: { applicationId: 'com.aconcierge.app' },
                 },
             ],
-            ['dark theme from query', { headers: {}, query: { theme: 'dark' } }],
-            ['light theme from query', { headers: {}, query: { theme: 'light' } }],
-            ['theme from query', { headers: {}, query: { title: 'Title' } }],
-            ['withoutLayout from query', { headers: {}, query: { without_layout: 'true' } }],
+            ['dark theme from query', { ...requestParams, query: { theme: 'dark' } }],
+            ['light theme from query', { ...requestParams, query: { theme: 'light' } }],
+            ['theme from query', { ...requestParams, query: { title: 'Title' } }],
+            ['withoutLayout from query', { ...requestParams, query: { without_layout: 'true' } }],
         ])('should not pass `%s` in non-webview environment', (_, request) => {
             expect(extractNativeParams(request)).toEqual(null);
         });
@@ -55,16 +61,14 @@ describe('extractNativeParams', () => {
 
     describe('appVersion', () => {
         const restReturnValues = {
-            isWebview: true,
             theme: 'light',
             title: '',
-            withoutLayout: false,
             nextPageId: null,
             originalWebviewParams: '',
         };
 
         it('should pass default appVersion', () => {
-            const request = { headers: {}, query: { is_webview: 'true' } };
+            const request = { ...requestParams, query: { is_webview: 'true' } };
 
             expect(extractNativeParams(request)).toEqual({
                 appVersion: '0.0.0',
@@ -76,6 +80,7 @@ describe('extractNativeParams', () => {
             'should pass appVersion `%s` from headers',
             (version) => {
                 const request = {
+                    ...requestParams,
                     headers: { 'app-version': version },
                     query: { is_webview: 'true' },
                 };
@@ -91,6 +96,7 @@ describe('extractNativeParams', () => {
             'should not pass wrong format `%s` of appVersion from headers',
             (version) => {
                 const request = {
+                    ...requestParams,
                     headers: { 'app-version': version },
                     query: { is_webview: 'true' },
                 };
@@ -106,7 +112,7 @@ describe('extractNativeParams', () => {
             'should pass appVersion `%s` from query',
             (version) => {
                 const request = {
-                    headers: {},
+                   ...requestParams,
                     query: { device_app_version: version, is_webview: 'true' },
                 };
 
@@ -122,7 +128,7 @@ describe('extractNativeParams', () => {
             'should not pass wrong format `%s` of appVersion from query',
             (version) => {
                 const request = {
-                    headers: {},
+                    ...requestParams,
                     query: { device_app_version: version, is_webview: 'true' },
                 };
 
@@ -136,6 +142,7 @@ describe('extractNativeParams', () => {
 
         it('should pass appVersion from query while appVersion exists both in query and in headers', () => {
             const request = {
+                ...requestParams,
                 headers: { 'app-version': '10.11.12' },
                 query: { device_app_version: '13.14.15', is_webview: 'true' },
             };
@@ -149,6 +156,7 @@ describe('extractNativeParams', () => {
 
         it('should pass only version from full version-string on Android', () => {
             const request = {
+                ...requestParams,
                 headers: { 'app-version': '10.11.12 feature' },
                 query: { is_webview: 'true' },
             };
@@ -163,17 +171,15 @@ describe('extractNativeParams', () => {
     describe('iosAppId', () => {
         const restReturnValues = {
             appVersion: '0.0.0',
-            isWebview: true,
             theme: 'light',
             title: '',
-            withoutLayout: false,
             nextPageId: null,
             originalWebviewParams: '',
         };
 
         it('should pass trimmed ios `applicationId`', () => {
             const request = {
-                headers: {},
+                ...requestParams,
                 query: { applicationId: 'com.aconcierge.app', is_webview: 'true' },
             };
 
@@ -186,7 +192,7 @@ describe('extractNativeParams', () => {
 
         it('should ignore unknown value of `applicationId`', () => {
             const request = {
-                headers: {},
+                ...requestParams,
                 query: { applicationId: 'something-strange', is_webview: 'true' },
             };
 
@@ -202,7 +208,6 @@ describe('extractNativeParams', () => {
             appVersion: '0.0.0',
             theme: 'light',
             title: '',
-            withoutLayout: false,
             nextPageId: null,
             originalWebviewParams: '',
         };
@@ -210,15 +215,14 @@ describe('extractNativeParams', () => {
         it('should pass non webview env', () => {
             mockIsWebviewEnv.mockReturnValue(false);
 
-            expect(extractNativeParams({ headers: {}, query: {} })).toEqual(null);
+            expect(extractNativeParams({ ...requestParams, query: {} })).toEqual(null);
         });
 
             it('should pass webview env', () => {
                 mockIsWebviewEnv.mockReturnValue(true);
 
-                expect(extractNativeParams({headers: {}, query: {}})).toEqual({
+                expect(extractNativeParams({ ...requestParams, query: {}})).toEqual({
                     ...restReturnValues,
-                    isWebview: true,
                 });
             });
         });
@@ -226,15 +230,13 @@ describe('extractNativeParams', () => {
         describe('theme', () => {
             const restReturnValues = {
                 appVersion: '0.0.0',
-                isWebview: true,
                 title: '',
-                withoutLayout: false,
                 nextPageId: null,
                 originalWebviewParams: '',
             };
 
             it.each(['dark', 'light'])('should pass theme=%s', (theme) => {
-                const request = {headers: {}, query: {is_webview: 'true', theme}};
+                const request = { ...requestParams, query: {is_webview: 'true', theme}};
 
                 expect(extractNativeParams(request)).toEqual({
                     ...restReturnValues,
@@ -244,7 +246,7 @@ describe('extractNativeParams', () => {
             });
 
             it('should pass light theme while theme in query is unknown', () => {
-                const request = {headers: {}, query: {is_webview: 'true', theme: 'diamond'}};
+                const request = { ...requestParams, query: {is_webview: 'true', theme: 'diamond'}};
 
                 expect(extractNativeParams(request)).toEqual({
                     ...restReturnValues,
@@ -257,15 +259,13 @@ describe('extractNativeParams', () => {
         describe('title', () => {
             const restReturnValues = {
                 appVersion: '0.0.0',
-                isWebview: true,
                 theme: 'light',
-                withoutLayout: false,
                 nextPageId: null,
                 originalWebviewParams: '',
             };
 
             it('should default title', () => {
-                const request = {headers: {}, query: {is_webview: 'true'}};
+                const request = { ...requestParams, query: {is_webview: 'true'}};
 
                 expect(extractNativeParams(request)).toEqual({
                     ...restReturnValues,
@@ -274,7 +274,7 @@ describe('extractNativeParams', () => {
             });
 
             it('should pass title', () => {
-                const request = {headers: {}, query: {is_webview: 'true', title: 'Title'}};
+                const request = { ...requestParams, query: {title: 'Title'}};
 
                 expect(extractNativeParams(request)).toEqual({
                     ...restReturnValues,
@@ -287,17 +287,15 @@ describe('extractNativeParams', () => {
         describe('originalWebviewParams', () => {
             const returnValues = {
                 appVersion: '12.26.0',
-                isWebview: true,
                 theme: 'light',
                 title: 'Title',
-                withoutLayout: false,
                 nextPageId: null,
                 iosAppId: 'aconcierge',
                 originalWebviewParams:
                     'device_app_version=12.26.0&device_os_version=iOS+16.1&device_boot_time=38933&device_timezone=%2B0300&applicationId=com.aconcierge.app&device_app_id=8441576F&device_locale=ru-US&device_model=x86_64&device_uuid=2E32AFD5&device_name=iPhone+14&device_id=1842D0AA&client_id=mobile-app&theme=light&scope=openid+mobile-bank',
             };
             const request = {
-                headers: {},
+                ...requestParams,
                 query: {
                     device_app_id: '8441576F',
                     device_uuid: '2E32AFD5',
@@ -326,38 +324,27 @@ describe('extractNativeParams', () => {
         describe('withoutLayout', () => {
             const restReturnValues = {
                 appVersion: '0.0.0',
-                isWebview: true,
                 theme: 'light',
                 title: '',
                 nextPageId: null,
                 originalWebviewParams: '',
             };
 
-            it('should pass withoutLayout=true', () => {
-                const request = {headers: {}, query: {is_webview: 'true', without_layout: 'true'}};
-
-                expect(extractNativeParams(request)).toEqual({
-                    ...restReturnValues,
-                    withoutLayout: true,
-                });
-            });
-
             it.each(['false', 'kekus', '1'])('should not pass withoutLayout=%s', (queryValue) => {
                 const request = {
-                    headers: {},
+                    ...requestParams,
                     query: {is_webview: 'true', without_layout: queryValue},
                 };
 
                 expect(extractNativeParams(request)).toEqual({
-                    ...restReturnValues,
-                    withoutLayout: false,
+                    ...restReturnValues
                 });
             });
         });
 
         describe('nextPageId', () => {
             const request = {
-                headers: {},
+                ...requestParams,
                 query: {
                     nextPageId: 4,
                     is_webview: true,
@@ -367,12 +354,10 @@ describe('extractNativeParams', () => {
             const returnValues = {
                 appVersion: '0.0.0',
                 iosAppId: undefined,
-                isWebview: true,
                 nextPageId: 4,
                 originalWebviewParams: '',
                 theme: 'light',
                 title: '',
-                withoutLayout: false,
             };
 
             it('should return correct nextPageId', () => {

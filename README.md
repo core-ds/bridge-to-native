@@ -1,4 +1,5 @@
 # bridge-to-native
+
 Утилита для удобной работы веб приложения внутри нативного приложения и коммуникации с ним
 
 ## Установка
@@ -7,9 +8,14 @@
 npm install @alfalab/bridge-to-native
 ```
 
-## Определение вебвью окружения на сервере
+## Серверные утилиты
 
-При отправке запроса сервер определяет что запрос был сделан из вебвью (по `User-Agent` или ранее установленной `cookie`), извлекает параметры запроса, создает cookie с этими данными и отправляет клиенту.
+При открытии веб-ресурса в webview, нативное приложение добавляет к первому запросу специальные заголовки, позволяющие определить окружение вебвью. Это полезно, если ваше веб-приложение должно вести себя по-разному в вебвью и обычном браузере (например, отдавать разные бандлы или применять разные настройки).
+
+Кроме того, нативное приложение передаёт информацию о себе через query-параметры и заголовки. Эту информацию удобно сохранить в cookie, чтобы затем использовать на клиентской стороне.
+
+`b2native` предоставляет набор утилит для Node.js серверов, которые помогают решить эти задачи эффективно и удобно.
+
 
 Пример:
 
@@ -22,12 +28,10 @@ const server = http.createServer((req, res) => {
 
   // Проверяем, является ли запрос WebView
   if (isWebviewEnvironment(req)) {
-    // Извлекаем параметры WebView
-    const nativeParams = extractNativeParams(req);
 
-    // Устанавливаем cookie
-      setNativeParamsCookie(
-        nativeParams,
+      // Извлекаем параметры вебвью и записываем их в cookie
+      handleNativeParams(
+        req,
         (name, value) => {
             const cookieOptions = `HttpOnly=false; Max-Age=432000`;
             res.setHeader('Set-Cookie', `${name}=${value}; ${cookieOptions}; Path=/`);
@@ -41,13 +45,14 @@ const server = http.createServer((req, res) => {
   }
 });
 ```
-где
 
-| Название      | Описание                                                        | Параметры                                                                                                                                               | Результат                                                                                                                                                 |
-|---------------|-----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-|`isWebviewEnvironment(request)`    | Проверяет, является ли запрос исходящим из окружения WebView    | `request [Object]` Объект HTTP-запроса                                                                                                                  | `true` или `false`                                                                                                                                        |
-| `extractNativeParams(request)`     | Извлекает параметры, специфичные для WebView, из HTTP-запроса. | `request [Object]` Объект HTTP-запроса                                                                                                                  | объект с извлеченными параметрами WebView (`theme`,  `appVersion`, `iosAppId`, `isWebview`,`title`,`withoutLayout`,`originalWebviewParams`, `nextPageId`) |
-| `setNativeParamsCookie(params, setCookieMethod)` | Записывает информацию из параметров WebView в не-HttpOnly куку   | `params [Object]`: Параметры WebView, которые нужно записать в куку.  `setCookieMethod (cookieName, cookieValue) [Function]`: Метод для установки куки. | `void`                                                                                                                                                    |
+
+| Название | Описание                                                                                                                      | Параметры  | Результат                                                                                                                     |
+|----------|-------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| `isWebviewEnvironment(request)` | Проверяет, является ли запрос исходящим из окружения WebView                                                                  | `request [Object]` Объект HTTP-запроса                                                                                                                  | `true` или `false`                                                                                                            |
+| `handleNativeParams(request, setCookieMethod)` | Извлекает параметры, специфичные для WebView, из HTTP-запроса и записывает информацию из параметров WebView в куку | `request [Object]` Объект HTTP-запроса       `setCookieMethod (cookieName, cookieValue) [Function]`: Метод для установки куки. | Объект с извлеченными параметрами WebView (`theme`,  `appVersion`, `iosAppId`, `title`,`originalWebviewParams`, `nextPageId`) |
+| `extractNativeParams(request)`                  | Извлекает параметры, специфичные для WebView, из HTTP-запроса.                                                                | `request [Object]` Объект HTTP-запроса                                                                                                                  | Объект с извлеченными параметрами WebView (`theme`,  `appVersion`, `iosAppId`, `title`,`originalWebviewParams`, `nextPageId`) |
+| `setNativeParamsCookie(params, setCookieMethod)` | Записывает информацию из параметров WebView в не-HttpOnly куку                                                                | `params [Object]`: Параметры WebView, которые нужно записать в куку.  `setCookieMethod (cookieName, cookieValue) [Function]`: Метод для установки куки. | `void`                                                                                                                        |
 
 
 ## Работа с webview  на клиенте
