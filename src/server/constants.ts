@@ -1,6 +1,7 @@
-export const THEME_QUERY = 'theme';
-export const TITLE = 'title';
-export const WEBVIEW_IOS_APP_ID_QUERY = 'applicationId';
-export const WEBVIEW_IOS_APP_VERSION_QUERY = 'device_app_version';
-export const WEBVIEW_NEXT_PAGE_ID_QUERY = 'nextPageId';
-export const NATIVE_PARAMS_COOKIE_NAME = 'app_native_params';
+export const APP_VERSION_HEADER_KEY = 'app-version';
+export const IOS_APP_ID_QUERY_KEY = 'applicationId';
+export const IOS_APP_VERSION_QUERY_KEY = 'device_app_version';
+export const NATIVE_PARAMS_COOKIE_KEY = 'app_native_params';
+export const NEXT_PAGE_ID_QUERY_KEY = 'nextPageId';
+export const THEME_QUERY_KEY = 'theme';
+export const TITLE_QUERY_KEY = 'title';

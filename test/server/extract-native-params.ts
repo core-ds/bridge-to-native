@@ -1,5 +1,5 @@
 import { extractNativeParams } from '../../src/server/extract-native-params';
-import { isWebviewEnvironment, RequestHeaderType } from "../../src/server";
+import { isWebviewEnvironment, UniversalRequest } from "../../src/server";
 import { IncomingMessage } from "http";
 import { Socket } from "net";
 

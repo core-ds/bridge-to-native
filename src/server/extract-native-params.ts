@@ -1,16 +1,16 @@
 import {
-    THEME_QUERY,
-    TITLE,
-    WEBVIEW_IOS_APP_ID_QUERY,
-    WEBVIEW_IOS_APP_VERSION_QUERY,
-    WEBVIEW_NEXT_PAGE_ID_QUERY,
+    THEME_QUERY_KEY,
+    TITLE_QUERY_KEY,
+    IOS_APP_ID_QUERY_KEY,
+    IOS_APP_VERSION_QUERY_KEY,
+    NEXT_PAGE_ID_QUERY_KEY,
 } from './constants';
 
 import { extractAppVersion } from './utils';
 
 import { extractAndJoinOriginalWebviewParams } from './extract-and-join-original-webview-params';
 import { iosAppIdPattern, versionPattern } from './reg-exp-patterns';
-import { RequestHeaderType } from "./types";
+import { UniversalRequest } from "./types";
 import { isWebviewEnvironment } from "./is-webview-environment";
 import {NativeParams} from "../shared/types";
 
@@ -21,7 +21,7 @@ import {NativeParams} from "../shared/types";
  */
 
 export const extractNativeParams = (
-    request: RequestHeaderType
+    request: UniversalRequest
 ): NativeParams | null => {
 
     if(!isWebviewEnvironment(request)) {
@@ -29,14 +29,14 @@ export const extractNativeParams = (
     }
 
     const {
-        [THEME_QUERY]: themeQuery,
+        [THEME_QUERY_KEY]: themeQuery,
         // При желании через диплинк на вебвью можно передать желаемый заголовок
         // По умолчанию нужна именно пустая строка.
-        [TITLE]: title = '',
+        [TITLE_QUERY_KEY]: title = '',
         // Говорят, этого может и не быть в урле. Формат `com.xxxxxxxxx.app`.
-        [WEBVIEW_IOS_APP_ID_QUERY]: iosAppIdQuery,
-        [WEBVIEW_IOS_APP_VERSION_QUERY]: iosAppVersionQuery,
-        [WEBVIEW_NEXT_PAGE_ID_QUERY]: nextPageId,
+        [IOS_APP_ID_QUERY_KEY]: iosAppIdQuery,
+        [IOS_APP_VERSION_QUERY_KEY]: iosAppVersionQuery,
+        [NEXT_PAGE_ID_QUERY_KEY]: nextPageId,
     } = request.query as Record<string, string>;
 
     const originalWebviewParams = extractAndJoinOriginalWebviewParams(

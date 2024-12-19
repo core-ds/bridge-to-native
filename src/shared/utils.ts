@@ -1,4 +1,4 @@
-import { NATIVE_PARAMS_COOKIE_NAME } from "../server/constants";
+import { NATIVE_PARAMS_COOKIE_KEY } from "../server/constants";
 
 /**
  * Возвращает объект с `webview-параметрами` из cookies
@@ -10,7 +10,7 @@ export function extractNativeParamsFromCookies(cookies?: string): Record<string,
     }
 
     const cookiesArray = cookies.split('; ');
-    const cookieString = cookiesArray.find((cookie: string) => cookie.startsWith(`${NATIVE_PARAMS_COOKIE_NAME}=`));
+    const cookieString = cookiesArray.find((cookie: string) => cookie.startsWith(`${NATIVE_PARAMS_COOKIE_KEY}=`));
 
     if (!cookieString) return null;
 

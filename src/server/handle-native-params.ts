@@ -1,10 +1,10 @@
 import type { NativeParams } from '../shared/types';
 import {extractNativeParams} from "./extract-native-params";
 import {setNativeParamsCookie} from "./set-native-params-cookie";
-import { RequestHeaderType } from "./types";
+import { UniversalRequest } from "./types";
 
 export const handleNativeParams = (
-    request: RequestHeaderType,
+    request: UniversalRequest,
     setCookie: (cookieKey: string, cookieValue: string) => void
 ): NativeParams | null => {
     const nativeParams = extractNativeParams(request);
