@@ -6,47 +6,42 @@ import {
     NEXT_PAGE_ID_QUERY_KEY,
 } from './constants';
 
-import { extractAppVersion } from './utils';
+import { extractAppVersion, extractNativeParamsFromCookie, getQueryParamValue } from './utils';
 
 import { extractAndJoinOriginalWebviewParams } from './extract-and-join-original-webview-params';
 import { iosAppIdPattern, versionPattern } from './reg-exp-patterns';
-import { UniversalRequest } from "./types";
-import { isWebviewEnvironment } from "./is-webview-environment";
-import {NativeParams} from "../shared/types";
+import { UniversalRequest } from './types';
+import { NativeParams } from '../shared/types';
 
 /**
- * Вытаскивает из query и headers все детали для вебвью.
+ * Определяет, сделан ли запрос из вебвью, вытаскивает из него все детали о нативном приложении.
  *
  * @returns Примечание по `appVersion`: В вебвью окружении версия всегда имеет формат `x.x.x`.
  */
 
-export const extractNativeParams = (
-    request: UniversalRequest
-): NativeParams | null => {
+export const extractNativeParamsFromRequest = (request: UniversalRequest) => {
+    const paramsFromCookie = extractNativeParamsFromCookie(request);
 
-    if(!isWebviewEnvironment(request)) {
-        return null;
+    if (paramsFromCookie) {
+        return paramsFromCookie;
     }
 
-    const {
-        [THEME_QUERY_KEY]: themeQuery,
-        // При желании через диплинк на вебвью можно передать желаемый заголовок
-        // По умолчанию нужна именно пустая строка.
-        [TITLE_QUERY_KEY]: title = '',
-        // Говорят, этого может и не быть в урле. Формат `com.xxxxxxxxx.app`.
-        [IOS_APP_ID_QUERY_KEY]: iosAppIdQuery,
-        [IOS_APP_VERSION_QUERY_KEY]: iosAppVersionQuery,
-        [NEXT_PAGE_ID_QUERY_KEY]: nextPageId,
-    } = request.query as Record<string, string>;
+    const themeQuery = getQueryParamValue(request, THEME_QUERY_KEY) || 'light';
+    // При желании через диплинк на вебвью можно передать желаемый заголовок
+    // По умолчанию нужна именно пустая строка.
+    const title = getQueryParamValue(request, TITLE_QUERY_KEY) || '';
+    // Говорят, этого может и не быть в урле. Формат `com.xxxxxxxxx.app`.
+    const iosAppIdQuery = getQueryParamValue(request, IOS_APP_ID_QUERY_KEY);
+    const iosAppVersionQuery = getQueryParamValue(request, IOS_APP_VERSION_QUERY_KEY);
+    const nextPageId = getQueryParamValue(request, NEXT_PAGE_ID_QUERY_KEY);
 
-    const originalWebviewParams = extractAndJoinOriginalWebviewParams(
-        request.query as Record<string, string>,
-    );
+    const originalWebviewParams = extractAndJoinOriginalWebviewParams(request);
 
     // Пробуем вытащить схему iOS приложения из query, если есть.
-    let iosAppId;
+    let iosAppId: string | undefined = undefined;
 
-    if (iosAppIdPattern.test(iosAppIdQuery)) {
+    if (iosAppIdQuery && iosAppIdPattern.test(iosAppIdQuery)) {
+        // Кастинг здесь ок, регулярка это гарантирует и совпадение с ней есть.
         const [, appIdSubsting] = iosAppIdQuery.match(iosAppIdPattern) as string[];
 
         iosAppId = appIdSubsting;
@@ -57,25 +52,26 @@ export const extractNativeParams = (
 
     const appVersionFromHeaders = extractAppVersion(request);
 
-    if (typeof iosAppVersionQuery === 'string' && versionPattern.test(iosAppVersionQuery)) {
+    if (iosAppVersionQuery && versionPattern.test(iosAppVersionQuery)) {
         appVersion = iosAppVersionQuery;
-    } else if (
-        typeof appVersionFromHeaders === 'string' &&
-        versionPattern.test(appVersionFromHeaders)
-    ) {
-        const [, versionSubstring] = appVersionFromHeaders.match(versionPattern) || [];
+    } else if (appVersionFromHeaders && versionPattern.test(appVersionFromHeaders)) {
+        // Кастинг здесь ок, регулярка это гарантирует и совпадение с ней есть.
+        const [, versionSubstring] = appVersionFromHeaders.match(versionPattern) as string[];
 
         appVersion = versionSubstring;
     }
 
-    const nativeParams = {
+    const nativeParams: NativeParams = {
         appVersion,
         title,
-        iosAppId,
         theme: themeQuery === 'dark' ? 'dark' : 'light',
         nextPageId: nextPageId ? Number(nextPageId) : null,
         originalWebviewParams,
     };
 
-    return nativeParams;
+    if (iosAppId) {
+        nativeParams.iosAppId = iosAppId;
+    }
+
+    return encodeURIComponent(JSON.stringify(nativeParams));
 };

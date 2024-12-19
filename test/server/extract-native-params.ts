@@ -1,7 +1,7 @@
-import { extractNativeParams } from '../../src/server/extract-native-params';
-import { isWebviewEnvironment, UniversalRequest } from "../../src/server";
-import { IncomingMessage } from "http";
-import { Socket } from "net";
+import { extractNativeParamsFromRequest } from '../../src/server/extract-native-params';
+import { isWebviewEnvironment } from '../../src/server';
+import { IncomingMessage } from 'http';
+import { Socket } from 'net';
 
 const UA_IPHONE =
     'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1';
@@ -13,7 +13,6 @@ let mockedUa = UA_WEBVIEW;
 const mockSocket = {} as Socket;
 
 const requestParams = { ...Object.create(new IncomingMessage(mockSocket)), headers: {} };
-
 
 const originalUtils = jest.requireActual('../../src/server/utils');
 let mockedExtractAppVersion = originalUtils.extractAppVersion;
@@ -42,7 +41,10 @@ describe('extractNativeParams', () => {
         });
 
         it.each([
-            ['appVersion from query', { ...requestParams, query: { device_app_version: '10.10.10' } }],
+            [
+                'appVersion from query',
+                { ...requestParams, query: { device_app_version: '10.10.10' } },
+            ],
             [
                 'iosAppId from query',
                 {
@@ -55,7 +57,7 @@ describe('extractNativeParams', () => {
             ['theme from query', { ...requestParams, query: { title: 'Title' } }],
             ['withoutLayout from query', { ...requestParams, query: { without_layout: 'true' } }],
         ])('should not pass `%s` in non-webview environment', (_, request) => {
-            expect(extractNativeParams(request)).toEqual(null);
+            expect(extractNativeParamsFromRequest(request)).toEqual(null);
         });
     });
 
@@ -70,7 +72,7 @@ describe('extractNativeParams', () => {
         it('should pass default appVersion', () => {
             const request = { ...requestParams, query: { is_webview: 'true' } };
 
-            expect(extractNativeParams(request)).toEqual({
+            expect(extractNativeParamsFromRequest(request)).toEqual({
                 appVersion: '0.0.0',
                 ...restReturnValues,
             });
@@ -85,7 +87,7 @@ describe('extractNativeParams', () => {
                     query: { is_webview: 'true' },
                 };
 
-                expect(extractNativeParams(request)).toEqual({
+                expect(extractNativeParamsFromRequest(request)).toEqual({
                     appVersion: version,
                     ...restReturnValues,
                 });
@@ -101,7 +103,7 @@ describe('extractNativeParams', () => {
                     query: { is_webview: 'true' },
                 };
 
-                expect(extractNativeParams(request)).toEqual({
+                expect(extractNativeParamsFromRequest(request)).toEqual({
                     appVersion: '0.0.0',
                     ...restReturnValues,
                 });
@@ -112,11 +114,11 @@ describe('extractNativeParams', () => {
             'should pass appVersion `%s` from query',
             (version) => {
                 const request = {
-                   ...requestParams,
+                    ...requestParams,
                     query: { device_app_version: version, is_webview: 'true' },
                 };
 
-                expect(extractNativeParams(request)).toEqual({
+                expect(extractNativeParamsFromRequest(request)).toEqual({
                     appVersion: version,
                     ...restReturnValues,
                     originalWebviewParams: `device_app_version=${version}`,
@@ -132,7 +134,7 @@ describe('extractNativeParams', () => {
                     query: { device_app_version: version, is_webview: 'true' },
                 };
 
-                expect(extractNativeParams(request)).toEqual({
+                expect(extractNativeParamsFromRequest(request)).toEqual({
                     appVersion: '0.0.0',
                     ...restReturnValues,
                     originalWebviewParams: `device_app_version=${version}`,
@@ -147,7 +149,7 @@ describe('extractNativeParams', () => {
                 query: { device_app_version: '13.14.15', is_webview: 'true' },
             };
 
-            expect(extractNativeParams(request)).toEqual({
+            expect(extractNativeParamsFromRequest(request)).toEqual({
                 appVersion: '13.14.15',
                 ...restReturnValues,
                 originalWebviewParams: 'device_app_version=13.14.15',
@@ -161,7 +163,7 @@ describe('extractNativeParams', () => {
                 query: { is_webview: 'true' },
             };
 
-            expect(extractNativeParams(request)).toEqual({
+            expect(extractNativeParamsFromRequest(request)).toEqual({
                 appVersion: '10.11.12',
                 ...restReturnValues,
             });
@@ -183,7 +185,7 @@ describe('extractNativeParams', () => {
                 query: { applicationId: 'com.aconcierge.app', is_webview: 'true' },
             };
 
-            expect(extractNativeParams(request)).toEqual({
+            expect(extractNativeParamsFromRequest(request)).toEqual({
                 ...restReturnValues,
                 iosAppId: 'aconcierge',
                 originalWebviewParams: `applicationId=${request.query.applicationId}`,
@@ -196,7 +198,7 @@ describe('extractNativeParams', () => {
                 query: { applicationId: 'something-strange', is_webview: 'true' },
             };
 
-            expect(extractNativeParams(request)).toEqual({
+            expect(extractNativeParamsFromRequest(request)).toEqual({
                 ...restReturnValues,
                 originalWebviewParams: `applicationId=${request.query.applicationId}${restReturnValues.originalWebviewParams}`,
             });
@@ -215,153 +217,153 @@ describe('extractNativeParams', () => {
         it('should pass non webview env', () => {
             mockIsWebviewEnv.mockReturnValue(false);
 
-            expect(extractNativeParams({ ...requestParams, query: {} })).toEqual(null);
+            expect(extractNativeParamsFromRequest({ ...requestParams, query: {} })).toEqual(null);
         });
 
-            it('should pass webview env', () => {
-                mockIsWebviewEnv.mockReturnValue(true);
+        it('should pass webview env', () => {
+            mockIsWebviewEnv.mockReturnValue(true);
 
-                expect(extractNativeParams({ ...requestParams, query: {}})).toEqual({
-                    ...restReturnValues,
-                });
+            expect(extractNativeParamsFromRequest({ ...requestParams, query: {} })).toEqual({
+                ...restReturnValues,
+            });
+        });
+    });
+
+    describe('theme', () => {
+        const restReturnValues = {
+            appVersion: '0.0.0',
+            title: '',
+            nextPageId: null,
+            originalWebviewParams: '',
+        };
+
+        it.each(['dark', 'light'])('should pass theme=%s', (theme) => {
+            const request = { ...requestParams, query: { is_webview: 'true', theme } };
+
+            expect(extractNativeParamsFromRequest(request)).toEqual({
+                ...restReturnValues,
+                theme,
+                originalWebviewParams: `theme=${theme}`,
             });
         });
 
-        describe('theme', () => {
-            const restReturnValues = {
-                appVersion: '0.0.0',
+        it('should pass light theme while theme in query is unknown', () => {
+            const request = { ...requestParams, query: { is_webview: 'true', theme: 'diamond' } };
+
+            expect(extractNativeParamsFromRequest(request)).toEqual({
+                ...restReturnValues,
+                theme: 'light',
+                originalWebviewParams: 'theme=diamond',
+            });
+        });
+    });
+
+    describe('title', () => {
+        const restReturnValues = {
+            appVersion: '0.0.0',
+            theme: 'light',
+            nextPageId: null,
+            originalWebviewParams: '',
+        };
+
+        it('should default title', () => {
+            const request = { ...requestParams, query: { is_webview: 'true' } };
+
+            expect(extractNativeParamsFromRequest(request)).toEqual({
+                ...restReturnValues,
                 title: '',
-                nextPageId: null,
-                originalWebviewParams: '',
-            };
-
-            it.each(['dark', 'light'])('should pass theme=%s', (theme) => {
-                const request = { ...requestParams, query: {is_webview: 'true', theme}};
-
-                expect(extractNativeParams(request)).toEqual({
-                    ...restReturnValues,
-                    theme,
-                    originalWebviewParams: `theme=${theme}`,
-                });
-            });
-
-            it('should pass light theme while theme in query is unknown', () => {
-                const request = { ...requestParams, query: {is_webview: 'true', theme: 'diamond'}};
-
-                expect(extractNativeParams(request)).toEqual({
-                    ...restReturnValues,
-                    theme: 'light',
-                    originalWebviewParams: 'theme=diamond',
-                });
             });
         });
 
-        describe('title', () => {
-            const restReturnValues = {
-                appVersion: '0.0.0',
-                theme: 'light',
-                nextPageId: null,
-                originalWebviewParams: '',
-            };
+        it('should pass title', () => {
+            const request = { ...requestParams, query: { title: 'Title' } };
 
-            it('should default title', () => {
-                const request = { ...requestParams, query: {is_webview: 'true'}};
-
-                expect(extractNativeParams(request)).toEqual({
-                    ...restReturnValues,
-                    title: '',
-                });
-            });
-
-            it('should pass title', () => {
-                const request = { ...requestParams, query: {title: 'Title'}};
-
-                expect(extractNativeParams(request)).toEqual({
-                    ...restReturnValues,
-                    title: 'Title',
-                    originalWebviewParams: '',
-                });
-            });
-        });
-
-        describe('originalWebviewParams', () => {
-            const returnValues = {
-                appVersion: '12.26.0',
-                theme: 'light',
+            expect(extractNativeParamsFromRequest(request)).toEqual({
+                ...restReturnValues,
                 title: 'Title',
-                nextPageId: null,
-                iosAppId: 'aconcierge',
-                originalWebviewParams:
-                    'device_app_version=12.26.0&device_os_version=iOS+16.1&device_boot_time=38933&device_timezone=%2B0300&applicationId=com.aconcierge.app&device_app_id=8441576F&device_locale=ru-US&device_model=x86_64&device_uuid=2E32AFD5&device_name=iPhone+14&device_id=1842D0AA&client_id=mobile-app&theme=light&scope=openid+mobile-bank',
-            };
-            const request = {
-                ...requestParams,
-                query: {
-                    device_app_id: '8441576F',
-                    device_uuid: '2E32AFD5',
-                    device_id: '1842D0AA',
-                    applicationId: 'com.aconcierge.app',
-                    device_os_version: 'iOS 16.1',
-                    device_app_version: '12.26.0',
-                    scope: 'openid mobile-bank',
-                    device_boot_time: '38933',
-                    device_name: 'iPhone 14',
-                    device_timezone: '+0300',
-                    client_id: 'mobile-app',
-                    device_locale: 'ru-US',
-                    device_model: 'x86_64',
-                    is_webview: true,
-                    title: 'Title',
-                    theme: 'light',
-                },
-            };
-
-            it('should add correct originalWebviewParams', () => {
-                expect(extractNativeParams(request)).toEqual(returnValues);
-            });
-        });
-
-        describe('withoutLayout', () => {
-            const restReturnValues = {
-                appVersion: '0.0.0',
-                theme: 'light',
-                title: '',
-                nextPageId: null,
                 originalWebviewParams: '',
-            };
-
-            it.each(['false', 'kekus', '1'])('should not pass withoutLayout=%s', (queryValue) => {
-                const request = {
-                    ...requestParams,
-                    query: {is_webview: 'true', without_layout: queryValue},
-                };
-
-                expect(extractNativeParams(request)).toEqual({
-                    ...restReturnValues
-                });
             });
         });
+    });
 
-        describe('nextPageId', () => {
+    describe('originalWebviewParams', () => {
+        const returnValues = {
+            appVersion: '12.26.0',
+            theme: 'light',
+            title: 'Title',
+            nextPageId: null,
+            iosAppId: 'aconcierge',
+            originalWebviewParams:
+                'device_app_version=12.26.0&device_os_version=iOS+16.1&device_boot_time=38933&device_timezone=%2B0300&applicationId=com.aconcierge.app&device_app_id=8441576F&device_locale=ru-US&device_model=x86_64&device_uuid=2E32AFD5&device_name=iPhone+14&device_id=1842D0AA&client_id=mobile-app&theme=light&scope=openid+mobile-bank',
+        };
+        const request = {
+            ...requestParams,
+            query: {
+                device_app_id: '8441576F',
+                device_uuid: '2E32AFD5',
+                device_id: '1842D0AA',
+                applicationId: 'com.aconcierge.app',
+                device_os_version: 'iOS 16.1',
+                device_app_version: '12.26.0',
+                scope: 'openid mobile-bank',
+                device_boot_time: '38933',
+                device_name: 'iPhone 14',
+                device_timezone: '+0300',
+                client_id: 'mobile-app',
+                device_locale: 'ru-US',
+                device_model: 'x86_64',
+                is_webview: true,
+                title: 'Title',
+                theme: 'light',
+            },
+        };
+
+        it('should add correct originalWebviewParams', () => {
+            expect(extractNativeParamsFromRequest(request)).toEqual(returnValues);
+        });
+    });
+
+    describe('withoutLayout', () => {
+        const restReturnValues = {
+            appVersion: '0.0.0',
+            theme: 'light',
+            title: '',
+            nextPageId: null,
+            originalWebviewParams: '',
+        };
+
+        it.each(['false', 'kekus', '1'])('should not pass withoutLayout=%s', (queryValue) => {
             const request = {
                 ...requestParams,
-                query: {
-                    nextPageId: 4,
-                    is_webview: true,
-                },
+                query: { is_webview: 'true', without_layout: queryValue },
             };
 
-            const returnValues = {
-                appVersion: '0.0.0',
-                iosAppId: undefined,
+            expect(extractNativeParamsFromRequest(request)).toEqual({
+                ...restReturnValues,
+            });
+        });
+    });
+
+    describe('nextPageId', () => {
+        const request = {
+            ...requestParams,
+            query: {
                 nextPageId: 4,
-                originalWebviewParams: '',
-                theme: 'light',
-                title: '',
-            };
+                is_webview: true,
+            },
+        };
 
-            it('should return correct nextPageId', () => {
-                expect(extractNativeParams(request)).toEqual(returnValues);
-            });
+        const returnValues = {
+            appVersion: '0.0.0',
+            iosAppId: undefined,
+            nextPageId: 4,
+            originalWebviewParams: '',
+            theme: 'light',
+            title: '',
+        };
+
+        it('should return correct nextPageId', () => {
+            expect(extractNativeParamsFromRequest(request)).toEqual(returnValues);
         });
+    });
 });

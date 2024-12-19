@@ -1,4 +1,5 @@
-// Словарь всех известных на данный момент сервисных query параметров в webview
+import { UniversalRequest } from './types';
+
 const webviewInitParamsDictionary = [
     'device_app_version',
     'device_os_version',
@@ -18,25 +19,22 @@ const webviewInitParamsDictionary = [
 ];
 
 /**
- * Данная утилита извлекает из запроса все известные
- * сервисные query параметры которые добавляются к url внутри
- * webview при первой инициализации и собирает их в query строку.
- *
- * @param query - Query в формате объекта
- * @return строка query параметров в формате: "title=Title&theme=dark..."
+ * Данная утилита извлекает из запроса все известные сервисные query-параметры,
+ * которые нативное приложение добавляет к URL веб-приложения, запускаемого в webview.
+ * Возвращает строку, очищенную от прочих query-параметров.
  * */
-export const extractAndJoinOriginalWebviewParams = (
-    query: Record<string, string>,
-): string => {
-    const params = new URLSearchParams();
+export const extractAndJoinOriginalWebviewParams = (request: UniversalRequest): string => {
+    const allQueryParams = request.url ? new URL(request.url).searchParams : new URLSearchParams();
+
+    const filteredParams = new URLSearchParams();
 
     webviewInitParamsDictionary.forEach((key) => {
-        const value = query[key];
+        const value = allQueryParams.get(key);
 
         if (value) {
-            params.set(key, value);
+            filteredParams.set(key, value);
         }
     });
 
-    return params.toString();
+    return filteredParams.toString();
 };

@@ -1,10 +1,12 @@
-import { extractAppVersion, extractUserAgent, extractNativeParams } from './utils';
+import { extractAppVersion, extractUserAgent, extractNativeParamsFromCookie } from './utils';
 import { UniversalRequest } from './types';
 import { versionPattern, webviewUaIOSPattern } from './reg-exp-patterns';
 
-// Определяет, был ли сделан запрос из вебвью окружения.
+/**
+ * Определяет, был ли сделан запрос из вебвью окружения.
+ */
 export const isWebviewEnvironment = (request: UniversalRequest) => {
-    const nativeParams = extractNativeParams(request);
+    const nativeParams = extractNativeParamsFromCookie(request);
 
     if (nativeParams) {
         return true;
