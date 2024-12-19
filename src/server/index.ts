@@ -1,2 +1,2 @@
 export * from './is-webview-environment';
-export * from './handle-native-params';
+export * from './store-native-params-for-client-if-webview';
