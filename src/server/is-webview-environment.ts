@@ -5,6 +5,9 @@ import { extractAppVersion, extractUserAgent } from './utils/get-header-value';
 
 /**
  * Определяет, был ли сделан запрос из вебвью окружения.
+ * 
+ * @param request См. подробное описание здесь → src/server/types.ts
+ * @returns true – если был запрос из вебвью окружения, false – если нет
  */
 export const isWebviewEnvironment = (request: UniversalRequest) => {
     const nativeParams = extractNativeParamsFromCookie(request);
