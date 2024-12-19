@@ -1,5 +1,5 @@
-import { APP_VERSION_HEADER_KEY, NATIVE_PARAMS_COOKIE_KEY } from './constants';
-import { UniversalRequest } from './types';
+import { APP_VERSION_HEADER_KEY } from '../constants';
+import { UniversalRequest } from '../types';
 
 /**
  * Возвращает значение HTTP-заголовка запроса по ключу.
@@ -24,17 +24,6 @@ export function getHeaderValue(request: UniversalRequest, headerKey: string) {
 }
 
 /**
- * Возвращает значение query-параметра по ключу.
- */
-export function getQueryParamValue(request: UniversalRequest, queryKey: string) {
-    if (!request.url) {
-        return null;
-    }
-
-    return new URL(request.url).searchParams.get(queryKey);
-}
-
-/**
  * Возвращает `app-version` из заголовков запроса.
  */
 export function extractAppVersion(request: UniversalRequest) {
@@ -52,28 +41,4 @@ export function extractUserAgent(request: UniversalRequest) {
 
     // Не должно быть несколько таких заголовков, но если так почему-то случилось, работаем с первым.
     return Array.isArray(uaValue) ? uaValue[0] : uaValue;
-}
-
-/**
- * Возвращает объект с параметрами нативного приложения из cookie, если они были сохранены ранее.
- */
-export function extractNativeParamsFromCookie(request: UniversalRequest) {
-    const cookies = getHeaderValue(request, 'cookie');
-
-    if (!cookies) {
-        return null;
-    }
-
-    const cookiesArray = typeof cookies === 'string' ? [cookies] : cookies;
-    const nativeParamsCookie = cookiesArray.find((cookie) =>
-        cookie.startsWith(NATIVE_PARAMS_COOKIE_KEY),
-    );
-
-    if (!nativeParamsCookie) {
-        return null;
-    }
-
-    const [, value] = nativeParamsCookie.split('=');
-
-    return value;
 }

@@ -1,4 +1,4 @@
-import { UniversalRequest } from './types';
+import { UniversalRequest } from '../types';
 
 const webviewInitParamsDictionary = [
     'device_app_version',
@@ -23,7 +23,7 @@ const webviewInitParamsDictionary = [
  * которые нативное приложение добавляет к URL веб-приложения, запускаемого в webview.
  * Возвращает строку, очищенную от прочих query-параметров.
  * */
-export const extractAndJoinOriginalWebviewParams = (request: UniversalRequest): string => {
+export const extractInitWebviewNativeQueryParams = (request: UniversalRequest): string => {
     const allQueryParams = request.url ? new URL(request.url).searchParams : new URLSearchParams();
 
     const filteredParams = new URLSearchParams();

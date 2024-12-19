@@ -4,21 +4,20 @@ import {
     IOS_APP_ID_QUERY_KEY,
     IOS_APP_VERSION_QUERY_KEY,
     NEXT_PAGE_ID_QUERY_KEY,
-} from './constants';
+} from '../constants';
 
-import { extractAppVersion, extractNativeParamsFromCookie, getQueryParamValue } from './utils';
-
-import { extractAndJoinOriginalWebviewParams } from './extract-and-join-original-webview-params';
-import { iosAppIdPattern, versionPattern } from './reg-exp-patterns';
-import { UniversalRequest } from './types';
-import { NativeParams } from '../shared/types';
+import { extractInitWebviewNativeQueryParams } from './extract-init-webview-native-query-params';
+import { extractNativeParamsFromCookie } from './extract-native-params-from-cookie';
+import { extractAppVersion } from './get-header-value';
+import { getQueryParamValue } from './get-query-param-value';
+import { iosAppIdPattern, versionPattern } from '../reg-exp-patterns';
+import { NativeParams } from '../../shared/types';
+import { UniversalRequest } from '../types';
 
 /**
  * Определяет, сделан ли запрос из вебвью, вытаскивает из него все детали о нативном приложении.
- *
- * @returns Примечание по `appVersion`: В вебвью окружении версия всегда имеет формат `x.x.x`.
+ * Примечание по `appVersion`: В вебвью окружении версия всегда имеет формат `x.x.x`.
  */
-
 export const extractNativeParamsFromRequest = (request: UniversalRequest) => {
     const paramsFromCookie = extractNativeParamsFromCookie(request);
 
@@ -35,7 +34,7 @@ export const extractNativeParamsFromRequest = (request: UniversalRequest) => {
     const iosAppVersionQuery = getQueryParamValue(request, IOS_APP_VERSION_QUERY_KEY);
     const nextPageId = getQueryParamValue(request, NEXT_PAGE_ID_QUERY_KEY);
 
-    const originalWebviewParams = extractAndJoinOriginalWebviewParams(request);
+    const originalWebviewParams = extractInitWebviewNativeQueryParams(request);
 
     // Пробуем вытащить схему iOS приложения из query, если есть.
     let iosAppId: string | undefined = undefined;

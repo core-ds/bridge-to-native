@@ -1,7 +1,7 @@
 import { NATIVE_PARAMS_COOKIE_KEY } from './constants';
-import { extractNativeParamsFromRequest } from './extract-native-params';
 import { isWebviewEnvironment } from './is-webview-environment';
 import { UniversalRequest } from './types';
+import { extractNativeParamsFromRequest } from './utils/extract-native-params-from-request';
 
 /**
  * В вебвью окружении парсит запрос, вытаскивает оттуда детали о нативном приложении,

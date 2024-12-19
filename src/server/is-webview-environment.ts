@@ -1,6 +1,7 @@
-import { extractAppVersion, extractUserAgent, extractNativeParamsFromCookie } from './utils';
-import { UniversalRequest } from './types';
 import { versionPattern, webviewUaIOSPattern } from './reg-exp-patterns';
+import { UniversalRequest } from './types';
+import { extractNativeParamsFromCookie } from './utils/extract-native-params-from-cookie';
+import { extractAppVersion, extractUserAgent } from './utils/get-header-value';
 
 /**
  * Определяет, был ли сделан запрос из вебвью окружения.

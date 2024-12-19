@@ -1,4 +1,4 @@
-import { extractAndJoinOriginalWebviewParams } from '../../src/server/extract-and-join-original-webview-params';
+import { extractInitWebviewNativeQueryParams } from '../../src/server/utils/extract-init-webview-native-query-params';
 
 const fastifyRequestQueryExample = {
     first: 'asdasdsddsfdsfsdfdsas-8441576F-A09F-8441576F-A09F',
@@ -34,11 +34,11 @@ describe('extractAndJoinOriginalWebviewParams', () => {
             final: 'dddd',
         };
 
-        expect(extractAndJoinOriginalWebviewParams(otherParams)).toBe('');
+        expect(extractInitWebviewNativeQueryParams(otherParams)).toBe('');
     });
 
     it('should return all original webview query', () => {
-        expect(extractAndJoinOriginalWebviewParams(fastifyRequestQueryExample)).toBe(
+        expect(extractInitWebviewNativeQueryParams(fastifyRequestQueryExample)).toBe(
             'device_app_version=12.26.0&device_os_version=iOS+16.1&device_boot_time=38933&device_timezone=%2B0300&applicationId=com.aconcierge.app&device_app_id=8441576F-A09F-41E9-89A7-EE1FA486C20A&device_locale=ru-US&paySupported=true&device_model=x86_64&device_uuid=2E32AFD5-F50B-4B2F-B758-CAE59DF2BF6C&device_name=iPhone+14&device_id=1842D0AA-0008-4941-93E0-4FD80E087841&client_id=mobile-app&theme=light&scope=openid+mobile-bank',
         );
     });
