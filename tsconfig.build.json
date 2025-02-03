@@ -1,11 +1,9 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "target": "ES2019",
-        "module": "CommonJS",
-        "noEmit": false,
-        "composite": false,
-        "removeComments": false
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "Node",
     },
     "exclude": ["test/**/*.*"]
 }
