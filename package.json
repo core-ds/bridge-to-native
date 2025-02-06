@@ -6,6 +6,22 @@
         "type": "git",
         "url": "git+https://github.com/core-ds/bridge-to-native.git"
     },
+    "main": "./index.js",
+    "module": "./esm/index.js",
+    "exports": {
+        ".": {
+            "import": "./esm/index.js",
+            "require": "./index.js"
+        },
+        "./*": {
+            "import": "./esm/*",
+            "require": "./*"
+        }
+    },
+    "sideEffects": false,
+    "files": [
+        "*"
+    ],
     "bugs": {
         "url": "https://github.com/core-ds/bridge-to-native/issues"
     },
@@ -13,18 +29,19 @@
     "scripts": {
         "build": "yarn compile",
         "changelog": "bash bin/fill-changelog-file-and-notify-github.sh",
-        "compile": "yarn compile:clean && yarn compile:ts && yarn compile:copy-resources",
+        "compile": "yarn compile:clean && yarn compile:ts && yarn compile:ts:esm && yarn compile:copy-resources",
         "compile:copy-package-json": "shx cp package.json .publish/package.json",
         "compile:copy-resources": "yarn copyfiles -e \"**/*.{[jt]s*(x),snap}\" -e \"**/*.json\" -u 1 \"src/**/*\" .publish",
         "compile:clean": "shx rm -rf .publish",
         "compile:ts": "tsc --project tsconfig.build.json",
+        "compile:ts:esm": "tsc --project tsconfig.build.esm.json",
         "lint:scripts": "eslint \"**/*.{js,jsx,ts,tsx}\" --ext .js,.jsx,.ts,.tsx",
         "lint": "yarn lint:scripts && prettier --check \"./src/*.{ts,tsx,js,jsx,json}\"",
         "lint:fix": "yarn lint:scripts --fix",
         "pub": "npm publish .publish --userconfig \"../.npmrc\" --tag \"$TAG\"",
         "format": "prettier --write \"./**/*.{ts,tsx,js,jsx,css,json}\"",
         "test": "jest --silent --collect-coverage",
-        "release": "yarn compile && npm version \"$VERSION\" --no-git-tag-version && yarn compile:copy-package-json && yarn pub"
+        "release": "yarn build && npm version \"$VERSION\" --no-git-tag-version && yarn compile:copy-package-json && yarn pub"
     },
     "dependencies": {},
     "devDependencies": {
