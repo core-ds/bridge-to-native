@@ -1,3 +1,8 @@
+## 0.1.0 ([1dd9cd9](https://github.com/core-ds/bridge-to-native/commit/1dd9cd9)) (07-02-2025)
+
+### Features
+- Добавлена Esm сборка
+
 ### 0.0.13 ([c1d56d9](https://github.com/core-ds/bridge-to-native/commit/c1d56d9)) (29-08-2024)
 
 ### Bug Fixes
