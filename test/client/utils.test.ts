@@ -3,8 +3,8 @@ import {
     getAppId,
     getUrlInstance,
     isValidVersionFormat,
-} from '../src/utils';
-import { ANDROID_APP_ID } from '../src/constants';
+} from '../../src/client/utils';
+import { ANDROID_APP_ID } from '../../src/client/constants';
 
 describe('extractAppNameRouteAndQuery', () => {
     it('should extract app-name without path and query', () => {

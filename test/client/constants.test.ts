@@ -1,4 +1,4 @@
-import { nativeFeaturesFromVersion, versionToIosAppId } from '../src/constants';
+import { nativeFeaturesFromVersion, versionToIosAppId } from '../../src/client/constants';
 
 const versionPattern = /^\d+.\d+.\d+$/;
 
