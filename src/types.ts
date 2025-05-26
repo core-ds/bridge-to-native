@@ -15,7 +15,7 @@ export type NativeFeatureKey =
     // Возможность открыть ссылку в браузере.
     | 'linksInBrowser'
     // Возможность возврата к предыдущему webview для Android
-    | 'saveBackStack';
+    | 'savedBackStack';
 
 type NativeFeaturesParams = Readonly<Record<NativeFeatureKey, { fromVersion: string }>>;
 export type NativeFeaturesFromVersion = Readonly<{

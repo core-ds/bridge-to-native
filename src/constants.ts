@@ -22,14 +22,14 @@ export const nativeFeaturesFromVersion: NativeFeaturesFromVersion = {
             fromVersion: '11.71.0',
         },
         geolocation: { fromVersion: '11.71.0' },
-        saveBackStack: { fromVersion: '12.29.03' },
+        savedBackStack: { fromVersion: '12.29.03' },
     },
     ios: {
         linksInBrowser: {
             fromVersion: '13.3.0',
         },
         geolocation: { fromVersion: '0.0.0' },
-        saveBackStack: { fromVersion: '0.0.0' }
+        savedBackStack: { fromVersion: '0.0.0' }
     },
 } as const;
 
