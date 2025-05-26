@@ -1,3 +1,8 @@
+## 0.2.0 ([607be9e](https://github.com/core-ds/bridge-to-native/commit/607be9e)) (26-05-2025)
+
+### Features
+- Добалено свойство savedBackStack (информация о версии android приложения, с которой доступно открытие последующего webview без закрытия текущего
+
 ## 0.1.0 ([1dd9cd9](https://github.com/core-ds/bridge-to-native/commit/1dd9cd9)) (07-02-2025)
 
 ### Features
