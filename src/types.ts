@@ -13,7 +13,9 @@ export type NativeFeatureKey =
     // Возможность работы с геолокацией.
     | 'geolocation'
     // Возможность открыть ссылку в браузере.
-    | 'linksInBrowser';
+    | 'linksInBrowser'
+    // Возможность возврата к предыдущему webview для Android
+    | 'saveBackStack';
 
 type NativeFeaturesParams = Readonly<Record<NativeFeatureKey, { fromVersion: string }>>;
 export type NativeFeaturesFromVersion = Readonly<{
