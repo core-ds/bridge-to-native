@@ -9,13 +9,18 @@ const ENCODED_PARTS = {
 };
 
 describe('prepareNativeAppDetailsForClient', () => {
+    let setResonseHeader: ReturnType<typeof jest.fn>;
+
+    beforeEach(() => {
+        setResonseHeader = jest.fn();
+    });
+
     it('should not do anything if b2native cookie exists in request', () => {
         const mockedRequest = {
             headers: new Headers({
                 Cookie: 'bridgeToNativeData=foobarbaz',
             }),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -27,7 +32,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -42,7 +46,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com?theme=dark',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -57,7 +60,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com?b2n-next-page-id=2',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -72,7 +74,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com?b2n-next-page-id=1',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -87,7 +88,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com?b2n-next-page-id=foo',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -102,7 +102,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com?applicationId=com.example.app',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -117,7 +116,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com?applicationId=invalid',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -132,7 +130,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com?device_app_version=1.2.3',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -149,7 +146,6 @@ describe('prepareNativeAppDetailsForClient', () => {
                 'app-version': '1.2.3',
             }),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -164,7 +160,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -179,7 +174,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com?b2n-title=Example%20Title',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -194,7 +188,6 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com?title=Example%20Title',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
@@ -209,10 +202,30 @@ describe('prepareNativeAppDetailsForClient', () => {
             url: 'http://example.com',
             headers: new Headers(),
         } as Request;
-        const setResonseHeader = jest.fn();
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
         expect(setResonseHeader).not.toBeCalledWith('Set-Cookie', expect.stringContaining(`title`));
+    });
+
+    it('should set originalWebviewParams', () => {
+        const webviewParams =
+            'client_id=mobile-app&device_uuid=2E32AFD5-F50B-4B2F-B758-CAE59DF2BF6C';
+
+        const mockedRequest = {
+            url: `http://example.com?${webviewParams}`,
+            headers: new Headers(),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        const encodedWebviewParams = encodeURIComponent(webviewParams);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(
+                `originalWebviewParams${ENCODED_PARTS['":"'] + encodedWebviewParams}`,
+            ),
+        );
     });
 });

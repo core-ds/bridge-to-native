@@ -9,6 +9,7 @@ import {
     QUERY_NATIVE_THEME,
     QUERY_B2N_NEXT_PAGEID,
 } from './constants';
+import { extractNativeServiceQueries } from './extract-native-queries';
 import { iosAppIdPattern, versionPattern } from './regexp-patterns';
 import { UniversalRequest } from './types';
 import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie } from './utils';
@@ -47,6 +48,11 @@ export function prepareNativeAppDetailsForClient(
 }
 
 function parseRequest(request: UniversalRequest) {
+    // Прихраним «сервисные» query-параметры от нативного приложения,
+    // чтобы подмешать их к URL при переходе в другое веб-приложение
+    // в рамках одной вебвью-сессии.
+    const originalWebviewParams = extractNativeServiceQueries(request);
+
     // Чтобы понять, как парсится запрос, см. описания констант в `src/server/constants.ts`
     const [nextPageId, iosAppIdQuery, iosAppVersionQuery, theme, title, deprecatedTitle] =
         getQueryValues(request, [
@@ -60,6 +66,7 @@ function parseRequest(request: UniversalRequest) {
     const appVersionFromHeaders = getHeaderValue(request, HEADER_KEY_NATIVE_APPVERSION);
 
     const nativeParams: Partial<NativeParams> = {
+        originalWebviewParams,
         theme: theme || 'light',
     };
 
@@ -68,7 +75,7 @@ function parseRequest(request: UniversalRequest) {
     }
 
     if (iosAppIdQuery && iosAppIdPattern.test(iosAppIdQuery)) {
-        const [, appIdSubsting] = iosAppIdQuery.match(iosAppIdPattern) || [];
+        const [, appIdSubsting] = iosAppIdQuery.match(iosAppIdPattern) as string[]; // кастинг ок — в условии блока регулярка проверена
 
         nativeParams.iosAppId = appIdSubsting;
     }
@@ -76,7 +83,7 @@ function parseRequest(request: UniversalRequest) {
     if (iosAppVersionQuery && versionPattern.test(iosAppVersionQuery)) {
         nativeParams.appVersion = iosAppVersionQuery;
     } else if (appVersionFromHeaders && versionPattern.test(appVersionFromHeaders)) {
-        const [, versionSubstring] = appVersionFromHeaders.match(versionPattern) || [];
+        const [, versionSubstring] = appVersionFromHeaders.match(versionPattern) as string[]; // кастинг ок — в условии блока регулярка проверена
 
         nativeParams.appVersion = versionSubstring;
     } else {
