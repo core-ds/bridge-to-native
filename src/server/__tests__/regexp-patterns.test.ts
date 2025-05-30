@@ -1,5 +1,6 @@
 import {
     bridgeToNativeDataCookieExistencePattern,
+    iosAppIdPattern,
     versionPattern,
     webviewUaIOSPattern,
 } from '../regexp-patterns';
@@ -49,6 +50,39 @@ describe('bridgeToNativeDataCookieExistencePattern', () => {
 
         expect(bridgeToNativeDataCookieExistencePattern.test(testStr)).toBeTruthy();
         expect(bridgeToNativeDataCookieExistencePattern.test(testStr)).toBeTruthy();
+    });
+});
+
+describe('iosAppIdPattern', () => {
+    it('should match valid value', () => {
+        expect('com.example.app'.match(iosAppIdPattern)).not.toBeNull();
+        expect('com.test.app'.match(iosAppIdPattern)).not.toBeNull();
+    });
+
+    it('should capture the app name', () => {
+        const match = 'com.example.app'.match(iosAppIdPattern);
+        expect(match?.[1]).toBe('example');
+    });
+
+    it('should not match invalid value', () => {
+        expect('com.example'.match(iosAppIdPattern)).toBeNull();
+        expect('example.app'.match(iosAppIdPattern)).toBeNull();
+        expect('com.example.com'.match(iosAppIdPattern)).toBeNull();
+    });
+
+    it('should not match numbers in value', () => {
+        expect('com.example1.app'.match(iosAppIdPattern)).toBeNull();
+    });
+
+    it('should not match special characters in value', () => {
+        expect('com.example@.app'.match(iosAppIdPattern)).toBeNull();
+    });
+
+    it('should not use lastIndex RegExp property', () => {
+        const testStr = 'com.example.app';
+
+        expect(iosAppIdPattern.test(testStr)).toBeTruthy();
+        expect(iosAppIdPattern.test(testStr)).toBeTruthy();
     });
 });
 

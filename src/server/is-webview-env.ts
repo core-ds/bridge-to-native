@@ -1,4 +1,4 @@
-import { HEADER_KEY_NATIVE_APP_VERSION, HEADER_KEY_USER_AGENT } from './constants';
+import { HEADER_KEY_NATIVE_APPVERSION, HEADER_KEY_USER_AGENT } from './constants';
 import { versionPattern, webviewUaIOSPattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
 import { getHeaderValue, hasBridgeToNativeDataCookie } from './utils';
@@ -12,7 +12,7 @@ export function isWebviewEnv(request: UniversalRequest) {
         return true;
     }
 
-    const appVersion = getHeaderValue(request, HEADER_KEY_NATIVE_APP_VERSION);
+    const appVersion = getHeaderValue(request, HEADER_KEY_NATIVE_APPVERSION);
 
     // `app-version` в заголовках — основной индикатор запроса из вебвью.
     if (appVersion && versionPattern.test(appVersion)) {
