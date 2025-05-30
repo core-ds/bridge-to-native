@@ -4,3 +4,8 @@ import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../constants';
 export const bridgeToNativeDataCookieExistencePattern = new RegExp(
     `^(.+;\\s?)?${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=`,
 );
+
+// Вебвью Android приписывает после версии тип билда, например `feature`. Нам эта информация не нужна.
+export const versionPattern = /^(\d+\.\d+\.\d+)(\s.+)?$/;
+
+export const webviewUaIOSPattern = /WebView|(iPhone|iPod|iPad)(?!.*Safari)/i;
