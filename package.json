@@ -77,7 +77,10 @@
     "jest": {
         "preset": "arui-scripts",
         "testEnvironment": "jsdom",
-        "testRegex": "/test/.*\\.ts$",
+        "testRegex": [
+            "/test/.*\\.ts$",
+            "[^/]*/__tests__/.*\\.test\\.ts"
+        ],
         "moduleFileExtensions": [
             "ts",
             "js"
