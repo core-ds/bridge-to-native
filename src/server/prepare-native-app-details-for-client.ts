@@ -1,5 +1,5 @@
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../constants';
-import { NativeParams } from '../types';
+import { type NativeParams } from '../types';
 import {
     QUERY_NATIVE_IOS_APPID,
     HEADER_KEY_NATIVE_APPVERSION,
@@ -9,9 +9,9 @@ import {
     QUERY_NATIVE_THEME,
     QUERY_B2N_NEXT_PAGEID,
 } from './constants';
-import { extractNativeServiceQueries } from './extract-native-queries';
+import { extractNativeServiceQueries } from './extract-native-service-queries';
 import { iosAppIdPattern, versionPattern } from './regexp-patterns';
-import { UniversalRequest } from './types';
+import { type UniversalRequest } from './types';
 import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie } from './utils';
 
 /**
@@ -23,7 +23,7 @@ import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie } from './u
  * @param request Объект запроса (Request или IncomingMessage).
  * @param setResponseHeader Функция для добавления заголовка ответа.
  *  Нужно передать функцию, которая средствами используемого веб-сервера добавит заголовок в ответ.
- *  b2native добавит `Set-Cookie` заголовок с некоторыми данными для своего клиентского кода.
+ *  b2native с её помощью добавит `Set-Cookie` заголовок с некоторыми данными для своего клиентского кода.
  */
 export function prepareNativeAppDetailsForClient(
     request: UniversalRequest,

@@ -121,7 +121,7 @@ describe('prepareNativeAppDetailsForClient', () => {
 
         expect(setResonseHeader).not.toBeCalledWith(
             'Set-Cookie',
-            expect.stringContaining(`iosAppId`),
+            expect.stringContaining('iosAppId'),
         );
     });
 
@@ -139,6 +139,20 @@ describe('prepareNativeAppDetailsForClient', () => {
         );
     });
 
+    it('should not set appVersion from query parameter while value is invalid', () => {
+        const mockedRequest = {
+            url: 'http://example.com?device_app_version=1.foo.3',
+            headers: new Headers(),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).not.toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`appVersion${ENCODED_PARTS['":"']}1.foo.3`),
+        );
+    });
+
     it('should set appVersion from header if query parameter is not provided', () => {
         const mockedRequest = {
             url: 'http://example.com',
@@ -152,6 +166,22 @@ describe('prepareNativeAppDetailsForClient', () => {
         expect(setResonseHeader).toBeCalledWith(
             'Set-Cookie',
             expect.stringContaining(`appVersion${ENCODED_PARTS['":"']}1.2.3`),
+        );
+    });
+
+    it('should not set appVersion from header if its value is invalid', () => {
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers({
+                'app-version': '1.foo.3',
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).not.toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`appVersion${ENCODED_PARTS['":"']}1.foo.3`),
         );
     });
 

@@ -1,4 +1,4 @@
-import { extractNativeServiceQueries } from '../extract-native-queries';
+import { extractNativeServiceQueries } from '../extract-native-service-queries';
 
 describe('extractNativeServiceQueries', () => {
     it.each([

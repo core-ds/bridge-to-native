@@ -1,4 +1,4 @@
-import { IncomingMessage } from 'http';
+import { type IncomingMessage } from 'http';
 
 /*
  * # Универсальный request тип для разных Node.js серверов. При необходимости расширить.

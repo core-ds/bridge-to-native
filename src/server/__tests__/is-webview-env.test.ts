@@ -1,13 +1,13 @@
 /* @jest-environment node */
 
-import { IncomingMessage } from 'http';
+import { type IncomingMessage } from 'http';
 import { isWebviewEnv } from '../is-webview-env';
 
 describe('isWebviewEnv', () => {
     it('should return true when special cookie is present', () => {
         const mockRequest = {
             headers: {
-                cookie: 'first-cookie=foo; second-cookie=baк; bridgeToNativeData=data-data-data; third-cookie=baz',
+                cookie: 'first-cookie=foo; second-cookie=bar; bridgeToNativeData=data-data-data; third-cookie=baz',
             },
         } as IncomingMessage;
 
@@ -44,7 +44,7 @@ describe('isWebviewEnv', () => {
     it('should return false when special cookie is missing', () => {
         const mockRequest = {
             headers: {
-                cookie: 'first-cookie=foo; second-cookie=baк; third-cookie=baz',
+                cookie: 'first-cookie=foo; second-cookie=bar; third-cookie=baz',
             },
         } as IncomingMessage;
 
@@ -65,7 +65,7 @@ describe('isWebviewEnv', () => {
         expect(result).toBe(false);
     });
 
-    it('should return false when user-agent is present but does not match iOS pattern', () => {
+    it('should return false when user-agent is present but does not match iOS webview pattern', () => {
         const mockRequest = {
             headers: new Headers({
                 'user-agent':

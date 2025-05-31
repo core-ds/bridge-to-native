@@ -47,5 +47,5 @@ export const QUERY_B2N_TITLE = 'b2n-title';
 
 // Deprecated вариант query-параметра 'b2n-title'
 // (т.к. `title` часто может использоваться самим веб-приложением).
-// Игнорируется клиентским кодом b2native, если указан 'b2n-title'.
+// Игнорируется, если указан 'b2n-title'.
 export const QUERY_B2N_TITLE_DEPRECATED = 'title';
