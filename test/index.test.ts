@@ -5,7 +5,6 @@ import {
     CLOSE_WEBVIEW_SEARCH_KEY,
     CLOSE_WEBVIEW_SEARCH_VALUE,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
-    START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
 } from '../src/constants';
 import { mockSessionStorage } from './mock/mock-session-storage';
 import { WebViewWindow } from '../src/types';
@@ -225,10 +224,10 @@ describe('BridgeToNative', () => {
                     expect(inst.environment).toBe('android');
                 });
 
-                it('should not provide application type using `iosAppId` property', () => {
+                it('should set `appId` property correctly', () => {
                     const ins = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
 
-                    expect(ins.iosAppId).not.toBeDefined();
+                    expect(ins.appId).toBe('alfabank');
                 });
             });
 
@@ -261,18 +260,18 @@ describe('BridgeToNative', () => {
                     ['14.4.99', 'assistmekz'],
                     ['14.5.00', 'smartfinancementor'],
                 ])(
-                    'should detect app scheme for version %s correctly and save it in `iosAppId` property',
+                    'should detect app scheme for version %s correctly and save it in `appId` property',
                     (appVersion, expected) => {
                         const ins = new BridgeToNative(mockedHandleRedirect, '/', {
                             ...defaultAmParams,
                             appVersion,
                         });
 
-                        expect(ins.iosAppId).toBe(expected);
+                        expect(ins.appId).toBe(expected);
                     },
                 );
 
-                it('should use `iosAppId` parameter as value for `iosApplicationId` while parameter exists', () => {
+                it('should use `appId` parameter as value for `iosApplicationId` while parameter exists', () => {
                     const inst1 = new BridgeToNative(mockedHandleRedirect, '/', {
                         ...defaultAmParams,
                         appVersion: '0.0.0',
@@ -284,8 +283,8 @@ describe('BridgeToNative', () => {
                         iosAppId: 'kittycash',
                     });
 
-                    expect(inst1.iosAppId).toBe('kittycash');
-                    expect(inst2.iosAppId).toBe('kittycash');
+                    expect(inst1.appId).toBe('kittycash');
+                    expect(inst2.appId).toBe('kittycash');
                 });
             });
         });
@@ -365,14 +364,14 @@ describe('BridgeToNative', () => {
             );
         });
 
-        describe('method `getIosAppId`', () => {
-            it('should return `undefined` in Android environment', () => {
+        describe('method `getAppId`', () => {
+            it('should always return `alfabank` in Android environment', () => {
                 androidEnvFlag = true;
 
                 const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
 
-                expect(inst['getIosAppId']()).toBeUndefined();
-                expect(inst['getIosAppId']('aconcierge')).toBeUndefined();
+                expect(inst['getAppId']()).toBe('alfabank');
+                expect(inst['getAppId']('aconcierge')).toBe('alfabank');
             });
 
             it.each([
@@ -401,7 +400,7 @@ describe('BridgeToNative', () => {
                         appVersion: version,
                     });
 
-                    expect(inst['getIosAppId']()).toBe(appId);
+                    expect(inst['getAppId']()).toBe(appId);
                 },
             );
 
@@ -411,32 +410,7 @@ describe('BridgeToNative', () => {
                     appVersion: '1.0.0',
                 });
 
-                expect(inst['getIosAppId']('aconcierge')).toBe('aconcierge');
-            });
-        });
-
-        describe('checkAndroidAllowOpenInNewWebview', () => {
-            it(`should return true if version equal or above ${START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW}`, () => {
-                androidEnvFlag = true;
-                let appVersion = '11.35.0';
-
-                const savedBridgeToAmState = {
-                    appVersion,
-                    iosAppId: 'aconcierge',
-                    theme: 'dark',
-                    originalWebviewParams: 'title=Title',
-                    nextPageId: null,
-                };
-
-                mockSessionStorage(PREVIOUS_B2N_STATE_STORAGE_KEY, savedBridgeToAmState);
-
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', {
-                    ...defaultAmParams,
-                    appVersion,
-                });
-
-                expect(inst.checkAndroidAllowOpenInNewWebview()).toBe(true);
-                expect(inst.checkAndroidAllowOpenInNewWebview()).toBe(true);
+                expect(inst['getAppId']('aconcierge')).toBe('aconcierge');
             });
         });
     });

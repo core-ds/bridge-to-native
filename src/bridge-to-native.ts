@@ -1,11 +1,11 @@
 /* eslint-disable no-underscore-dangle */
 
 import {
+    ANDROID_APP_ID,
     CLOSE_WEBVIEW_SEARCH_KEY,
     CLOSE_WEBVIEW_SEARCH_VALUE,
     nativeFeaturesFromVersion,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
-    START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
     versionToIosAppId,
 } from './constants';
 import { NativeFallbacks } from './native-fallbacks';
@@ -57,7 +57,7 @@ export class BridgeToNative {
             nativeParams && isValidVersionFormat(nativeParams?.appVersion)
                 ? nativeParams.appVersion
                 : '0.0.0';
-        this._iosAppId = this.getIosAppId(nativeParams?.iosAppId);
+        this._appId = this.getAppId(nativeParams?.iosAppId);
         this._theme = nativeParams?.theme === 'dark' ? 'dark' : 'light';
         this._originalWebviewParams = nativeParams?.originalWebviewParams || '';
         this._nativeNavigationAndTitle = new NativeNavigationAndTitle(
@@ -93,10 +93,15 @@ export class BridgeToNative {
     }
 
     // Необходимо для формирования диплинка.
-    private _iosAppId?: string;
+    private _appId: string;
 
+    get appId() {
+        return this._appId;
+    }
+
+    // @deprecated Использовать `appId`.
     get iosAppId() {
-        return this._iosAppId;
+        return this._appId;
     }
 
     private _theme: Theme;
@@ -158,14 +163,6 @@ export class BridgeToNative {
         return true;
     }
 
-    public checkAndroidAllowOpenInNewWebview() {
-        const comparisonResult = this.isCurrentVersionHigherOrEqual(
-            START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
-        );
-
-        return this.environment === 'android' && comparisonResult;
-    }
-
     /**
      * Сохраняет текущее состояние BridgeToNative в sessionStorage.
      * Так же сохраняет текущее состояние nativeNavigationAndTitle.
@@ -181,7 +178,7 @@ export class BridgeToNative {
             theme: this._theme,
             nextPageId: this.nextPageId,
             originalWebviewParams: this._originalWebviewParams || '',
-            iosAppId: this._iosAppId,
+            iosAppId: this._appId,
         };
 
         sessionStorage.setItem(PREVIOUS_B2N_STATE_STORAGE_KEY, JSON.stringify(currentState));
@@ -193,9 +190,9 @@ export class BridgeToNative {
      * @param knownIosAppId Тип iOS приложения, если он известен.
      * @returns Тип приложения, `undefined` для Android окружения.
      */
-    private getIosAppId(knownIosAppId?: string) {
+    private getAppId(knownIosAppId?: string) {
         if (this.environment !== 'ios') {
-            return undefined;
+            return ANDROID_APP_ID;
         }
 
         if (knownIosAppId) {
@@ -220,7 +217,7 @@ export class BridgeToNative {
         );
 
         this._appVersion = previousState.appVersion;
-        this._iosAppId = previousState.iosAppId;
+        this._appId = this.getAppId(previousState.iosAppId);
         this._theme = previousState.theme;
         this._originalWebviewParams = previousState.originalWebviewParams;
         this.nextPageId = previousState.nextPageId;

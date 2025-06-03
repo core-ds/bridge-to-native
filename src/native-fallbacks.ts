@@ -1,7 +1,7 @@
 import { ExternalNavigationOptions, PdfType } from './types';
 import type { BridgeToNative } from './bridge-to-native';
 
-import { getAppId, getUrlInstance } from './utils';
+import { getUrlInstance } from './utils';
 
 /**
  * Класс содержит реализацию обходных путей для веб-фич, которые не работают в нативном-вебвью.
@@ -44,7 +44,6 @@ export class NativeFallbacks {
         const { onClick, forceOpenInWebview } = options;
 
         const url = getUrlInstance(link);
-        const appId = getAppId(this.b2n.environment, this.b2n.iosAppId);
 
         if (!forceOpenInWebview && this.b2n.canUseNativeFeature('linksInBrowser')) {
             url.searchParams.append('openInBrowser', 'true');
@@ -52,21 +51,11 @@ export class NativeFallbacks {
             return { href: url.href, onClick };
         }
 
-        if (this.b2n.iosAppId || this.b2n.checkAndroidAllowOpenInNewWebview()) {
-            return {
-                href: `${appId}://webFeature?type=recommendation&url=${encodeURIComponent(
-                    url.href,
-                )}`,
-                onClick: options?.onClick,
-            };
-        }
-
         return {
-            href: url.href,
-            onClick: () => {
-                onClick?.();
-                this.b2n.nativeNavigationAndTitle?.setInitialView('');
-            },
+            href: `${this.b2n.appId}://webFeature?type=recommendation&url=${encodeURIComponent(
+                url.href,
+            )}`,
+            onClick: options?.onClick,
         };
     }
 
@@ -94,7 +83,7 @@ export class NativeFallbacks {
         const paramsStr = params.toString();
 
         if (this.b2n.environment === 'ios') {
-            replaceUrl = `${this.b2n.iosAppId}:///dashboard/pdf_viewer?${paramsStr}`;
+            replaceUrl = `${this.b2n.appId}:///dashboard/pdf_viewer?${paramsStr}`;
         }
 
         // У андройда через диплинк открывается, но предыдущий экран затирается.
@@ -121,19 +110,17 @@ export class NativeFallbacks {
      */
     public visitExternalResource(link: string, forceOpenInWebview = false) {
         const url = getUrlInstance(link);
-        const appId = getAppId(this.b2n.environment, this.b2n.iosAppId);
 
         if (!forceOpenInWebview && this.b2n.canUseNativeFeature('linksInBrowser')) {
             url.searchParams.append('openInBrowser', 'true');
 
             window.location.replace(url.href);
-        } else if (this.b2n.iosAppId || this.b2n.checkAndroidAllowOpenInNewWebview()) {
-            window.location.replace(
-                `${appId}://webFeature?type=recommendation&url=${encodeURIComponent(url.href)}`,
-            );
         } else {
-            this.b2n.nativeNavigationAndTitle?.setInitialView('');
-            window.location.replace(url.href);
+            window.location.replace(
+                `${this.b2n.appId}://webFeature?type=recommendation&url=${encodeURIComponent(
+                    url.href,
+                )}`,
+            );
         }
     }
 }
