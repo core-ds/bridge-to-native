@@ -5,6 +5,7 @@ export const START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW = '10.35.0';
 export const ANDROID_APP_ID = 'YWxmYWJhbms=';
 export const CLOSE_WEBVIEW_SEARCH_KEY = 'closeWebView';
 export const CLOSE_WEBVIEW_SEARCH_VALUE = 'true';
+export const COOKIE_KEY_BRIDGE_TO_NATIVE_DATA = 'bridgeToNativeData';
 export const PREVIOUS_B2N_STATE_STORAGE_KEY = 'previousBridgeToNativeState';
 export const PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY =
     'previousNativeNavigationAndTitleState';
@@ -29,7 +30,7 @@ export const nativeFeaturesFromVersion: NativeFeaturesFromVersion = {
             fromVersion: '13.3.0',
         },
         geolocation: { fromVersion: '0.0.0' },
-        savedBackStack: { fromVersion: '0.0.0' }
+        savedBackStack: { fromVersion: '0.0.0' },
     },
 } as const;
 
