@@ -208,7 +208,7 @@ export class BridgeToNative {
             [...keys].reverse().find((version) => this.isCurrentVersionHigherOrEqual(version)) ||
             keys[0];
 
-        return atob(versionToIosAppId[rightKey as keyof typeof versionToIosAppId]);
+        return versionToIosAppId[rightKey as keyof typeof versionToIosAppId];
     }
 
     /**

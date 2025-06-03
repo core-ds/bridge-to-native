@@ -10,11 +10,11 @@ describe('BridgeToAm constants', () => {
             });
         });
 
-        it('should have `"0.0.0": "YWxmYWJhbms="` as the first entry', () => {
+        it('should have `"0.0.0": "alfabank"` as the first entry', () => {
             const [firstVersion, firstAppId] = Object.entries(versionToIosAppId)[0];
 
             expect(firstVersion).toBe('0.0.0');
-            expect(firstAppId).toBe('YWxmYWJhbms=');
+            expect(firstAppId).toBe('alfabank');
         });
 
         it('should have entries in ASC order by keys', () => {

@@ -67,7 +67,7 @@ export const isValidVersionFormat = (version?: string) => {
 
 export const getAppId = (environment: Environment, iosAppId?: string) => {
     if (environment === 'android') {
-        return atob(ANDROID_APP_ID);
+        return ANDROID_APP_ID;
     }
 
     if (environment === 'ios' && iosAppId && typeof iosAppId === 'string') {
