@@ -1,3 +1,11 @@
+### 0.2.2 ([7121d08](https://github.com/core-ds/bridge-to-native/commit/7121d08)) (02-06-2025)
+
+### Bug Fixes
+- Исправлена версия для фичи savedBackStack
+
+### 0.2.1 ([a20e585](https://github.com/core-ds/bridge-to-native/commit/a20e585)) (02-06-2025)
+
+
 ## 0.2.0 ([607be9e](https://github.com/core-ds/bridge-to-native/commit/607be9e)) (26-05-2025)
 
 ### Features
