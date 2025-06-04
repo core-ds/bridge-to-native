@@ -2,12 +2,10 @@
 
 import type { BridgeToNative } from '../src';
 
-import { PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY } from '../src/constants';
-import { mockSessionStorage } from './mock/mock-session-storage';
 import { NativeNavigationAndTitle } from '../src/native-navigation-and-title';
 
 let androidEnvFlag = false;
-let mockedSetPageSettings: unknown;
+let mockedSetPageSettings: ReturnType<typeof jest.fn>;
 
 const mockedHandleRedirect = jest.fn();
 const mockedBridgeToNativeInstance = {
@@ -23,10 +21,11 @@ const mockedBridgeToNativeInstance = {
     get originalWebviewParams() {
         return 'title=superTitle';
     },
-    iosAppId: 'assistmekz',
+    appId: 'assistmekz',
+    canUseNativeFeature: jest.fn(),
     closeWebview: jest.fn(),
-    saveCurrentState: jest.fn(),
     restorePreviousState: jest.fn(),
+    saveCurrentState: jest.fn(),
     nativeFallbacks: {
         visitExternalResource: jest.fn(),
     },
@@ -45,118 +44,8 @@ jest.mock('../src/bridge-to-native', () => ({
 }));
 
 describe('AmNavigationAndTitle', () => {
-    describe('sessionStorage interaction', () => {
-        const mockedSessionStorage = mockSessionStorage(
-            PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
-            {
-                nativeHistoryStack: ['page1', 'page2', 'lastPage'],
-                title: 'lastPage',
-            },
-        );
-
-        describe('constructor', () => {
-            it('should call `restorePreviousState` method if it has previous state into sessionStorage', () => {
-                const originalRestorePreviousStateMethod =
-                    NativeNavigationAndTitle.prototype['restorePreviousState'];
-
-                NativeNavigationAndTitle.prototype['restorePreviousState'] = jest.fn();
-                const inst = new NativeNavigationAndTitle(
-                    mockedBridgeToNativeInstance,
-                    null,
-                    '',
-                    mockedHandleRedirect,
-                );
-
-                expect(mockedSessionStorage.getItem).toBeCalledWith(
-                    PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
-                );
-                expect(inst['restorePreviousState']).toBeCalled();
-
-                NativeNavigationAndTitle.prototype['restorePreviousState'] =
-                    originalRestorePreviousStateMethod;
-            });
-        });
-
-        describe('methods', () => {
-            describe('method `handleBack`', () => {
-                it('should restore previous state and unblock itself if property isPopstateListenerBlocked=true', () => {
-                    const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToNativeInstance,
-                        1,
-                        '',
-                        mockedHandleRedirect,
-                    );
-
-                    inst['handleBack']();
-                    expect(mockedSessionStorage.getItem).toBeCalledWith(
-                        PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
-                    );
-
-                    expect(mockedBridgeToNativeInstance['restorePreviousState']).toBeCalled();
-                });
-            });
-
-            describe('method `restorePreviousState`', () => {
-                it('should get previous state from sessionStorage and restore it and cleared storage', () => {
-                    const titleExample = 'lastPage';
-                    const stackExample = ['page1', 'page2', titleExample];
-                    const mockedSyncHistoryWithAm = jest.fn();
-                    const mockedReassignPopstateListener = jest.fn();
-
-                    JSON.parse = jest.fn().mockImplementationOnce(() => ({
-                        nativeHistoryStack: stackExample,
-                        title: titleExample,
-                    }));
-                    const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToNativeInstance,
-                        1,
-                        '',
-                        mockedHandleRedirect,
-                    );
-
-                    inst['syncHistoryWithNative'] = mockedSyncHistoryWithAm;
-                    inst['reassignPopstateListener'] = mockedReassignPopstateListener;
-
-                    inst['restorePreviousState']();
-
-                    expect(mockedSessionStorage.getItem).toBeCalledWith(
-                        PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
-                    );
-                    expect(inst['nativeHistoryStack']).toStrictEqual(stackExample);
-                    expect(mockedSyncHistoryWithAm).toBeCalledWith(titleExample, 'title-replacing');
-                    expect(mockedReassignPopstateListener).toBeCalled();
-                    expect(mockedSessionStorage.removeItem).toBeCalledWith(
-                        PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
-                    );
-                });
-            });
-
-            describe('method `saveCurrentState`', () => {
-                it('should save current state into sessionStorage', () => {
-                    const stackExample = ['first', 'second', 'last'];
-
-                    const currentStateExample = {
-                        title: stackExample[stackExample.length - 1],
-                        nativeHistoryStack: stackExample,
-                    };
-
-                    const inst = new NativeNavigationAndTitle(
-                        mockedBridgeToNativeInstance,
-                        1,
-                        '',
-                        mockedHandleRedirect,
-                    );
-
-                    inst['nativeHistoryStack'] = stackExample;
-                    inst['saveCurrentState']();
-
-                    expect(mockedSessionStorage.setItem).toBeCalledWith(
-                        PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
-                        JSON.stringify(currentStateExample),
-                    );
-                });
-            });
-        });
+    afterEach(() => {
+        jest.resetAllMocks();
     });
 
     describe('constructor and methods', () => {
@@ -971,7 +860,7 @@ describe('AmNavigationAndTitle', () => {
         });
 
         describe('method `handleNativeDeeplink`', () => {
-            const root = atob('YWxmYWJhbms6');
+            const root = 'alfabank:';
 
             describe('Android environment', () => {
                 beforeEach(() => {
@@ -981,12 +870,12 @@ describe('AmNavigationAndTitle', () => {
                 it.each([
                     [
                         'webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app',
-                        `${root}//webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app`,
+                        `assistmekz://webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app`,
                     ],
-                    [`${root}///dashboard/deeplink_template`, `${root}//deeplink_template`],
-                    [`${root}///deeplink_template`, `${root}//deeplink_template`],
-                    [`${root}//deeplink_template`, `${root}//deeplink_template`],
-                    ['/deeplink_template', `${root}//deeplink_template`],
+                    [`${root}///dashboard/deeplink_template`, `assistmekz://deeplink_template`],
+                    [`${root}///deeplink_template`, `assistmekz://deeplink_template`],
+                    [`${root}//deeplink_template`, `assistmekz://deeplink_template`],
+                    ['/deeplink_template', `assistmekz://deeplink_template`],
                 ])(
                     'should modify input deeplink `%s` and call locationReplace with `%s`',
                     (deeplink, expectedValue) => {
@@ -1032,13 +921,27 @@ describe('AmNavigationAndTitle', () => {
                         inst['handleNativeDeeplink'](deeplink);
 
                         expect(mockedLocationReplace).toBeCalledWith(expectedValue);
-
-                        inst['handleNativeDeeplink'](deeplink, true);
-
-                        expect(mockedLocationReplace).toBeCalledWith(expectedValue);
-                        expect(inst['b2n']['closeWebview']).toBeCalled();
                     },
                 );
+            });
+
+            it('should use closeWebviewBeforeCallNativeDeeplinkHandler argument', () => {
+                (
+                    mockedBridgeToNativeInstance.canUseNativeFeature as ReturnType<typeof jest.fn>
+                ).mockImplementation(() => true);
+
+                const inst = new NativeNavigationAndTitle(
+                    mockedBridgeToNativeInstance,
+                    null,
+                    '',
+                    mockedHandleRedirect,
+                );
+
+                const deeplink = 'webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app';
+
+                inst['handleNativeDeeplink'](deeplink, true);
+
+                expect(inst['b2n']['closeWebview']).toBeCalled();
             });
         });
     });

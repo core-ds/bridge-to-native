@@ -5,9 +5,7 @@ import {
     CLOSE_WEBVIEW_SEARCH_KEY,
     CLOSE_WEBVIEW_SEARCH_VALUE,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
-    START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW,
 } from '../src/constants';
-import { mockSessionStorage } from './mock/mock-session-storage';
 import { WebViewWindow } from '../src/types';
 
 const mockedNativeFallbacksInstance = {};
@@ -40,87 +38,6 @@ describe('BridgeToNative', () => {
         originalWebviewParams: '',
     };
     const mockedHandleRedirect = jest.fn();
-
-    describe('sessionStorage interaction', () => {
-        const savedBridgeToAmState = {
-            appVersion: '12.25.83',
-            iosAppId: 'aconcierge',
-            theme: 'dark',
-            originalWebviewParams: 'title=Title',
-            nextPageId: null,
-        };
-
-        const { getItem, setItem, removeItem } = mockSessionStorage(
-            PREVIOUS_B2N_STATE_STORAGE_KEY,
-            savedBridgeToAmState,
-        );
-
-        afterAll(() => {
-            getItem.mockReset();
-        });
-
-        describe('constructor', () => {
-            it('should call `restorePreviousState` method if it has previous state into sessionStorage', () => {
-                const originalRestorePreviousStateMethod =
-                    BridgeToNative.prototype['restorePreviousState'];
-
-                BridgeToNative.prototype['restorePreviousState'] = jest.fn();
-
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', {
-                    ...defaultAmParams,
-                    title: 'Initial Title',
-                });
-
-                expect(getItem).toBeCalledWith(PREVIOUS_B2N_STATE_STORAGE_KEY);
-                expect(inst['restorePreviousState']).toBeCalled();
-
-                BridgeToNative.prototype['restorePreviousState'] =
-                    originalRestorePreviousStateMethod;
-            });
-        });
-
-        describe('method `saveCurrentState`', () => {
-            it('should save current state into sessionStorage and call `AmNavigationAndTitle.saveCurrentState`', () => {
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
-
-                const currentB2amState = {
-                    appVersion: inst['appVersion'],
-                    theme: inst['theme'],
-                    nextPageId: inst['nextPageId'],
-                    originalWebviewParams: inst['originalWebviewParams'],
-                    iosAppId: inst['iosAppId'],
-                };
-
-                inst['saveCurrentState']();
-                expect(inst.nativeNavigationAndTitle['saveCurrentState']).toBeCalled();
-                expect(setItem).toBeCalledWith(
-                    PREVIOUS_B2N_STATE_STORAGE_KEY,
-                    JSON.stringify(currentB2amState),
-                );
-            });
-        });
-
-        describe('method `restorePreviousState`', () => {
-            it('should get previous state from sessionStorage and restore it and cleared storage', () => {
-                JSON.parse = jest.fn(() => savedBridgeToAmState);
-
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
-
-                inst['restorePreviousState']();
-
-                expect(getItem).toBeCalledWith(PREVIOUS_B2N_STATE_STORAGE_KEY);
-
-                expect(inst['appVersion']).toBe(savedBridgeToAmState.appVersion);
-                expect(inst['iosAppId']).toBe(savedBridgeToAmState.iosAppId);
-                expect(inst['theme']).toBe(savedBridgeToAmState.theme);
-                expect(inst['originalWebviewParams']).toBe(
-                    savedBridgeToAmState.originalWebviewParams,
-                );
-                expect(inst['nextPageId']).toBe(savedBridgeToAmState.nextPageId);
-                expect(removeItem).toBeCalledWith(PREVIOUS_B2N_STATE_STORAGE_KEY);
-            });
-        });
-    });
 
     describe('constructor and methods', () => {
         let androidEnvFlag = false;
@@ -225,10 +142,10 @@ describe('BridgeToNative', () => {
                     expect(inst.environment).toBe('android');
                 });
 
-                it('should not provide application type using `iosAppId` property', () => {
+                it('should set `appId` property correctly', () => {
                     const ins = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
 
-                    expect(ins.iosAppId).not.toBeDefined();
+                    expect(ins.appId).toBe('alfabank');
                 });
             });
 
@@ -252,22 +169,27 @@ describe('BridgeToNative', () => {
                     ['12.22.1', 'aconcierge'],
                     ['12.25.83', 'aconcierge'],
                     ['12.26.0', 'kittycash'],
-                    ['12.30.99', 'kittycash'],
-                    ['12.31.0', 'aweassist'],
-                    ['13.0.0', 'aweassist'],
+                    ['13.1.99', 'kittycash'],
+                    ['13.2.0', 'triptally'],
+                    ['13.3.99', 'triptally'],
+                    ['13.4.0', 'cashline'],
+                    ['13.4.99', 'cashline'],
+                    ['13.5.0', 'assistmekz'],
+                    ['14.4.99', 'assistmekz'],
+                    ['14.5.00', 'smartfinancementor'],
                 ])(
-                    'should detect app scheme for version %s correctly and save it in `iosAppId` property',
+                    'should detect app scheme for version %s correctly and save it in `appId` property',
                     (appVersion, expected) => {
                         const ins = new BridgeToNative(mockedHandleRedirect, '/', {
                             ...defaultAmParams,
                             appVersion,
                         });
 
-                        expect(ins.iosAppId).toBe(expected);
+                        expect(ins.appId).toBe(expected);
                     },
                 );
 
-                it('should use `iosAppId` parameter as value for `iosApplicationId` while parameter exists', () => {
+                it('should use `appId` parameter as value for `iosApplicationId` while parameter exists', () => {
                     const inst1 = new BridgeToNative(mockedHandleRedirect, '/', {
                         ...defaultAmParams,
                         appVersion: '0.0.0',
@@ -279,8 +201,8 @@ describe('BridgeToNative', () => {
                         iosAppId: 'kittycash',
                     });
 
-                    expect(inst1.iosAppId).toBe('kittycash');
-                    expect(inst2.iosAppId).toBe('kittycash');
+                    expect(inst1.appId).toBe('kittycash');
+                    expect(inst2.appId).toBe('kittycash');
                 });
             });
         });
@@ -360,14 +282,14 @@ describe('BridgeToNative', () => {
             );
         });
 
-        describe('method `getIosAppId`', () => {
-            it('should return `undefined` in Android environment', () => {
+        describe('method `getAppId`', () => {
+            it('should always return `alfabank` in Android environment', () => {
                 androidEnvFlag = true;
 
                 const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
 
-                expect(inst['getIosAppId']()).toBeUndefined();
-                expect(inst['getIosAppId']('aconcierge')).toBeUndefined();
+                expect(inst['getAppId']()).toBe('alfabank');
+                expect(inst['getAppId']('aconcierge')).toBe('alfabank');
             });
 
             it.each([
@@ -380,9 +302,14 @@ describe('BridgeToNative', () => {
                 ['12.25.0', 'aconcierge'],
                 ['12.25.99', 'aconcierge'],
                 ['12.26.0', 'kittycash'],
-                ['12.30.99', 'kittycash'],
-                ['12.31.0', 'aweassist'],
-                ['13.0.0', 'aweassist'],
+                ['13.1.99', 'kittycash'],
+                ['13.2.0', 'triptally'],
+                ['13.3.99', 'triptally'],
+                ['13.4.0', 'cashline'],
+                ['13.4.99', 'cashline'],
+                ['13.5.0', 'assistmekz'],
+                ['14.4.99', 'assistmekz'],
+                ['14.5.00', 'smartfinancementor'],
             ])(
                 'should detect app scheme for version `%s` as `%s` while parameter is not passed',
                 (version, appId) => {
@@ -391,7 +318,7 @@ describe('BridgeToNative', () => {
                         appVersion: version,
                     });
 
-                    expect(inst['getIosAppId']()).toBe(appId);
+                    expect(inst['getAppId']()).toBe(appId);
                 },
             );
 
@@ -401,32 +328,7 @@ describe('BridgeToNative', () => {
                     appVersion: '1.0.0',
                 });
 
-                expect(inst['getIosAppId']('aconcierge')).toBe('aconcierge');
-            });
-        });
-
-        describe('checkAndroidAllowOpenInNewWebview', () => {
-            it(`should return true if version equal or above ${START_VERSION_ANDROID_ALLOW_OPEN_NEW_WEBVIEW}`, () => {
-                androidEnvFlag = true;
-                let appVersion = '11.35.0';
-
-                const savedBridgeToAmState = {
-                    appVersion,
-                    iosAppId: 'aconcierge',
-                    theme: 'dark',
-                    originalWebviewParams: 'title=Title',
-                    nextPageId: null,
-                };
-
-                mockSessionStorage(PREVIOUS_B2N_STATE_STORAGE_KEY, savedBridgeToAmState);
-
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', {
-                    ...defaultAmParams,
-                    appVersion,
-                });
-
-                expect(inst.checkAndroidAllowOpenInNewWebview()).toBe(true);
-                expect(inst.checkAndroidAllowOpenInNewWebview()).toBe(true);
+                expect(inst['getAppId']('aconcierge')).toBe('aconcierge');
             });
         });
     });
