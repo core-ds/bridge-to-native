@@ -208,29 +208,30 @@ export class NativeNavigationAndTitle {
      * На IOS нативная фича открывается в следующем по стеку экране и при выходе из нее пользователь вернется обратно в webview.
      * На IOS есть возможность закрыть webview перед открытием нативной фичи, передав второй параметр closeIOSWebviewBeforeCallNativeDeeplinkHandler = true
      * @param deeplink диплинк на нативную АМ фичу в AM
-     * @param [closeIOSWebviewBeforeCallNativeDeeplinkHandler = false] закрыть текущее webview после открытия нативной фичи (применимо только для IOS на Android по техническим причинам webview всегда будет закрываться)
+     * @param [closeWebviewBeforeCallNativeDeeplinkHandler = false] закрыть текущее webview после открытия нативной фичи.
+     *  Применимо для всех версий на IOS и в новых версиях на Android (>12.30.0). В старых, по техническим причинам, webview будет закрываться всегда.
      */
     public handleNativeDeeplink(
         deeplink: string,
-        closeIOSWebviewBeforeCallNativeDeeplinkHandler = false,
+        closeWebviewBeforeCallNativeDeeplinkHandler = false,
     ) {
         const clearedDeeplinkPath = deeplink.replace(DEEP_LINK_PATTERN, '');
 
-        if (this.b2n.environment === 'ios') {
-            if (closeIOSWebviewBeforeCallNativeDeeplinkHandler) {
-                this.b2n.closeWebview();
+        if (
+            closeWebviewBeforeCallNativeDeeplinkHandler &&
+            this.b2n.canUseNativeFeature('savedBackStack')
+        ) {
+            this.b2n.closeWebview();
 
-                setTimeout(
-                    () => window.location.replace(`${this.b2n.iosAppId}://${clearedDeeplinkPath}`),
-                    0,
-                );
+            setTimeout(
+                () => window.location.replace(`${this.b2n.appId}://${clearedDeeplinkPath}`),
+                0,
+            );
 
-                return;
-            }
-            window.location.replace(`${this.b2n.iosAppId}://${clearedDeeplinkPath}`);
-        } else {
-            window.location.replace(`alfabank://${clearedDeeplinkPath}`);
+            return;
         }
+
+        window.location.replace(`${this.b2n.appId}://${clearedDeeplinkPath}`);
     }
 
     /**

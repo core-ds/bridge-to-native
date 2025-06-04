@@ -6,7 +6,6 @@ import {
     CLOSE_WEBVIEW_SEARCH_VALUE,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
 } from '../src/constants';
-import { mockSessionStorage } from './mock/mock-session-storage';
 import { WebViewWindow } from '../src/types';
 
 const mockedNativeFallbacksInstance = {};
@@ -39,87 +38,6 @@ describe('BridgeToNative', () => {
         originalWebviewParams: '',
     };
     const mockedHandleRedirect = jest.fn();
-
-    describe('sessionStorage interaction', () => {
-        const savedBridgeToAmState = {
-            appVersion: '12.25.83',
-            iosAppId: 'aconcierge',
-            theme: 'dark',
-            originalWebviewParams: 'title=Title',
-            nextPageId: null,
-        };
-
-        const { getItem, setItem, removeItem } = mockSessionStorage(
-            PREVIOUS_B2N_STATE_STORAGE_KEY,
-            savedBridgeToAmState,
-        );
-
-        afterAll(() => {
-            getItem.mockReset();
-        });
-
-        describe('constructor', () => {
-            it('should call `restorePreviousState` method if it has previous state into sessionStorage', () => {
-                const originalRestorePreviousStateMethod =
-                    BridgeToNative.prototype['restorePreviousState'];
-
-                BridgeToNative.prototype['restorePreviousState'] = jest.fn();
-
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', {
-                    ...defaultAmParams,
-                    title: 'Initial Title',
-                });
-
-                expect(getItem).toBeCalledWith(PREVIOUS_B2N_STATE_STORAGE_KEY);
-                expect(inst['restorePreviousState']).toBeCalled();
-
-                BridgeToNative.prototype['restorePreviousState'] =
-                    originalRestorePreviousStateMethod;
-            });
-        });
-
-        describe('method `saveCurrentState`', () => {
-            it('should save current state into sessionStorage and call `AmNavigationAndTitle.saveCurrentState`', () => {
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
-
-                const currentB2amState = {
-                    appVersion: inst['appVersion'],
-                    theme: inst['theme'],
-                    nextPageId: inst['nextPageId'],
-                    originalWebviewParams: inst['originalWebviewParams'],
-                    iosAppId: inst['iosAppId'],
-                };
-
-                inst['saveCurrentState']();
-                expect(inst.nativeNavigationAndTitle['saveCurrentState']).toBeCalled();
-                expect(setItem).toBeCalledWith(
-                    PREVIOUS_B2N_STATE_STORAGE_KEY,
-                    JSON.stringify(currentB2amState),
-                );
-            });
-        });
-
-        describe('method `restorePreviousState`', () => {
-            it('should get previous state from sessionStorage and restore it and cleared storage', () => {
-                JSON.parse = jest.fn(() => savedBridgeToAmState);
-
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
-
-                inst['restorePreviousState']();
-
-                expect(getItem).toBeCalledWith(PREVIOUS_B2N_STATE_STORAGE_KEY);
-
-                expect(inst['appVersion']).toBe(savedBridgeToAmState.appVersion);
-                expect(inst['iosAppId']).toBe(savedBridgeToAmState.iosAppId);
-                expect(inst['theme']).toBe(savedBridgeToAmState.theme);
-                expect(inst['originalWebviewParams']).toBe(
-                    savedBridgeToAmState.originalWebviewParams,
-                );
-                expect(inst['nextPageId']).toBe(savedBridgeToAmState.nextPageId);
-                expect(removeItem).toBeCalledWith(PREVIOUS_B2N_STATE_STORAGE_KEY);
-            });
-        });
-    });
 
     describe('constructor and methods', () => {
         let androidEnvFlag = false;

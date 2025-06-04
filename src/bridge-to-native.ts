@@ -99,11 +99,6 @@ export class BridgeToNative {
         return this._appId;
     }
 
-    // @deprecated Использовать `appId`.
-    get iosAppId() {
-        return this._appId;
-    }
-
     private _theme: Theme;
 
     get theme() {
