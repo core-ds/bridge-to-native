@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 
+import { NativeParams } from '../types';
 import {
     ANDROID_APP_ID,
     CLOSE_WEBVIEW_SEARCH_KEY,
@@ -10,14 +11,7 @@ import {
 } from './constants';
 import { NativeFallbacks } from './native-fallbacks';
 import { NativeNavigationAndTitle } from './native-navigation-and-title';
-import type {
-    Environment,
-    HandleRedirect,
-    NativeFeatureKey,
-    NativeParams,
-    Theme,
-    WebViewWindow,
-} from './types';
+import type { Environment, HandleRedirect, NativeFeatureKey, Theme, WebViewWindow } from './types';
 import { PreviousBridgeToNativeState } from './types';
 import { isValidVersionFormat } from './utils';
 
