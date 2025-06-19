@@ -90,6 +90,9 @@ function parseRequest(request: UniversalRequest) {
         nativeParams.appVersion = '0.0.0';
     }
 
+    // Здесь такая проверка сделана намеренно, чтобы можно было задать пустой заголовок с помощью пустой строки:
+    // http://example.com?b2n-title=    →   title === ''
+    // http://example.com               →   title === null
     if (typeof title === 'string') {
         nativeParams.title = title;
     } else if (typeof deprecatedTitle === 'string') {
