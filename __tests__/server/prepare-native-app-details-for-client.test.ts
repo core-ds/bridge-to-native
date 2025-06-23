@@ -1,6 +1,4 @@
-/* @jest-environment node */
-
-import { prepareNativeAppDetailsForClient } from '../prepare-native-app-details-for-client';
+import { prepareNativeAppDetailsForClient } from '../../src/server/prepare-native-app-details-for-client';
 
 // Закодированные разделители в JSON между ключём и значением.
 const ENCODED_PARTS = {

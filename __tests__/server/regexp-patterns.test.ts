@@ -3,7 +3,7 @@ import {
     iosAppIdPattern,
     versionPattern,
     webviewUaIOSPattern,
-} from '../regexp-patterns';
+} from '../../src/server/regexp-patterns';
 
 describe('bridgeToNativeDataCookieExistencePattern', () => {
     it('should match cookie key without space after separator', () => {

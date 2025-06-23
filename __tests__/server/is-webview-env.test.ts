@@ -1,7 +1,5 @@
-/* @jest-environment node */
-
 import { type IncomingMessage } from 'http';
-import { isWebviewEnv } from '../is-webview-env';
+import { isWebviewEnv } from '../../src/server/is-webview-env';
 
 describe('isWebviewEnv', () => {
     it('should return true when special cookie is present', () => {

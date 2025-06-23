@@ -1,7 +1,5 @@
-/* @jest-environment node */
-
 import { type IncomingMessage } from 'http';
-import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie } from '../utils';
+import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie } from '../../src/server/utils';
 
 describe('getHeaderValue', () => {
     describe('IncomingMessage requests', () => {

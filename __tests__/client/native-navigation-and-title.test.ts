@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import type { BridgeToNative } from '../src/client';
+import type { BridgeToNative } from '../../src/client';
 
-import { NativeNavigationAndTitle } from '../src/client/native-navigation-and-title';
+import { NativeNavigationAndTitle } from '../../src/client/native-navigation-and-title';
+
+declare var window: Window & typeof globalThis & { Android?: object };
+
+const mockedSetPageSettings = jest.fn();
+const mockedHandleRedirect = jest.fn();
 
 let androidEnvFlag = false;
-let mockedSetPageSettings: ReturnType<typeof jest.fn>;
 
-const mockedHandleRedirect = jest.fn();
 const mockedBridgeToNativeInstance = {
     get AndroidBridge() {
         return androidEnvFlag ? { setPageSettings: mockedSetPageSettings } : undefined;
@@ -36,7 +39,7 @@ Object.defineProperty(global, 'handleRedirect', {
     configurable: true,
 });
 
-jest.mock('../src/client/bridge-to-native', () => ({
+jest.mock('../../src/client/bridge-to-native', () => ({
     __esModule: true,
     BridgeToNative: function MockedBridgeToAmConstructor() {
         return mockedBridgeToNativeInstance;
@@ -44,52 +47,40 @@ jest.mock('../src/client/bridge-to-native', () => ({
 }));
 
 describe('AmNavigationAndTitle', () => {
-    afterEach(() => {
-        jest.resetAllMocks();
-    });
-
     describe('constructor and methods', () => {
-        let mockedAddEventListener: any;
-        let mockedLocationReplace: any;
-        let mockedLocationReload: any;
-        let mockedLocationAssign: any;
-        let mockedRemoveEventListener: any;
-        let windowSpy: any;
+        let mockedAddEventListener: ReturnType<typeof jest.fn>;
+        let mockedRemoveEventListener: ReturnType<typeof jest.fn>;
 
         const mockedHistoryGo = jest.fn();
+        const mockedLocationAssign = jest.fn();
+        const mockedLocationReload = jest.fn();
+        const mockedLocationReplace = jest.fn();
+
+        const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+        const historyGoSpy = jest.spyOn(window.history, 'go');
+        const locationAssignSpy = jest.spyOn(window.location, 'assign');
+        const locationReloadSpy = jest.spyOn(window.location, 'reload');
+        const locationReplaceSpy = jest.spyOn(window.location, 'replace');
+        const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
 
         beforeEach(() => {
             mockedAddEventListener = jest.fn(() => performance.now());
-            mockedLocationReplace = jest.fn();
-            mockedLocationReload = jest.fn();
-            mockedLocationAssign = jest.fn();
             mockedRemoveEventListener = jest.fn(() => performance.now());
-            mockedSetPageSettings = jest.fn();
 
-            windowSpy = jest.spyOn(window, 'window', 'get');
+            addEventListenerSpy.mockImplementation(mockedAddEventListener);
+            historyGoSpy.mockImplementation(mockedHistoryGo);
+            locationAssignSpy.mockImplementation(mockedLocationAssign);
+            locationReloadSpy.mockImplementation(mockedLocationReload);
+            locationReplaceSpy.mockImplementation(mockedLocationReplace);
+            removeEventListenerSpy.mockImplementation(mockedRemoveEventListener);
 
-            windowSpy.mockImplementation(() => ({
-                addEventListener: mockedAddEventListener,
-                history: {
-                    go: mockedHistoryGo,
-                },
-                location: {
-                    replace: mockedLocationReplace,
-                    reload: mockedLocationReload,
-                    assign: mockedLocationAssign,
-                },
-                removeEventListener: mockedRemoveEventListener,
-                ...(androidEnvFlag && {
-                    Android: {
-                        setPageSettings: mockedSetPageSettings,
-                    },
-                }),
-            }));
+            window.Android = {
+                setPageSettings: mockedSetPageSettings,
+            };
         });
 
         afterEach(() => {
             androidEnvFlag = false;
-            windowSpy.mockRestore();
             jest.resetAllMocks();
         });
 
