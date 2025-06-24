@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "declaration": true,
+        "esModuleInterop": true,
+        "module": "nodenext",
+        "outDir": "./.publish",
+        "skipLibCheck": true,
+        "strict": true
+    },
+    "exclude": ["__test__/**/*.*"],
+}
