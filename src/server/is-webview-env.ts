@@ -5,7 +5,7 @@ import { getHeaderValue, hasBridgeToNativeDataCookie } from './utils';
 
 /**
  * На основе объекта запроса любого типа определяет, сделан ли запрос из вебвью.
- * 
+ *
  * @param request Объект запроса (Request или IncomingMessage).
  */
 export function isWebviewEnv(request: UniversalRequest) {

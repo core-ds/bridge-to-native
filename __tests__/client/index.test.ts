@@ -2,8 +2,9 @@
 
 import { BridgeToNative } from '../../src/client';
 import { CLOSE_WEBVIEW_SEARCH_KEY, CLOSE_WEBVIEW_SEARCH_VALUE } from '../../src/client/constants';
-import { WebViewWindow } from '../../src/client/types';
+import { type WebViewWindow } from '../../src/client/types';
 
+/* eslint-disable-next-line no-var -- в данном случае без `var` не обойтись */
 declare var window: Window & typeof globalThis & { Android?: object };
 
 const mockedNativeFallbacksInstance = {};

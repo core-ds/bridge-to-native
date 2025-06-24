@@ -1,4 +1,4 @@
-import { NativeParams } from '../types';
+import { type NativeParams } from '../types';
 
 export type NativeFeatureKey =
     // Возможность работы с геолокацией.

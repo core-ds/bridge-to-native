@@ -2,7 +2,7 @@
 
 import { BridgeToNative } from '../../src/client/bridge-to-native';
 
-declare var window: Window & typeof globalThis & { Android?: object; history: History };
+declare let window: Window & typeof globalThis & { Android?: object; history: History };
 
 describe('BridgeToNative integration testing', () => {
     const defaultAmParams = {
@@ -25,6 +25,7 @@ describe('BridgeToNative integration testing', () => {
 
     beforeEach(() => {
         addEventListenerSpy.mockImplementation((_, handler) => {
+            // eslint-disable-next-line @typescript-eslint/ban-types -- это моки, каст к Function 👌
             const asyncHandler = () => process.nextTick(handler as Function);
 
             emulateAmBackButtonTap = asyncHandler;

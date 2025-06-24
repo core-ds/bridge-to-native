@@ -1,7 +1,8 @@
 {
-    "license": "UNLICENSED",
     "name": "@alfalab/bridge-to-native",
     "version": "0.2.2",
+    "license": "MIT",
+    "description": "Утилита для удобной работы веб приложения внутри нативного приложения и коммуникации с ним.",
     "engines": {
         "node": ">=20.19.2",
         "npm": "please-use-yarn"
@@ -29,49 +30,56 @@
     "bugs": {
         "url": "https://github.com/core-ds/bridge-to-native/issues"
     },
-    "description": "Утилита для удобной работы веб приложения внутри нативного приложения и коммуникации с ним.",
     "scripts": {
-        "build": "yarn compile",
+        "build": "yarn build:clean && yarn build:ts",
+        "build:clean": "shx rm -rf .publish",
+        "build:copy-package-json": "shx cp package.json .publish/package.json",
+        "build:ts": "tsc --build",
         "changelog": "bash bin/fill-changelog-file-and-notify-github.sh",
-        "compile": "yarn compile:clean && yarn compile:ts",
-        "compile:copy-package-json": "shx cp package.json .publish/package.json",
-        "compile:clean": "shx rm -rf .publish",
-        "compile:ts": "tsc --build",
-        "lint:scripts": "eslint \"**/*.{js,jsx,ts,tsx}\" --ext .js,.jsx,.ts,.tsx",
-        "lint": "yarn lint:scripts && prettier --check \"./src/*.{ts,tsx,js,jsx,json}\"",
-        "lint:fix": "yarn lint:scripts --fix",
+        "format": "arui-presets-lint format",
+        "format:check": "arui-presets-lint format:check",
+        "lint": "yarn lint:scripts && yarn format:check",
+        "lint:fix": "yarn lint:scripts --fix && yarn format",
+        "lint:scripts": "arui-presets-lint scripts",
         "pub": "npm publish .publish --userconfig \"../.npmrc\" --tag \"$TAG\"",
-        "format": "prettier --write \"./**/*.{ts,tsx,js,jsx,css,json}\"",
-        "test": "arui-scripts test --silent --collect-coverage",
-        "release": "yarn build && npm version \"$VERSION\" --no-git-tag-version && yarn compile:copy-package-json && yarn pub"
+        "release": "yarn build && npm version \"$VERSION\" --no-git-tag-version && yarn build:copy-package-json && yarn pub",
+        "test": "arui-scripts test --silent --collect-coverage"
     },
     "devDependencies": {
         "@happy-dom/jest-environment": "18.0.1",
         "@types/jest": "29.5.14",
         "@types/node": "20.19.1",
-        "@typescript-eslint/eslint-plugin": "^5.30.6",
-        "@typescript-eslint/parser": "^5.30.6",
-        "arui-presets-lint": "6.2.0",
+        "arui-presets-lint": "8.7.0",
         "arui-scripts": "19.0.7",
         "copyfiles": "2.4.1",
-        "eslint": "^8.20.0",
-        "eslint-config-airbnb": "^19.0.4",
-        "eslint-config-airbnb-typescript": "^17.0.0",
-        "eslint-config-prettier": "^8.5.0",
-        "eslint-import-resolver-typescript": "~3.1.5",
-        "eslint-plugin-dirnames": "^1.0.3",
-        "eslint-plugin-import": "^2.26.0",
-        "eslint-plugin-simple-import-sort": "^7.0.0",
-        "eslint-plugin-unicorn": "^42.0.0",
-        "husky": "^4.3.8",
         "jest-junit": "10.0.0",
         "lint-staged": "^12.5.0",
-        "prettier": "^2.7.1",
         "promisify-child-process": "4.1.1",
         "shx": "0.3.4",
-        "stylelint": "^14.9.1",
-        "stylelint-config-prettier": "^9.0.3",
-        "typescript": "5.8.3"
+        "typescript": "5.5.4"
+    },
+    "commitlint": {
+        "extends": "./node_modules/arui-presets-lint/commitlint"
+    },
+    "eslintConfig": {
+        "extends": "./node_modules/arui-presets-lint/eslint",
+        "parserOptions": {
+            "project": [
+                "./__tests__/tsconfig.json",
+                "./src/client/tsconfig.json",
+                "./src/server/tsconfig.json"
+            ]
+        },
+        "overrides": [
+            {
+                "files": [
+                    "__tests__/**/*"
+                ],
+                "rules": {
+                    "max-lines": "off"
+                }
+            }
+        ]
     },
     "jest": {
         "projects": [
@@ -102,21 +110,12 @@
             "jest-junit"
         ]
     },
-    "jest-junit": {
-        "output": "./test-results.xml"
-    },
     "prettier": "arui-presets-lint/prettier",
-    "eslintConfig": {
-        "extends": "./node_modules/arui-presets-lint/eslint"
-    },
     "stylelint": {
         "extends": "arui-presets-lint/stylelint",
         "ignoreFiles": [
             "coverage/**/*.js"
         ]
-    },
-    "commitlint": {
-        "extends": "./node_modules/arui-presets-lint/commitlint"
     },
     "publishConfig": {
         "registry": "https://registry.npmjs.org"

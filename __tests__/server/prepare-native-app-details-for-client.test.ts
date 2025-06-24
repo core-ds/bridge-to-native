@@ -78,7 +78,7 @@ describe('prepareNativeAppDetailsForClient', () => {
 
         expect(setResonseHeader).not.toBeCalledWith(
             'Set-Cookie',
-            expect.stringContaining(`nextPageId`),
+            expect.stringContaining('nextPageId'),
         );
     });
 
@@ -92,7 +92,7 @@ describe('prepareNativeAppDetailsForClient', () => {
 
         expect(setResonseHeader).not.toBeCalledWith(
             'Set-Cookie',
-            expect.stringContaining(`nextPageId`),
+            expect.stringContaining('nextPageId'),
         );
     });
 
@@ -286,7 +286,7 @@ describe('prepareNativeAppDetailsForClient', () => {
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
-        expect(setResonseHeader).not.toBeCalledWith('Set-Cookie', expect.stringContaining(`title`));
+        expect(setResonseHeader).not.toBeCalledWith('Set-Cookie', expect.stringContaining('title'));
     });
 
     it('should set originalWebviewParams', () => {

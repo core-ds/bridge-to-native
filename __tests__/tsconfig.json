@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "noEmit": true,
+        "types": ["jest", "node"]
+    },
+    "include": ["**/*.test.ts"]
+}

@@ -1,5 +1,10 @@
 import { type IncomingMessage } from 'http';
-import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie } from '../../src/server/utils';
+
+import {
+    getHeaderValue,
+    getQueryValues,
+    hasBridgeToNativeDataCookie,
+} from '../../src/server/utils';
 
 describe('getHeaderValue', () => {
     describe('IncomingMessage requests', () => {
@@ -71,16 +76,19 @@ describe('getQueryValues', () => {
 
     it('should return array of values for multiple keys', () => {
         const mockRequest = { url: 'http://test.com/?name=John&age=25' } as Request;
+
         expect(getQueryValues(mockRequest, ['name', 'age'])).toEqual(['John', '25']);
     });
 
     it('should return nulls for non-existent keys in array', () => {
         const mockRequest = { url: 'http://test.com/?a=1&c=3' } as Request;
+
         expect(getQueryValues(mockRequest, ['a', 'b', 'c'])).toEqual(['1', null, '3']);
     });
 
     it('should return null when no query params', () => {
         const mockRequest = { url: 'http://test.com/' } as Request;
+
         expect(getQueryValues(mockRequest, 'any')).toBeNull();
         expect(getQueryValues(mockRequest, ['any', 'some'])).toEqual([null, null]);
     });
@@ -98,6 +106,7 @@ describe('getQueryValues', () => {
 
     it('should handle malformed URL', () => {
         const mockRequest = { url: 'invalid-url' } as Request;
+
         expect(getQueryValues(mockRequest, 'key')).toBeNull();
         expect(getQueryValues(mockRequest, ['key'])).toEqual([null]);
     });
@@ -106,6 +115,7 @@ describe('getQueryValues', () => {
 describe('hasBridgeToNativeDataCookie', () => {
     it('should return false while there is no cookie', () => {
         const mockRequest = { headers: new Headers({}) } as Request;
+
         expect(hasBridgeToNativeDataCookie(mockRequest)).toBe(false);
     });
 
@@ -113,22 +123,25 @@ describe('hasBridgeToNativeDataCookie', () => {
         const mockRequest = {
             headers: new Headers({ Cookie: 'anotherCookie=value' }),
         } as Request;
+
         expect(hasBridgeToNativeDataCookie(mockRequest)).toBe(false);
     });
 
     it('should return true while desired cookie is found', () => {
         const mockRequest = {
-            headers: new Headers({ Cookie: `bridgeToNativeData=value` }),
+            headers: new Headers({ Cookie: 'bridgeToNativeData=value' }),
         } as Request;
+
         expect(hasBridgeToNativeDataCookie(mockRequest)).toBe(true);
     });
 
     it('should return true while desired cookie is found among others', () => {
         const mockRequest = {
             headers: new Headers({
-                Cookie: `anotherCookie=value; bridgeToNativeData=value`,
+                Cookie: 'anotherCookie=value; bridgeToNativeData=value',
             }),
         } as Request;
+
         expect(hasBridgeToNativeDataCookie(mockRequest)).toBe(true);
     });
 });

@@ -61,6 +61,7 @@ describe('iosAppIdPattern', () => {
 
     it('should capture the app name', () => {
         const match = 'com.example.app'.match(iosAppIdPattern);
+
         expect(match?.[1]).toBe('example');
     });
 

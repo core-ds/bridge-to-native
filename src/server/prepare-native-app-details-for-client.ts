@@ -1,13 +1,14 @@
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../constants';
 import { type NativeParams } from '../types';
+
 import {
-    QUERY_NATIVE_IOS_APPID,
     HEADER_KEY_NATIVE_APPVERSION,
-    QUERY_NATIVE_IOS_APPVERSION,
+    QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
     QUERY_B2N_TITLE_DEPRECATED,
+    QUERY_NATIVE_IOS_APPID,
+    QUERY_NATIVE_IOS_APPVERSION,
     QUERY_NATIVE_THEME,
-    QUERY_B2N_NEXT_PAGEID,
 } from './constants';
 import { extractNativeServiceQueries } from './extract-native-service-queries';
 import { iosAppIdPattern, versionPattern } from './regexp-patterns';

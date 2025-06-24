@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import type { BridgeToNative } from '../../src/client';
-
+import { type BridgeToNative } from '../../src/client';
 import { NativeNavigationAndTitle } from '../../src/client/native-navigation-and-title';
 
-declare var window: Window & typeof globalThis & { Android?: object };
+declare let window: Window & typeof globalThis & { Android?: object };
 
 const mockedSetPageSettings = jest.fn();
 const mockedHandleRedirect = jest.fn();
@@ -861,12 +860,12 @@ describe('AmNavigationAndTitle', () => {
                 it.each([
                     [
                         'webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app',
-                        `assistmekz://webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app`,
+                        'assistmekz://webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app',
                     ],
-                    [`${root}///dashboard/deeplink_template`, `assistmekz://deeplink_template`],
-                    [`${root}///deeplink_template`, `assistmekz://deeplink_template`],
-                    [`${root}//deeplink_template`, `assistmekz://deeplink_template`],
-                    ['/deeplink_template', `assistmekz://deeplink_template`],
+                    [`${root}///dashboard/deeplink_template`, 'assistmekz://deeplink_template'],
+                    [`${root}///deeplink_template`, 'assistmekz://deeplink_template'],
+                    [`${root}//deeplink_template`, 'assistmekz://deeplink_template'],
+                    ['/deeplink_template', 'assistmekz://deeplink_template'],
                 ])(
                     'should modify input deeplink `%s` and call locationReplace with `%s`',
                     (deeplink, expectedValue) => {

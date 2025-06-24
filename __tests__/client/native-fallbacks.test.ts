@@ -1,7 +1,7 @@
-import type { BridgeToNative } from '../../src/client/bridge-to-native';
+import { type BridgeToNative } from '../../src/client/bridge-to-native';
 import { nativeFeaturesFromVersion } from '../../src/client/constants';
 import { NativeFallbacks } from '../../src/client/native-fallbacks';
-import { PdfType } from '../../src/client/types';
+import { type PdfType } from '../../src/client/types';
 
 type JestFn = ReturnType<typeof jest.fn>;
 
@@ -121,7 +121,7 @@ describe('AmFallbacks', () => {
             const inst = new NativeFallbacks(mockedBridgeToAmInstance);
 
             expect(inst.getExternalLinkProps(url, { forceOpenInWebview: true })).toStrictEqual({
-                href: 'alfabank://webFeature?type=recommendation&url=' + encodeURIComponent(url),
+                href: `alfabank://webFeature?type=recommendation&url=${encodeURIComponent(url)}`,
                 onClick: undefined,
             });
         });
@@ -237,7 +237,7 @@ describe('AmFallbacks', () => {
 
             inst.visitExternalResource(url, true);
             expect(mockedLocationReplace).toBeCalledWith(
-                'alfabank://webFeature?type=recommendation&url=' + encodeURIComponent(url),
+                `alfabank://webFeature?type=recommendation&url=${encodeURIComponent(url)}`,
             );
         });
     });

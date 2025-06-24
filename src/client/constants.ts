@@ -1,4 +1,4 @@
-import { NativeFeaturesFromVersion } from './types';
+import { type NativeFeaturesFromVersion } from './types';
 
 export const ANDROID_APP_ID = 'alfabank';
 export const CLOSE_WEBVIEW_SEARCH_KEY = 'closeWebView';
