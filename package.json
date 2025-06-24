@@ -3,7 +3,7 @@
     "name": "@alfalab/bridge-to-native",
     "version": "0.2.2",
     "engines": {
-        "node": ">=22.16.0",
+        "node": ">=20.19.2",
         "npm": "please-use-yarn"
     },
     "repository": {
@@ -48,7 +48,7 @@
     "devDependencies": {
         "@happy-dom/jest-environment": "18.0.1",
         "@types/jest": "29.5.14",
-        "@types/node": "22.15.32",
+        "@types/node": "20.19.1",
         "@typescript-eslint/eslint-plugin": "^5.30.6",
         "@typescript-eslint/parser": "^5.30.6",
         "arui-presets-lint": "6.2.0",
