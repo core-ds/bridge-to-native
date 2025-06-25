@@ -16,17 +16,6 @@ export type NativeFeaturesFromVersion = Readonly<{
 
 export type Environment = 'android' | 'ios';
 
-export type WebViewWindow = Window & {
-    Android?: {
-        setPageSettings: (params: string) => void;
-    };
-    handleRedirect?: (
-        appName: string,
-        path?: string,
-        params?: Record<string, string>,
-    ) => VoidFunction;
-};
-
 export type PdfType = 'pdfFile' | 'base64' | 'binary';
 
 export type PreviousBridgeToNativeState = Omit<NativeParams, 'title' | 'theme'> & {

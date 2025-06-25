@@ -2,7 +2,6 @@
 
 import { BridgeToNative } from '../../src/client';
 import { CLOSE_WEBVIEW_SEARCH_KEY, CLOSE_WEBVIEW_SEARCH_VALUE } from '../../src/client/constants';
-import { type WebViewWindow } from '../../src/client/types';
 
 declare let window: Window & typeof globalThis & { Android?: object };
 
@@ -119,7 +118,7 @@ describe('BridgeToNative', () => {
                 it('should provide `AndroidBridge` property', () => {
                     const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
 
-                    expect(inst.AndroidBridge).toEqual((window as WebViewWindow).Android);
+                    expect(inst.AndroidBridge).toEqual(window.Android);
                 });
 
                 it('should set `environment` property correctly', () => {

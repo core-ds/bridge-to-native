@@ -19,7 +19,6 @@ import {
     type NativeFeatureKey,
     type PreviousBridgeToNativeState,
     type Theme,
-    type WebViewWindow,
 } from './types';
 import { isValidVersionFormat } from './utils';
 
@@ -29,7 +28,7 @@ import { isValidVersionFormat } from './utils';
  */
 export class BridgeToNative {
     // Webview, запущенное в Android окружении имеет объект `Android` в window.
-    public readonly AndroidBridge = (window as WebViewWindow).Android;
+    public readonly AndroidBridge = window.Android;
 
     public readonly environment: Environment = this.AndroidBridge ? 'android' : 'ios';
 
