@@ -4,8 +4,7 @@ import { BridgeToNative } from '../../src/client';
 import { CLOSE_WEBVIEW_SEARCH_KEY, CLOSE_WEBVIEW_SEARCH_VALUE } from '../../src/client/constants';
 import { type WebViewWindow } from '../../src/client/types';
 
-/* eslint-disable-next-line no-var -- в данном случае без `var` не обойтись */
-declare var window: Window & typeof globalThis & { Android?: object };
+declare let window: Window & typeof globalThis & { Android?: object };
 
 const mockedNativeFallbacksInstance = {};
 const mockedNativeNavigationAndTitleInstance = {
