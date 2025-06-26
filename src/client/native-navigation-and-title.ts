@@ -1,41 +1,35 @@
 /* eslint-disable max-lines -- TODO следующим этапом, подумать, как устранить */
-/* eslint-disable no-underscore-dangle -- TODO следующим этапом, подумать, как устранить */
 
-import { type BridgeToNative } from './bridge-to-native';
 import {
     DEEP_LINK_PATTERN,
     PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
 } from './constants';
+import { type Mediator } from './mediator';
 import {
-    type HandleRedirect,
+    type HistoryPushStateParams,
     type PreviousNativeNavigationAndTitleState,
     type SyncPurpose,
 } from './types';
-import { extractAppNameRouteAndQuery } from './utils';
 
 /**
- * Класс, отвечающий за взаимодействие с нативными элементами в приложении – заголовком и нативной кнопкой назад.
+ * Класс, отвечающий за взаимодействие WA с компонентами NA —
+ * заголовком, кнопкой «назад» и т.п.
  */
 export class NativeNavigationAndTitle {
     private nativeHistoryStack: string[] = [''];
 
     private numOfBackSteps = 1;
 
-    // Тут сохраняются параметры, которые в последний раз были отправлены в приложение.
-    // Просто, чтобы не слать одинаковые сигналы в приложение.
+    // Здесь сохраняются параметры, которые в последний раз были отправлены
+    // в NA. Помогает предотвратить повторную отправку одинаковых параметров.
     private lastSetPageSettingsParams = '';
 
-    private readonly _handleWindowRedirect: HandleRedirect;
-
     constructor(
-        private b2n: BridgeToNative,
+        private mediator: Mediator,
         pageId: number | null,
-        // eslint-disable-next-line -- TODO следующим этапом, подумать, как устранить
         initialNativeTitle = '',
-        handleWindowRedirect: HandleRedirect,
     ) {
         this.handleBack = this.handleBack.bind(this);
-        this._handleWindowRedirect = handleWindowRedirect;
         const previousState = !!sessionStorage.getItem(
             PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
         );
@@ -50,24 +44,25 @@ export class NativeNavigationAndTitle {
     }
 
     /**
-     * Метод, вызывающий `history.back()` или закрывающий вебвью, если нет записей
-     * в истории переходов.
+     * Делает один шаг назад по браузерной истории и модифицирует внутреннее состояние,
+     * чтобы в дальнейшем зарегистрировать этот переход в NA.
+     *
+     * Метод автоматически закрывает WV, если отсутствуют записи в браузерной истории.
      */
-    public goBack() {
+    goBack() {
         this.goBackAFewSteps(-1, true);
     }
 
     /**
-     * Метод, вызывающий history.go(-колл. шагов назад) и модифицирует внутреннее
-     * состояние, чтобы в дальнейшем зарегистрировать этот переход в приложении.
+     * Делает несколько шагов назад по браузерной истории и модифицирует внутреннее состояние,
+     * чтобы в дальнейшем зарегистрировать этот переход в NA.
      *
      * @param stepsNumber Количество шагов назад.
-     *  Возможно передача как положительного, так и отрицательного числа.
-     *  0 будет проигнорирован.
-     * @param autoCloseWebview Флаг – закрывать ли вебвью автоматически,
-     * если переданное кол-во шагов будет больше чем записей в истории.
+     *  Возможно передача как положительного, так и отрицательного числа. `0` будет проигнорирован.
+     * @param autoCloseWebview Флаг — закрывать ли WV автоматически,
+     * если переданное кол-во шагов будет больше, чем записей в истории.
      */
-    public goBackAFewSteps(stepsNumber: number, autoCloseWebview = false) {
+    goBackAFewSteps(stepsNumber: number, autoCloseWebview = false) {
         if (!stepsNumber) {
             return;
         }
@@ -77,7 +72,7 @@ export class NativeNavigationAndTitle {
 
         if (stepsToBack > maxStepsToBack) {
             if (autoCloseWebview) {
-                this.b2n.closeWebview();
+                this.mediator.closeWebview();
 
                 return;
             }
@@ -87,90 +82,57 @@ export class NativeNavigationAndTitle {
             this.numOfBackSteps = stepsToBack;
         }
 
-        window.history.go(-this.numOfBackSteps);
+        const steps = -this.numOfBackSteps;
+
+        if (this.mediator.browserHistoryAbstractions) {
+            this.mediator.browserHistoryAbstractions?.go(steps);
+        } else {
+            window.history.go(steps);
+        }
     }
 
     /**
-     * @param path Путь для перехода на функциональность внутри приложения.
-     * @param historyState (https://developer.mozilla.org/en-US/docs/Web/API/History/state) для новой записи в истории.
-     */
-    handleRedirect(path: string, historyState?: Record<string, unknown>): void;
-    /**
-     * В этом варианте аргументы 2,3,4 соответствуют аргументам 1,2,3 метода `src/shared/utils/handle-redirect`.
+     * Вызывает метод `push` параметра `browserHistoryAbstractions`, если такой был передан в конструктор или
+     * вызывает `History: pushState()` <https://developer.mozilla.org/en-US/docs/Web/API/History/pushState>.
+     * И регистрирует этот переход в NA.
      *
-     * @param pageTitle Заголовок, который нужно отрисовать в приложении.
-     * @param appName См. первый параметр `src/handle-redirect.ts`.
-     * @param path См. второй параметр `src/handle-redirect.ts`.
-     * @param params См. третий параметр `src/handle-redirect.ts`.
-     * @param historyState (https://developer.mozilla.org/en-US/docs/Web/API/History/state) для новой записи в истории.
+     * @param url URL для перехода внутри WA.
+     * @param historyState <https://developer.mozilla.org/en-US/docs/Web/API/History/state> для новой записи в истории.
+     * @param nativeTitle Заголовок, который нужно отрисовать в NA.
      */
-    handleRedirect(
-        pageTitle: string,
-        appName: string,
-        path?: string,
-        params?: Record<string, string>,
-        historyState?: Record<string, unknown>,
-    ): void;
-    /**
-     * Метод вызывает `src/shared/utils/handle-redirect` из `newclick-host-ui`
-     * и регистрирует этот переход в приложении, чтобы кнопка «Назад» в Нативе вызывала
-     * переход назад в вебе.
-     */
-    public handleRedirect(
-        pageTitleOrPath: string,
-        appNameOrHistoryState?: string | Record<string, unknown>,
-        path?: string,
-        params?: Record<string, string>,
-        historyState?: Record<string, unknown>,
-    ) {
-        const checkAppNameArgument = (argument: unknown): argument is string =>
-            Boolean(appNameOrHistoryState && typeof appNameOrHistoryState === 'string');
-        const isAppNameArgument = checkAppNameArgument(appNameOrHistoryState);
-
-        if (isAppNameArgument) {
-            this._handleWindowRedirect(appNameOrHistoryState, path, params, historyState);
+    navigate(url?: HistoryPushStateParams[2], state?: HistoryPushStateParams[0], nativeTitle = '') {
+        if (this.mediator.browserHistoryAbstractions) {
+            this.mediator.browserHistoryAbstractions?.push(url, state);
         } else {
-            const {
-                appName: extractedAppName,
-                path: extractedPath,
-                query: extractedQuery,
-            } = extractAppNameRouteAndQuery(pageTitleOrPath);
-
-            this._handleWindowRedirect(
-                extractedAppName,
-                extractedPath,
-                extractedQuery,
-                appNameOrHistoryState,
-            );
+            window.history.pushState(state, '', url);
         }
 
-        const title = isAppNameArgument ? pageTitleOrPath : '';
-
-        this.nativeHistoryStack.push(title);
-        this.syncHistoryWithNative(title, 'navigation');
+        this.nativeHistoryStack.push(nativeTitle);
+        this.syncHistoryWithNative(nativeTitle, 'navigation');
     }
 
     /**
-     * Информирует натив, что веб находится на первом экране (сбрасывает историю переходов, не влияя на браузерную
-     * историю), а значит следующее нажатие на кнопку "Назад" в нативе закроет вебвью.
+     * Информирует NA, что веб находится на первом экране
+     * (сбрасывает историю переходов там, не влияя на браузерную историю),
+     * а значит следующее нажатие на кнопку "Назад" в NA закроет WV.
      *
-     * @param pageTitle Заголовок, который нужно отрисовать в нативе.
+     * @param nativeTitle Заголовок, который нужно отрисовать в NA.
      */
-    public setInitialView(pageTitle = '') {
-        this.nativeHistoryStack = [pageTitle];
-        this.syncHistoryWithNative(pageTitle, 'initialization');
+    setInitialView(nativeTitle = '') {
+        this.nativeHistoryStack = [nativeTitle];
+        this.syncHistoryWithNative(nativeTitle, 'initialization');
 
         this.reassignPopstateListener();
     }
 
     /**
-     * Метод для смены заголовка в нативе без влияния на историю переходов.
+     * Метод для смены заголовка в NA без влияния на историю переходов.
      *
-     * @param pageTitle Заголовок, который нужно отрисовать в нативе.
+     * @param nativeTitle Заголовок, который нужно отрисовать в NA.
      */
-    public setTitle(pageTitle: string) {
-        this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = pageTitle;
-        this.syncHistoryWithNative(pageTitle, 'title-replacing');
+    setTitle(nativeTitle: string) {
+        this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = nativeTitle;
+        this.syncHistoryWithNative(nativeTitle, 'title-replacing');
     }
 
     /**
@@ -182,8 +144,8 @@ export class NativeNavigationAndTitle {
      * @param url адрес второго web приложения, к которому перед переходом на него будут добавлены
      * все initial query параметры от натива и параметр nextPageId (Android)
      */
-    public navigateInsideASharedSession(url: string) {
-        if (this.b2n.environment === 'ios') {
+    navigateInsideASharedSession(url: string) {
+        if (this.mediator.environment === 'ios') {
             const nativeDeeplink = `/webFeature?type=recommendation&url=${encodeURIComponent(url)}`;
 
             this.handleNativeDeeplink(nativeDeeplink);
@@ -200,47 +162,36 @@ export class NativeNavigationAndTitle {
     }
 
     /**
-     * Безопасный способ для перезагрузки страницы.
+     * Вызывает обработчик диплинков NA для обработки переданного диплинка.
+     *
+     * Если диплинк приводит к открытию нового экрана, он открывается «поверх» текущего WV.
+     * При выходе из нового экрана, пользователь возвращается обратно в WV.
+     * ВАЖНО!
+     * В NA на Android до версии `12.30.0` текущее WV закрывается при открытии новго экрана,
+     * поэтому в закрытое WV невозможно вернуться back-навигацией.
+     *
+     * @param deeplink Диплинк для передачи на обработку нативному приложению.
+     * @param closeWebviewBeforeCallNativeDeeplinkHandler Флаг принудительного закрытия текущего WV перед открытием нового экрана.
+     *  Применимо для всех версий на iOS и в новых версиях на Android (>=12.30.0), в более старых WV закрывается всегда автоматически.
      */
-    public pseudoReloadPage() {
-        // В b2n этот метод отмечен модификатором доступа private, но тут его нужно вызвать
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        this.handleRedirect(this.b2n._blankPagePath);
-
-        this.goBack();
-    }
-
-    /**
-     * Вызывает обработчик deeplinks в нативе (АМ) и передает туда переданный deeplink.
-     * На Android текущее webview будет закрыто из-за технических особенностей.
-     * На IOS нативная фича открывается в следующем по стеку экране и при выходе из нее пользователь вернется обратно в webview.
-     * На IOS есть возможность закрыть webview перед открытием нативной фичи, передав второй параметр closeIOSWebviewBeforeCallNativeDeeplinkHandler = true
-     * @param deeplink диплинк на нативную АМ фичу в AM
-     * @param [closeWebviewBeforeCallNativeDeeplinkHandler = false] закрыть текущее webview после открытия нативной фичи.
-     *  Применимо для всех версий на IOS и в новых версиях на Android (>12.30.0). В старых, по техническим причинам, webview будет закрываться всегда.
-     */
-    public handleNativeDeeplink(
-        deeplink: string,
-        closeWebviewBeforeCallNativeDeeplinkHandler = false,
-    ) {
+    handleNativeDeeplink(deeplink: string, closeWebviewBeforeCallNativeDeeplinkHandler = false) {
         const clearedDeeplinkPath = deeplink.replace(DEEP_LINK_PATTERN, '');
 
         if (
             closeWebviewBeforeCallNativeDeeplinkHandler &&
-            this.b2n.canUseNativeFeature('savedBackStack')
+            this.mediator.canUseNativeFeature('savedBackStack')
         ) {
-            this.b2n.closeWebview();
+            this.mediator.closeWebview();
 
             setTimeout(
-                () => window.location.replace(`${this.b2n.appId}://${clearedDeeplinkPath}`),
+                () => window.location.replace(`${this.mediator.appId}://${clearedDeeplinkPath}`),
                 0,
             );
 
             return;
         }
 
-        window.location.replace(`${this.b2n.appId}://${clearedDeeplinkPath}`);
+        window.location.replace(`${this.mediator.appId}://${clearedDeeplinkPath}`);
     }
 
     /**
@@ -301,7 +252,7 @@ export class NativeNavigationAndTitle {
         // * В iOS для "первой" страницы не нужно слать `pageId`.
         // * В Android важно, чтобы `pageId` "первой" страницы
         //  всегда был одинаковый.
-        return this.b2n.environment === 'ios' ? null : 1;
+        return this.mediator.environment === 'ios' ? null : 1;
     }
 
     /**
@@ -314,7 +265,7 @@ export class NativeNavigationAndTitle {
 
         // Нажимая на кнопку назад, можно дойти до "первой" страницы,
         // в iOS для "первой" страницы не нужно слать `pageId`.
-        return this.b2n.environment === 'ios' && stackSize <= 1 ? null : stackSize;
+        return this.mediator.environment === 'ios' && stackSize <= 1 ? null : stackSize;
     }
 
     /**
@@ -325,7 +276,7 @@ export class NativeNavigationAndTitle {
     private getNativePageIdForTitleReplacing() {
         const stackSize = this.nativeHistoryStack.length;
 
-        if (this.b2n.environment === 'android') {
+        if (this.mediator.environment === 'android') {
             // Для смены заголовка в Андроид просто повторяем текущий `pageId`.
             // В отличии от iOS, если не послать `pageId` первой страницы,
             // Вебвью не будет закрываться по клику на нативный «Назад».
@@ -347,17 +298,14 @@ export class NativeNavigationAndTitle {
         );
 
         if (previousState) {
-            // В b2n этот метод отмечен модификатором доступа private дабы не торчал наружу, но тут его нужно вызвать
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            this.b2n.restorePreviousState();
+            this.mediator.restorePreviousState();
         }
 
         this.nativeHistoryStack = this.nativeHistoryStack.slice(0, -this.numOfBackSteps);
         this.numOfBackSteps = 1;
 
         if (this.nativeHistoryStack.length < 1) {
-            this.b2n.closeWebview();
+            this.mediator.closeWebview();
 
             return;
         }
@@ -376,7 +324,7 @@ export class NativeNavigationAndTitle {
     private syncHistoryWithNative(pageTitle: string, purpose: SyncPurpose) {
         const pageId = this.getNativePageId(purpose);
 
-        if (this.b2n.environment === 'android') {
+        if (this.mediator.environment === 'android') {
             const pageSettingsObj: { pageTitle: string; pageId?: number } = { pageTitle };
 
             if (pageId) {
@@ -386,7 +334,7 @@ export class NativeNavigationAndTitle {
             const paramsToSend = JSON.stringify(pageSettingsObj);
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
-                this.b2n.AndroidBridge?.setPageSettings(paramsToSend);
+                this.mediator.AndroidBridge?.setPageSettings(paramsToSend);
                 this.lastSetPageSettingsParams = paramsToSend;
             }
         } else {
@@ -452,7 +400,7 @@ export class NativeNavigationAndTitle {
 
         const divider = new URL(url).searchParams.toString() ? '&' : '?';
 
-        const link = new URL(`${url}${divider}${this.b2n.originalWebviewParams}`);
+        const link = new URL(`${url}${divider}${this.mediator.originalWebviewParams}`);
 
         link.searchParams.set('nextPageId', (currentPageId + 1).toString());
 

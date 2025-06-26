@@ -10,12 +10,13 @@ import {
     PREVIOUS_B2N_STATE_STORAGE_KEY,
     versionToIosAppId,
 } from './constants';
+import { Mediator } from './mediator';
 import { NativeFallbacks } from './native-fallbacks';
 // eslint-disable-next-line import/no-cycle -- TODO следующим этапом, подумать, как устранить
 import { NativeNavigationAndTitle } from './native-navigation-and-title';
 import {
+    type BrowserHistoryAbstractions,
     type Environment,
-    type HandleRedirect,
     type NativeFeatureKey,
     type PreviousBridgeToNativeState,
     type Theme,
@@ -36,22 +37,21 @@ export class BridgeToNative {
 
     private nextPageId: number | null;
 
-    private readonly _blankPagePath: string;
-
-    private readonly _handleRedirect: HandleRedirect;
-
+    /**
+     * @param browserHistoryAbstractions Методы, которые вызовут методы обертки (например из react-router)
+     *  над [History](https://developer.mozilla.org/en-US/docs/Web/API/History), если ваше WA такие использует.
+     *  Если аргумент не передать, будут использованы стандартные `History: pushState()` и `History: go()`.
+     * @param nativeParams TODO: Удалить параметр, брать детали нативного приложения из куки.
+     */
     constructor(
-        handleRedirect: HandleRedirect,
-        blankPagePath: string,
+        private browserHistoryAbstractions?: BrowserHistoryAbstractions,
         nativeParams?: NativeParams,
     ) {
         const previousState = !!sessionStorage.getItem(PREVIOUS_B2N_STATE_STORAGE_KEY);
 
         if (previousState) {
-            this._handleRedirect = handleRedirect;
             this.restorePreviousState();
             this.nativeFallbacks = new NativeFallbacks(this);
-            this._blankPagePath = blankPagePath;
 
             return;
         }
@@ -64,16 +64,22 @@ export class BridgeToNative {
         this._theme = nativeParams?.theme === 'dark' ? 'dark' : 'light';
         this._originalWebviewParams = nativeParams?.originalWebviewParams || '';
         this._nativeNavigationAndTitle = new NativeNavigationAndTitle(
-            this,
+            new Mediator(
+                this.AndroidBridge,
+                this.appId,
+                browserHistoryAbstractions,
+                this.canUseNativeFeature.bind(this),
+                this.closeWebview.bind(this),
+                this.environment,
+                this.originalWebviewParams,
+                this.restorePreviousState.bind(this),
+            ),
             nativeParams ? nativeParams.nextPageId : null,
             nativeParams?.title,
-            handleRedirect,
         );
-        this._handleRedirect = handleRedirect;
 
         this.nextPageId = nativeParams ? nativeParams.nextPageId : null;
         this.nativeFallbacks = new NativeFallbacks(this);
-        this._blankPagePath = blankPagePath;
     }
 
     private _nativeNavigationAndTitle: NativeNavigationAndTitle;
@@ -220,10 +226,18 @@ export class BridgeToNative {
         this._originalWebviewParams = previousState.originalWebviewParams;
         this.nextPageId = previousState.nextPageId;
         this._nativeNavigationAndTitle = new NativeNavigationAndTitle(
-            this,
+            new Mediator(
+                this.AndroidBridge,
+                this.appId,
+                this.browserHistoryAbstractions,
+                this.canUseNativeFeature.bind(this),
+                this.closeWebview.bind(this),
+                this.environment,
+                this.originalWebviewParams,
+                this.restorePreviousState.bind(this),
+            ),
             previousState.nextPageId,
             '',
-            this._handleRedirect,
         );
 
         sessionStorage.removeItem(PREVIOUS_B2N_STATE_STORAGE_KEY);
