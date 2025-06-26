@@ -1,10 +1,17 @@
+/* eslint-disable max-lines -- TODO следующим этапом, подумать, как устранить */
+/* eslint-disable no-underscore-dangle -- TODO следующим этапом, подумать, как устранить */
+
+import { type BridgeToNative } from './bridge-to-native';
 import {
     DEEP_LINK_PATTERN,
     PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY,
 } from './constants';
-import { HandleRedirect, PreviousNativeNavigationAndTitleState, SyncPurpose } from './types';
+import {
+    type HandleRedirect,
+    type PreviousNativeNavigationAndTitleState,
+    type SyncPurpose,
+} from './types';
 import { extractAppNameRouteAndQuery } from './utils';
-import { BridgeToNative } from './bridge-to-native';
 
 /**
  * Класс, отвечающий за взаимодействие с нативными элементами в приложении – заголовком и нативной кнопкой назад.
@@ -23,6 +30,7 @@ export class NativeNavigationAndTitle {
     constructor(
         private b2n: BridgeToNative,
         pageId: number | null,
+        // eslint-disable-next-line -- TODO следующим этапом, подумать, как устранить
         initialNativeTitle = '',
         handleWindowRedirect: HandleRedirect,
     ) {
@@ -137,6 +145,7 @@ export class NativeNavigationAndTitle {
         }
 
         const title = isAppNameArgument ? pageTitleOrPath : '';
+
         this.nativeHistoryStack.push(title);
         this.syncHistoryWithNative(title, 'navigation');
     }

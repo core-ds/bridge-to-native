@@ -1,6 +1,5 @@
-import { ExternalNavigationOptions, PdfType } from './types';
-import type { BridgeToNative } from './bridge-to-native';
-
+import { type BridgeToNative } from './bridge-to-native';
+import { type ExternalNavigationOptions, type PdfType } from './types';
 import { getUrlInstance } from './utils';
 
 /**
@@ -94,6 +93,7 @@ export class NativeFallbacks {
         }
 
         const windowObjectReference = window.open(replaceUrl);
+
         if (windowObjectReference === null) {
             window.location.replace(replaceUrl);
         }

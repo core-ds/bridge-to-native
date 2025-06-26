@@ -1,4 +1,4 @@
-import { UniversalRequest } from './types';
+import { type UniversalRequest } from './types';
 import { getQueryValues } from './utils';
 
 // Словарь всех известных на данный момент сервисных query-параметров,

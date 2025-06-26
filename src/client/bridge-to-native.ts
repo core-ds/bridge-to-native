@@ -1,5 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 
+import { type NativeParams } from '../types';
+
 import {
     ANDROID_APP_ID,
     CLOSE_WEBVIEW_SEARCH_KEY,
@@ -9,16 +11,16 @@ import {
     versionToIosAppId,
 } from './constants';
 import { NativeFallbacks } from './native-fallbacks';
+// eslint-disable-next-line import/no-cycle -- TODO следующим этапом, подумать, как устранить
 import { NativeNavigationAndTitle } from './native-navigation-and-title';
-import type {
-    Environment,
-    HandleRedirect,
-    NativeFeatureKey,
-    NativeParams,
-    Theme,
-    WebViewWindow,
+import {
+    type Environment,
+    type HandleRedirect,
+    type NativeFeatureKey,
+    type PreviousBridgeToNativeState,
+    type Theme,
+    type WebViewWindow,
 } from './types';
-import { PreviousBridgeToNativeState } from './types';
 import { isValidVersionFormat } from './utils';
 
 /**
@@ -34,7 +36,9 @@ export class BridgeToNative {
     public readonly nativeFallbacks: NativeFallbacks;
 
     private nextPageId: number | null;
+
     private readonly _blankPagePath: string;
+
     private readonly _handleRedirect: HandleRedirect;
 
     constructor(

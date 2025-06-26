@@ -1,7 +1,7 @@
-import type { BridgeToNative } from '../src/bridge-to-native';
-import { nativeFeaturesFromVersion } from '../src/constants';
-import { NativeFallbacks } from '../src/native-fallbacks';
-import { PdfType } from '../src/types';
+import { type BridgeToNative } from '../../src/client/bridge-to-native';
+import { nativeFeaturesFromVersion } from '../../src/client/constants';
+import { NativeFallbacks } from '../../src/client/native-fallbacks';
+import { type PdfType } from '../../src/client/types';
 
 type JestFn = ReturnType<typeof jest.fn>;
 
@@ -13,7 +13,9 @@ let mockedLocationReplace: JestFn;
 let mockedHandleRedirect: JestFn;
 let mockedSetInitialView: JestFn;
 let mockedWindowOpen: JestFn;
-let windowSpy: ReturnType<typeof jest.spyOn>;
+
+const locationReplaceSpy = jest.spyOn(window.location, 'replace');
+const windowOpenSpy = jest.spyOn(window, 'open');
 
 const mockedBridgeToAmInstance = {
     get appVersion() {
@@ -33,7 +35,7 @@ const mockedBridgeToAmInstance = {
     },
 } as unknown as BridgeToNative;
 
-jest.mock('../src/bridge-to-native', () => ({
+jest.mock('../../src/client/bridge-to-native', () => ({
     __esModule: true,
     BridgeToNative: function MockedBridgeToAmConstructor() {
         return mockedBridgeToAmInstance;
@@ -50,18 +52,12 @@ describe('AmFallbacks', () => {
         mockedHandleRedirect = jest.fn();
         mockedSetInitialView = jest.fn();
         mockedWindowOpen = jest.fn();
-        windowSpy = jest.spyOn(window, 'window', 'get');
 
-        windowSpy.mockImplementation(() => ({
-            open: mockedWindowOpen,
-            location: {
-                replace: mockedLocationReplace,
-            },
-        }));
+        locationReplaceSpy.mockImplementation(mockedLocationReplace);
+        windowOpenSpy.mockImplementation(mockedWindowOpen as typeof window.open);
     });
 
     afterEach(() => {
-        windowSpy.mockRestore();
         jest.resetAllMocks();
     });
 
@@ -125,7 +121,7 @@ describe('AmFallbacks', () => {
             const inst = new NativeFallbacks(mockedBridgeToAmInstance);
 
             expect(inst.getExternalLinkProps(url, { forceOpenInWebview: true })).toStrictEqual({
-                href: 'alfabank://webFeature?type=recommendation&url=' + encodeURIComponent(url),
+                href: `alfabank://webFeature?type=recommendation&url=${encodeURIComponent(url)}`,
                 onClick: undefined,
             });
         });
@@ -241,7 +237,7 @@ describe('AmFallbacks', () => {
 
             inst.visitExternalResource(url, true);
             expect(mockedLocationReplace).toBeCalledWith(
-                'alfabank://webFeature?type=recommendation&url=' + encodeURIComponent(url),
+                `alfabank://webFeature?type=recommendation&url=${encodeURIComponent(url)}`,
             );
         });
     });

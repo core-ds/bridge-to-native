@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import { BridgeToNative } from '../src/bridge-to-native';
+import { BridgeToNative } from '../../src/client/bridge-to-native';
+
+declare let window: Window & typeof globalThis & { Android?: object; history: History };
 
 describe('BridgeToNative integration testing', () => {
     const defaultAmParams = {
@@ -13,42 +15,38 @@ describe('BridgeToNative integration testing', () => {
     const mockedHandleRedirect = jest.fn();
     const mockedLocationReplace = jest.fn();
     const mockedSetPageSettings = jest.fn();
-    let androidEnvFlag = false;
-    let emulateAmBackButtonTap: any;
-    let windowSpy: any;
+
+    const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+    const historyGoSpy = jest.spyOn(window.history, 'go');
+    const locationReplaceSpy = jest.spyOn(window.location, 'replace');
+
+    let emulateAmBackButtonTap: () => void;
+    let emulatePopStateHandler: () => void;
 
     beforeEach(() => {
-        let emulatePopStateHandler: any;
+        addEventListenerSpy.mockImplementation((_, handler) => {
+            // eslint-disable-next-line @typescript-eslint/ban-types -- это моки, каст к Function 👌
+            const asyncHandler = () => process.nextTick(handler as Function);
 
-        windowSpy = jest.spyOn(window, 'window', 'get');
+            emulateAmBackButtonTap = asyncHandler;
+            emulatePopStateHandler = asyncHandler;
+        });
 
-        windowSpy.mockImplementation(() => ({
-            addEventListener: jest.fn((_: 'popstate', handler: () => void) => {
-                const asyncHandler = () => process.nextTick(handler);
+        historyGoSpy.mockImplementation(() => emulatePopStateHandler());
 
-                emulateAmBackButtonTap = asyncHandler;
-                emulatePopStateHandler = asyncHandler;
-            }),
-            history: { go: emulatePopStateHandler },
-            location: { replace: mockedLocationReplace },
-            removeEventListener: jest.fn(),
-            ...(androidEnvFlag && {
-                Android: {
-                    setPageSettings: mockedSetPageSettings,
-                },
-            }),
-        }));
+        locationReplaceSpy.mockImplementation(mockedLocationReplace);
     });
 
     afterEach(() => {
-        androidEnvFlag = false;
-        windowSpy.mockRestore();
+        delete window.Android;
         jest.resetAllMocks();
     });
 
     describe('Android environment', () => {
         beforeEach(() => {
-            androidEnvFlag = true;
+            window.Android = {
+                setPageSettings: mockedSetPageSettings,
+            };
         });
 
         it('should use AM interface correctly when moving forward and then backward', async () => {

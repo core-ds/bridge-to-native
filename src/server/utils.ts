@@ -5,7 +5,7 @@ import { type UniversalRequest } from './types';
 /**
  * На основе объекта запроса любого типа возвращает
  * значение заголовка по заданному ключу.
- * 
+ *
  * @param request Объект запроса (Request или IncomingMessage).
  * @param headerKey Ключ заголовка, значение которого нужно получить.
  */
@@ -25,14 +25,14 @@ export function getHeaderValue(request: UniversalRequest, headerKey: string) {
 /**
  * На основе объекта запроса любого типа возвращает
  * значение query-параметра(ов) по ключу(ам).
- * 
+ *
  * @param request Объект запроса (Request или IncomingMessage).
  * @param queryKeys Ключ(и) query-параметра(ов), значение(я) которого(ых) нужно получить.
  */
 export function getQueryValues(request: UniversalRequest, queryKeys: string): string | null;
 export function getQueryValues(
     request: UniversalRequest,
-    queryKeys: Array<string>,
+    queryKeys: string[],
 ): Array<string | null>;
 export function getQueryValues(request: UniversalRequest, queryKeys: string | string[]) {
     if (!request.url || request.url.indexOf('?') === -1) {
@@ -52,7 +52,7 @@ export function getQueryValues(request: UniversalRequest, queryKeys: string | st
 
 /**
  * Проверяет наличие в запросе bridgeToNativeData куки.
- * 
+ *
  * @param request Объект запроса (Request или IncomingMessage).
  */
 export function hasBridgeToNativeDataCookie(request: UniversalRequest) {

@@ -1,11 +1,10 @@
-/* @jest-environment node */
-
-import { prepareNativeAppDetailsForClient } from '../prepare-native-app-details-for-client';
+import { prepareNativeAppDetailsForClient } from '../../src/server/prepare-native-app-details-for-client';
 
 // Закодированные разделители в JSON между ключём и значением.
 const ENCODED_PARTS = {
-    '":': '%22%3A', //  для значений типа number, boolean и т.п.
+    '":': '%22%3A', // для значений типа number, boolean и т.п.
     '":"': '%22%3A%22', // для значений типа string
+    '":""': '%22%3A%22', // для значений === пустая строка
 };
 
 describe('prepareNativeAppDetailsForClient', () => {
@@ -79,7 +78,7 @@ describe('prepareNativeAppDetailsForClient', () => {
 
         expect(setResonseHeader).not.toBeCalledWith(
             'Set-Cookie',
-            expect.stringContaining(`nextPageId`),
+            expect.stringContaining('nextPageId'),
         );
     });
 
@@ -93,7 +92,7 @@ describe('prepareNativeAppDetailsForClient', () => {
 
         expect(setResonseHeader).not.toBeCalledWith(
             'Set-Cookie',
-            expect.stringContaining(`nextPageId`),
+            expect.stringContaining('nextPageId'),
         );
     });
 
@@ -213,6 +212,32 @@ describe('prepareNativeAppDetailsForClient', () => {
         );
     });
 
+    it('should set empty title from query parameter', () => {
+        const mockedRequest = {
+            url: 'http://example.com?b2n-title=',
+            headers: new Headers(),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`title${ENCODED_PARTS['":""']}`),
+        );
+
+        const mockedRequest2 = {
+            url: 'http://example.com?b2n-title=&another-param=foo',
+            headers: new Headers(),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest2, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`title${ENCODED_PARTS['":""']}`),
+        );
+    });
+
     it('should set title from deprecated query parameter if b2n-title is not provided', () => {
         const mockedRequest = {
             url: 'http://example.com?title=Example%20Title',
@@ -227,6 +252,32 @@ describe('prepareNativeAppDetailsForClient', () => {
         );
     });
 
+    it('should set empty title from deprecated query parameter if b2n-title is not provided', () => {
+        const mockedRequest = {
+            url: 'http://example.com?title=',
+            headers: new Headers(),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`title${ENCODED_PARTS['":""']}`),
+        );
+
+        const mockedRequest2 = {
+            url: 'http://example.com?title=&another-param=foo',
+            headers: new Headers(),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest2, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`title${ENCODED_PARTS['":""']}`),
+        );
+    });
+
     it('should not set title by default', () => {
         const mockedRequest = {
             url: 'http://example.com',
@@ -235,7 +286,7 @@ describe('prepareNativeAppDetailsForClient', () => {
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
-        expect(setResonseHeader).not.toBeCalledWith('Set-Cookie', expect.stringContaining(`title`));
+        expect(setResonseHeader).not.toBeCalledWith('Set-Cookie', expect.stringContaining('title'));
     });
 
     it('should set originalWebviewParams', () => {

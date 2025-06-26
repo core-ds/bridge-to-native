@@ -1,0 +1,8 @@
+{
+    "compilerOptions": {
+        "moduleResolution": "nodenext",
+        "target": "es2022",
+        "types": ["node"]
+    },
+    "extends": "../../tsconfig.base.json"
+}

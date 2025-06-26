@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
 
-import { BridgeToNative } from '../src';
-import {
-    CLOSE_WEBVIEW_SEARCH_KEY,
-    CLOSE_WEBVIEW_SEARCH_VALUE,
-    PREVIOUS_B2N_STATE_STORAGE_KEY,
-} from '../src/constants';
-import { WebViewWindow } from '../src/types';
+import { BridgeToNative } from '../../src/client';
+import { CLOSE_WEBVIEW_SEARCH_KEY, CLOSE_WEBVIEW_SEARCH_VALUE } from '../../src/client/constants';
+import { type WebViewWindow } from '../../src/client/types';
+
+declare let window: Window & typeof globalThis & { Android?: object };
 
 const mockedNativeFallbacksInstance = {};
 const mockedNativeNavigationAndTitleInstance = {
@@ -16,14 +14,14 @@ const MockedNativeNavigationAndTitleConstructor = jest.fn(
     () => mockedNativeNavigationAndTitleInstance,
 );
 
-jest.mock('../src/native-fallbacks', () => ({
+jest.mock('../../src/client/native-fallbacks', () => ({
     __esModule: true,
     NativeFallbacks: function MockedNativeFallbacksConstructor() {
         return mockedNativeFallbacksInstance;
     },
 }));
 
-jest.mock('../src/native-navigation-and-title', () => ({
+jest.mock('../../src/client/native-navigation-and-title', () => ({
     __esModule: true,
     get NativeNavigationAndTitle() {
         return MockedNativeNavigationAndTitleConstructor;
@@ -40,20 +38,8 @@ describe('BridgeToNative', () => {
     const mockedHandleRedirect = jest.fn();
 
     describe('constructor and methods', () => {
-        let androidEnvFlag = false;
-        let windowSpy: any;
-
-        beforeEach(() => {
-            windowSpy = jest.spyOn(window, 'window', 'get');
-
-            windowSpy.mockImplementation(() => ({
-                ...(androidEnvFlag ? { Android: {} } : undefined),
-            }));
-        });
-
         afterEach(() => {
-            androidEnvFlag = false;
-            windowSpy.mockRestore();
+            delete window.Android;
         });
 
         describe('constructor', () => {
@@ -127,7 +113,7 @@ describe('BridgeToNative', () => {
 
             describe('Android environment', () => {
                 beforeEach(() => {
-                    androidEnvFlag = true;
+                    window.Android = {};
                 });
 
                 it('should provide `AndroidBridge` property', () => {
@@ -219,7 +205,7 @@ describe('BridgeToNative', () => {
                 'should return `%s` for feature while AM version %s in %s environment',
                 (expected, _, env, appVersion) => {
                     if (env === 'Android') {
-                        androidEnvFlag = true;
+                        window.Android = {};
                     }
 
                     const inst = new BridgeToNative(mockedHandleRedirect, '/', {
@@ -284,7 +270,7 @@ describe('BridgeToNative', () => {
 
         describe('method `getAppId`', () => {
             it('should always return `alfabank` in Android environment', () => {
-                androidEnvFlag = true;
+                window.Android = {};
 
                 const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
 
