@@ -2,6 +2,7 @@
 
 import { BridgeToNative } from '../../src/client';
 import { CLOSE_WEBVIEW_SEARCH_KEY, CLOSE_WEBVIEW_SEARCH_VALUE } from '../../src/client/constants';
+import { Mediator } from '../../src/client/mediator';
 
 declare let window: Window & typeof globalThis & { Android?: object };
 
@@ -34,7 +35,6 @@ describe('BridgeToNative', () => {
         nextPageId: null,
         originalWebviewParams: '',
     };
-    const mockedHandleRedirect = jest.fn();
 
     describe('constructor and methods', () => {
         afterEach(() => {
@@ -43,24 +43,23 @@ describe('BridgeToNative', () => {
 
         describe('constructor', () => {
             it('should pass `initialAmTitle` to `AmNavigationAndTitle` constructor', () => {
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', {
+                // eslint-disable-next-line no-new -- в целях тестирования
+                new BridgeToNative(undefined, {
                     ...defaultAmParams,
-                    title: 'Initial Title',
                 });
 
                 expect(MockedNativeNavigationAndTitleConstructor).toBeCalledWith(
-                    inst,
+                    expect.any(Mediator),
                     null,
-                    'Initial Title',
-                    mockedHandleRedirect,
+                    undefined,
                 );
             });
         });
 
         describe('public props', () => {
             it('should save theme used by AM in `theme` property', () => {
-                const inst1 = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
-                const inst2 = new BridgeToNative(mockedHandleRedirect, '/', {
+                const inst1 = new BridgeToNative(undefined, defaultAmParams);
+                const inst2 = new BridgeToNative(undefined, {
                     ...defaultAmParams,
                     theme: 'dark',
                 });
@@ -72,7 +71,7 @@ describe('BridgeToNative', () => {
             it('should save original AM query params in `originalWebviewParams` property', () => {
                 const originalWebviewParamsExample =
                     'device_uuid=8441576F-A09F-41E9-89A7-EE1FA486C20A&device_id=2E32AFD5-F50B-4B2F-B758-CAE59DF2BF6C&applicationId=1842D0AA-0008-4941-93E0-4FD80E087841&device_os_version=com.aconcierge.app&device_app_version=iOS 16.1&scope=12.26.0&device_boot_time=openid mobile-bank';
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', {
+                const inst = new BridgeToNative(undefined, {
                     ...defaultAmParams,
                     originalWebviewParams: originalWebviewParamsExample,
                 });
@@ -81,7 +80,7 @@ describe('BridgeToNative', () => {
             });
 
             it('should save nextPageId in `nextPageId` property and send it into `AmNavigationAndTitle` constructor', () => {
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', {
+                const inst = new BridgeToNative(undefined, {
                     ...defaultAmParams,
                     title: 'Test',
                     nextPageId: 7,
@@ -89,21 +88,20 @@ describe('BridgeToNative', () => {
 
                 expect(inst['nextPageId']).toBe(7);
                 expect(MockedNativeNavigationAndTitleConstructor).toBeCalledWith(
-                    inst,
+                    expect.any(Mediator),
                     7,
                     'Test',
-                    mockedHandleRedirect,
                 );
             });
 
             it('should provide `NativeFallbacks` instance', () => {
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+                const inst = new BridgeToNative(undefined, defaultAmParams);
 
                 expect(inst.nativeFallbacks).toEqual(mockedNativeFallbacksInstance);
             });
 
             it('should provide `AmNavigationAndTitle` instance', () => {
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+                const inst = new BridgeToNative(undefined, defaultAmParams);
 
                 expect(inst.nativeNavigationAndTitle).toEqual(
                     mockedNativeNavigationAndTitleInstance,
@@ -116,19 +114,19 @@ describe('BridgeToNative', () => {
                 });
 
                 it('should provide `AndroidBridge` property', () => {
-                    const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+                    const inst = new BridgeToNative(undefined, defaultAmParams);
 
                     expect(inst.AndroidBridge).toEqual(window.Android);
                 });
 
                 it('should set `environment` property correctly', () => {
-                    const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+                    const inst = new BridgeToNative(undefined, defaultAmParams);
 
                     expect(inst.environment).toBe('android');
                 });
 
                 it('should set `appId` property correctly', () => {
-                    const ins = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+                    const ins = new BridgeToNative(undefined, defaultAmParams);
 
                     expect(ins.appId).toBe('alfabank');
                 });
@@ -136,13 +134,13 @@ describe('BridgeToNative', () => {
 
             describe('iOS environment', () => {
                 it('should not provide `AndroidBridge` property', () => {
-                    const ins = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+                    const ins = new BridgeToNative(undefined, defaultAmParams);
 
                     expect(ins.AndroidBridge).not.toBeDefined();
                 });
 
                 it('should set `environment` property correctly', () => {
-                    const ins = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+                    const ins = new BridgeToNative(undefined, defaultAmParams);
 
                     expect(ins.environment).toBe('ios');
                 });
@@ -165,7 +163,7 @@ describe('BridgeToNative', () => {
                 ])(
                     'should detect app scheme for version %s correctly and save it in `appId` property',
                     (appVersion, expected) => {
-                        const ins = new BridgeToNative(mockedHandleRedirect, '/', {
+                        const ins = new BridgeToNative(undefined, {
                             ...defaultAmParams,
                             appVersion,
                         });
@@ -175,12 +173,12 @@ describe('BridgeToNative', () => {
                 );
 
                 it('should use `appId` parameter as value for `iosApplicationId` while parameter exists', () => {
-                    const inst1 = new BridgeToNative(mockedHandleRedirect, '/', {
+                    const inst1 = new BridgeToNative(undefined, {
                         ...defaultAmParams,
                         appVersion: '0.0.0',
                         iosAppId: 'kittycash',
                     });
-                    const inst2 = new BridgeToNative(mockedHandleRedirect, '/', {
+                    const inst2 = new BridgeToNative(undefined, {
                         ...defaultAmParams,
                         appVersion: '12.22.0',
                         iosAppId: 'kittycash',
@@ -207,7 +205,7 @@ describe('BridgeToNative', () => {
                         window.Android = {};
                     }
 
-                    const inst = new BridgeToNative(mockedHandleRedirect, '/', {
+                    const inst = new BridgeToNative(undefined, {
                         ...defaultAmParams,
                         appVersion,
                     });
@@ -228,7 +226,7 @@ describe('BridgeToNative', () => {
                 writable: true,
             });
 
-            const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+            const inst = new BridgeToNative(undefined, defaultAmParams);
 
             inst.closeWebview();
             expect(window.location.href).toBe(
@@ -256,7 +254,7 @@ describe('BridgeToNative', () => {
             ])(
                 'should compare current version `%s` with `%s` and return `%s`',
                 (currentVersion, versionToCompare, result) => {
-                    const inst = new BridgeToNative(mockedHandleRedirect, '/', {
+                    const inst = new BridgeToNative(undefined, {
                         ...defaultAmParams,
 
                         appVersion: currentVersion,
@@ -271,7 +269,7 @@ describe('BridgeToNative', () => {
             it('should always return `alfabank` in Android environment', () => {
                 window.Android = {};
 
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+                const inst = new BridgeToNative(undefined, defaultAmParams);
 
                 expect(inst['getAppId']()).toBe('alfabank');
                 expect(inst['getAppId']('aconcierge')).toBe('alfabank');
@@ -298,7 +296,7 @@ describe('BridgeToNative', () => {
             ])(
                 'should detect app scheme for version `%s` as `%s` while parameter is not passed',
                 (version, appId) => {
-                    const inst = new BridgeToNative(mockedHandleRedirect, '/', {
+                    const inst = new BridgeToNative(undefined, {
                         ...defaultAmParams,
                         appVersion: version,
                     });
@@ -308,7 +306,7 @@ describe('BridgeToNative', () => {
             );
 
             it('should use app scheme from parameter', () => {
-                const inst = new BridgeToNative(mockedHandleRedirect, '/', {
+                const inst = new BridgeToNative(undefined, {
                     ...defaultAmParams,
                     appVersion: '1.0.0',
                 });

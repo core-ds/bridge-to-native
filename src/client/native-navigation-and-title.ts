@@ -100,7 +100,7 @@ export class NativeNavigationAndTitle {
      * @param historyState <https://developer.mozilla.org/en-US/docs/Web/API/History/state> для новой записи в истории.
      * @param nativeTitle Заголовок, который нужно отрисовать в NA.
      */
-    navigate(url?: HistoryPushStateParams[2], state?: HistoryPushStateParams[0], nativeTitle = '') {
+    navigate(url: HistoryPushStateParams[2], state?: HistoryPushStateParams[0], nativeTitle = '') {
         if (this.mediator.browserHistoryAbstractions) {
             this.mediator.browserHistoryAbstractions?.push(url, state);
         } else {
