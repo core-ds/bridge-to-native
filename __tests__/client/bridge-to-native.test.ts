@@ -43,7 +43,7 @@ describe('BridgeToNative', () => {
 
         describe('constructor', () => {
             it('should pass `initialAmTitle` to `AmNavigationAndTitle` constructor', () => {
-                // eslint-disable-next-line no-new -- в целях тестирования
+                // eslint-disable-next-line no-new -- создаём экземпляр в целях тестирования
                 new BridgeToNative(undefined, {
                     ...defaultAmParams,
                 });

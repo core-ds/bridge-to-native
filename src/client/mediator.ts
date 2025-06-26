@@ -2,7 +2,7 @@ import { type BrowserHistoryAbstractions, type Environment, type NativeFeatureKe
 
 /**
  * Временный!!! посредник (пока «божественный»), введённый, чтобы избавиться от круговых зависимостей
- * и не глушить TS по поводу использования приватных методов.
+ * и не глушить TS по поводу использования приватных методов из вне.
  */
 export class Mediator {
     constructor(
