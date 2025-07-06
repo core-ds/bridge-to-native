@@ -1,5 +1,12 @@
 import { type NativeParams } from '../types';
 
+export type BrowserHistoryAbstractions = {
+    push: (url: HistoryPushStateParams[2], state: HistoryPushStateParams[0]) => void;
+    go: (delta: number) => void;
+};
+
+export type HistoryPushStateParams = Parameters<typeof window.history.pushState>;
+
 export type NativeFeatureKey =
     // Возможность работы с геолокацией.
     | 'geolocation'
@@ -16,17 +23,6 @@ export type NativeFeaturesFromVersion = Readonly<{
 
 export type Environment = 'android' | 'ios';
 
-export type WebViewWindow = Window & {
-    Android?: {
-        setPageSettings: (params: string) => void;
-    };
-    handleRedirect?: (
-        appName: string,
-        path?: string,
-        params?: Record<string, string>,
-    ) => VoidFunction;
-};
-
 export type PdfType = 'pdfFile' | 'base64' | 'binary';
 
 export type PreviousBridgeToNativeState = Omit<NativeParams, 'title' | 'theme'> & {
@@ -39,13 +35,6 @@ export type PreviousNativeNavigationAndTitleState = {
 };
 
 export type SyncPurpose = 'initialization' | 'navigation' | 'title-replacing';
-
-export type HandleRedirect = (
-    appName: string,
-    path?: string,
-    params?: Record<string, string>,
-    historyState?: Record<string, unknown>,
-) => void;
 
 export type Theme = 'light' | 'dark';
 

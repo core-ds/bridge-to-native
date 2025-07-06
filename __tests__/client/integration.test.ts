@@ -12,12 +12,13 @@ describe('BridgeToNative integration testing', () => {
         nextPageId: null,
     };
 
-    const mockedHandleRedirect = jest.fn();
+    const mockedHistoryPushState = jest.fn();
     const mockedLocationReplace = jest.fn();
     const mockedSetPageSettings = jest.fn();
 
     const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
     const historyGoSpy = jest.spyOn(window.history, 'go');
+    const historyPushStateSpy = jest.spyOn(window.history, 'pushState');
     const locationReplaceSpy = jest.spyOn(window.location, 'replace');
 
     let emulateAmBackButtonTap: () => void;
@@ -33,7 +34,7 @@ describe('BridgeToNative integration testing', () => {
         });
 
         historyGoSpy.mockImplementation(() => emulatePopStateHandler());
-
+        historyPushStateSpy.mockImplementation(mockedHistoryPushState);
         locationReplaceSpy.mockImplementation(mockedLocationReplace);
     });
 
@@ -50,20 +51,20 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should use AM interface correctly when moving forward and then backward', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, '/', {
+            const inst = new BridgeToNative(undefined, {
                 ...defaultAmParams,
                 title: 'Initial Title',
             });
             const mockedCloseWebview = jest.fn();
 
-            inst.closeWebview = mockedCloseWebview;
+            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
 
             expect(mockedSetPageSettings).toBeCalledTimes(1);
             expect(mockedSetPageSettings).toBeCalledWith(
                 '{"pageTitle":"Initial Title","pageId":1}',
             );
 
-            inst.nativeNavigationAndTitle.handleRedirect('Title 2', 'test-app');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
             expect(mockedSetPageSettings).toBeCalledTimes(2);
             expect(mockedSetPageSettings).toBeCalledWith('{"pageTitle":"Title 2","pageId":2}');
 
@@ -73,11 +74,11 @@ describe('BridgeToNative integration testing', () => {
                 '{"pageTitle":"Changed Title 2","pageId":2}',
             );
 
-            inst.nativeNavigationAndTitle.handleRedirect('', 'test-app', 'some-path');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, '');
             expect(mockedSetPageSettings).toBeCalledTimes(4);
             expect(mockedSetPageSettings).toBeCalledWith('{"pageTitle":"","pageId":3}');
 
-            inst.nativeNavigationAndTitle.handleRedirect('/test-app/some-path');
+            inst.nativeNavigationAndTitle.navigate('http://example.com');
             expect(mockedSetPageSettings).toBeCalledTimes(5);
             expect(mockedSetPageSettings).toBeCalledWith('{"pageTitle":"","pageId":4}');
 
@@ -108,15 +109,15 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+            const inst = new BridgeToNative(undefined, defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
-            inst.closeWebview = mockedCloseWebview;
+            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
 
-            inst.nativeNavigationAndTitle.handleRedirect('Title 2', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 3', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 4', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 5', 'test-app');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 3');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 4');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 5');
             expect(mockedSetPageSettings).toBeCalledTimes(5);
 
             inst.nativeNavigationAndTitle.goBackAFewSteps(3);
@@ -138,15 +139,15 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `setInitialView`', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+            const inst = new BridgeToNative(undefined, defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
-            inst.closeWebview = mockedCloseWebview;
+            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
 
-            inst.nativeNavigationAndTitle.handleRedirect('Title 2', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 3', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 4', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 5', 'test-app');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 3');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 4');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 5');
 
             inst.nativeNavigationAndTitle.setInitialView('New Title After Reset');
             expect(mockedSetPageSettings).toBeCalledTimes(6);
@@ -164,20 +165,20 @@ describe('BridgeToNative integration testing', () => {
 
     describe('iOS environment', () => {
         it('should use AM interface correctly when moving forward and then backward', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, '/', {
+            const inst = new BridgeToNative(undefined, {
                 ...defaultAmParams,
                 title: 'Initial Title',
             });
             const mockedCloseWebview = jest.fn();
 
-            inst.closeWebview = mockedCloseWebview;
+            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
 
             expect(mockedLocationReplace).toBeCalledTimes(1);
             expect(mockedLocationReplace).toBeCalledWith(
                 `ios:setPageSettings/?pageTitle=${encodeURIComponent('Initial Title')}`,
             );
 
-            inst.nativeNavigationAndTitle.handleRedirect('Title 2', 'test-app');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
             expect(mockedLocationReplace).toBeCalledTimes(2);
             expect(mockedLocationReplace).toBeCalledWith(
                 `ios:setPageSettings/?pageTitle=${encodeURIComponent('Title 2')}&pageId=2`,
@@ -189,13 +190,13 @@ describe('BridgeToNative integration testing', () => {
                 `ios:setPageSettings/?pageTitle=${encodeURIComponent('Changed Title 2')}&pageId=2`,
             );
 
-            inst.nativeNavigationAndTitle.handleRedirect('', 'test-app', 'some-path');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, '');
             expect(mockedLocationReplace).toBeCalledTimes(4);
             expect(mockedLocationReplace).toBeCalledWith(
                 'ios:setPageSettings/?pageTitle=&pageId=3',
             );
 
-            inst.nativeNavigationAndTitle.handleRedirect('/test-app/some-path');
+            inst.nativeNavigationAndTitle.navigate('http://example.com');
             expect(mockedLocationReplace).toBeCalledTimes(5);
             expect(mockedLocationReplace).toBeCalledWith(
                 'ios:setPageSettings/?pageTitle=&pageId=4',
@@ -230,15 +231,15 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+            const inst = new BridgeToNative(undefined, defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
-            inst.closeWebview = mockedCloseWebview;
+            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
 
-            inst.nativeNavigationAndTitle.handleRedirect('Title 2', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 3', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 4', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 5', 'test-app');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 3');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 4');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 5');
             expect(mockedLocationReplace).toBeCalledTimes(5);
 
             inst.nativeNavigationAndTitle.goBackAFewSteps(3);
@@ -262,15 +263,15 @@ describe('BridgeToNative integration testing', () => {
         });
 
         it('should act and use AM interface correctly when using `setInitialView`', async () => {
-            const inst = new BridgeToNative(mockedHandleRedirect, '/', defaultAmParams);
+            const inst = new BridgeToNative(undefined, defaultAmParams);
             const mockedCloseWebview = jest.fn();
 
-            inst.closeWebview = mockedCloseWebview;
+            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
 
-            inst.nativeNavigationAndTitle.handleRedirect('Title 2', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 3', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 4', 'test-app');
-            inst.nativeNavigationAndTitle.handleRedirect('Title 5', 'test-app');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 3');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 4');
+            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 5');
 
             inst.nativeNavigationAndTitle.setInitialView('New Title After Reset');
             expect(mockedLocationReplace).toBeCalledTimes(6);
