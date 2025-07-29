@@ -6,9 +6,9 @@ import {
     ANDROID_APP_ID,
     CLOSE_WEBVIEW_SEARCH_KEY,
     CLOSE_WEBVIEW_SEARCH_VALUE,
-    nativeFeaturesFromVersion,
+    NATIVE_FEATURES_FROM_VERSION,
     PREVIOUS_B2N_STATE_STORAGE_KEY,
-    versionToIosAppId,
+    VERSION_TO_IOS_APP_ID,
 } from './constants';
 import { Mediator } from './mediator';
 import { NativeFallbacks } from './native-fallbacks';
@@ -120,7 +120,7 @@ export class BridgeToNative {
      * @param feature Название функциональности, которую нужно проверить.
      */
     public canUseNativeFeature(feature: NativeFeatureKey) {
-        const { fromVersion } = nativeFeaturesFromVersion[this.environment][feature];
+        const { fromVersion } = NATIVE_FEATURES_FROM_VERSION[this.environment][feature];
 
         return this.isCurrentVersionHigherOrEqual(fromVersion);
     }
@@ -203,13 +203,13 @@ export class BridgeToNative {
             return knownIosAppId;
         }
 
-        const keys = Object.keys(versionToIosAppId);
+        const keys = Object.keys(VERSION_TO_IOS_APP_ID);
 
         const rightKey =
             [...keys].reverse().find((version) => this.isCurrentVersionHigherOrEqual(version)) ||
             keys[0];
 
-        return versionToIosAppId[rightKey as keyof typeof versionToIosAppId];
+        return VERSION_TO_IOS_APP_ID[rightKey as keyof typeof VERSION_TO_IOS_APP_ID];
     }
 
     /**

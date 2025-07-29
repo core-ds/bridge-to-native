@@ -7,7 +7,7 @@ export const PREVIOUS_B2N_STATE_STORAGE_KEY = 'previousBridgeToNativeState';
 export const PREVIOUS_NATIVE_NAVIGATION_AND_TITLE_STATE_STORAGE_KEY =
     'previousNativeNavigationAndTitleState';
 
-export const versionToIosAppId = {
+export const VERSION_TO_IOS_APP_ID = {
     '0.0.0': 'alfabank',
     '12.22.0': 'aconcierge',
     '12.26.0': 'kittycash',
@@ -17,7 +17,7 @@ export const versionToIosAppId = {
     '14.5.0': 'smartfinancementor',
 } as const;
 
-export const nativeFeaturesFromVersion: NativeFeaturesFromVersion = {
+export const NATIVE_FEATURES_FROM_VERSION: NativeFeaturesFromVersion = {
     android: {
         linksInBrowser: {
             fromVersion: '11.71.0',

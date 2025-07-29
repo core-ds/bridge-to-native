@@ -7,6 +7,8 @@ export type BrowserHistoryAbstractions = {
 
 export type HistoryPushStateParams = Parameters<typeof window.history.pushState>;
 
+export type LogError = (b2nErrorMessage: string, originalError: unknown) => void;
+
 export type NativeFeatureKey =
     // Возможность работы с геолокацией.
     | 'geolocation'
