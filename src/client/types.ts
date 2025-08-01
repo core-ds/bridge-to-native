@@ -1,11 +1,13 @@
 import { type NativeParams } from '../types';
 
-export type BrowserHistoryAbstractions = {
-    push: (url: HistoryPushStateParams[2], state: HistoryPushStateParams[0]) => void;
-    go: (delta: number) => void;
+export type BrowserHistoryApiWrappers = {
+    push?: (url: HistoryPushStateParams[2], state: HistoryPushStateParams[0]) => void;
+    go?: (delta: number) => void;
 };
 
 export type HistoryPushStateParams = Parameters<typeof window.history.pushState>;
+
+export type LocationAssignParam = Parameters<typeof window.location.assign>[0];
 
 export type LogError = (b2nErrorMessage: string, originalError: unknown) => void;
 
@@ -35,8 +37,6 @@ export type PreviousNativeNavigationAndTitleState = {
     nativeHistoryStack: string[];
     title: string;
 };
-
-export type SyncPurpose = 'initialization' | 'navigation' | 'title-replacing';
 
 export type Theme = 'light' | 'dark';
 

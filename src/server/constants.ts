@@ -31,12 +31,3 @@ export const QUERY_NATIVE_IOS_APPVERSION = 'device_app_version';
 
 // Нативное приложение на обеих платформах в этом параметре передаёт активную тему (светлая/тёмная).
 export const QUERY_NATIVE_THEME = 'theme';
-
-/*
- * Ключи заголовков и query-параметров, которые использует b2native.
- */
-
-// Флаг, предписывающий клиентскому коду b2native начать связь
-// с нативным приложением с указанного в этом параметре id, а не с 1.
-// Cм. клиентский код (`navigateInsideASharedSession`) для подробностей.
-export const QUERY_B2N_NEXT_PAGEID = 'b2n-next-page-id';
