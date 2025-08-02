@@ -1,4 +1,4 @@
-import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../constants';
+import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../query-and-headers-keys';
 import { type NativeParams } from '../../types';
 import { ANDROID_APP_ID, NATIVE_FEATURES_FROM_VERSION, VERSION_TO_IOS_APP_ID } from '../constants';
 import { type Environment, type LogError, type NativeFeatureKey, type Theme } from '../types';

@@ -1,4 +1,5 @@
-import { QUERY_CLOSE_WEBVIEW_KEY, QUERY_CLOSE_WEBVIEW_VALUE } from '../constants';
+const QUERY_CLOSE_WEBVIEW_KEY = 'closeWebView';
+const QUERY_CLOSE_WEBVIEW_VALUE = 'true';
 
 export const closeWebviewUtil = () => {
     const originalPageUrl = new URL(window.location.href);

@@ -1,5 +1,8 @@
-import { QUERY_B2N_NEXT_PAGEID, QUERY_B2N_TITLE } from '../../constants';
-import { COOKIE_KEY_BRIDGE_TO_NATIVE_NATIVE_HISTORY_STACK } from '../constants';
+import {
+    COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+    QUERY_B2N_NEXT_PAGEID,
+    QUERY_B2N_TITLE,
+} from '../../query-and-headers-keys';
 import {
     type BrowserHistoryApiWrappers,
     type HistoryPushStateParams,
@@ -159,7 +162,7 @@ export class NativeNavigationAndTitleService {
         const allCookies = document.cookie.split(';');
 
         const historyStackCookieIdx = allCookies.findIndex((c) =>
-            c.trim().startsWith(COOKIE_KEY_BRIDGE_TO_NATIVE_NATIVE_HISTORY_STACK),
+            c.trim().startsWith(COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK),
         );
 
         return historyStackCookieIdx !== -1;
@@ -224,7 +227,7 @@ export class NativeNavigationAndTitleService {
         const allCookies = document.cookie.split(';');
 
         const nativeHistoryStackCookie = allCookies.find((c) =>
-            c.trim().startsWith(COOKIE_KEY_BRIDGE_TO_NATIVE_NATIVE_HISTORY_STACK),
+            c.trim().startsWith(COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK),
         );
 
         try {
@@ -259,7 +262,7 @@ export class NativeNavigationAndTitleService {
 
         const serializedNativeHistoryStack = encodeURIComponent(JSON.stringify(stackToSave));
 
-        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_NATIVE_HISTORY_STACK}=${serializedNativeHistoryStack}`;
+        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=${serializedNativeHistoryStack}`;
     }
 
     /**

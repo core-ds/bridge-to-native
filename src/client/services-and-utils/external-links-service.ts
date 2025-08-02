@@ -1,4 +1,4 @@
-import { QUERY_B2N_TITLE } from '../../constants';
+import { QUERY_B2N_TITLE } from '../../query-and-headers-keys';
 import { DEEP_LINK_PATTERN } from '../constants';
 import { type PdfType } from '../types';
 

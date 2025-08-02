@@ -1,9 +1,9 @@
-import { type NativeParams } from '../types';
-
 export type BrowserHistoryApiWrappers = {
     push?: (url: HistoryPushStateParams[2], state: HistoryPushStateParams[0]) => void;
     go?: (delta: number) => void;
 };
+
+export type Environment = 'android' | 'ios';
 
 export type HistoryPushStateParams = Parameters<typeof window.history.pushState>;
 
@@ -25,22 +25,6 @@ export type NativeFeaturesFromVersion = Readonly<{
     ios: NativeFeaturesParams;
 }>;
 
-export type Environment = 'android' | 'ios';
-
 export type PdfType = 'pdfFile' | 'base64' | 'binary';
 
-export type PreviousBridgeToNativeState = Omit<NativeParams, 'title' | 'theme'> & {
-    theme: 'dark' | 'light';
-};
-
-export type PreviousNativeNavigationAndTitleState = {
-    nativeHistoryStack: string[];
-    title: string;
-};
-
 export type Theme = 'light' | 'dark';
-
-export type ExternalNavigationOptions = {
-    onClick?: () => void;
-    forceOpenInWebview?: boolean;
-};
