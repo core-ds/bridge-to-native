@@ -28,7 +28,7 @@ const mockedNativeParamsServiceInstance = {
     appVersion: '1.0.0',
     environment: 'android',
     nativeParamsReadErrorFlag: false,
-    originalWebviewParams: 'theme=false',
+    originalWebviewParams: 'theme=dark',
     theme: 'light',
     canUseNativeFeature: jest.fn(),
     isCurrentVersionHigherOrEqual: jest.fn(),

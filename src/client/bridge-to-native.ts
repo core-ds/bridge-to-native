@@ -262,8 +262,8 @@ export class BridgeToNative {
      *  Надо тщательно изучить вопрос и доработать реализацию.
      *
      * @param url Ссылка на PDF.
-     * @param type Тип PDF ссылки.
-     * @param title Название PDF файла.
+     * @param type Тип PDF ссылки (игнорируется в Android окружении).
+     * @param title Название PDF файла (игнорируется в Android окружении).
      */
     openPdf(url: string, type: PdfType = 'pdfFile', title?: string) {
         this.externalLinksService.openPdf(url, type, title);

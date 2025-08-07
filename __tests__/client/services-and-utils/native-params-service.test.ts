@@ -196,7 +196,7 @@ describe('NativeParamsService', () => {
         });
     });
 
-    describe('method `canUseNativeFeature`', () => {
+    describe('method canUseNativeFeature', () => {
         it.each([
             [false, 'is too low', 'iOS', '13.2.99'],
             [true, 'is minimum required', 'iOS', '13.3.0'],
@@ -223,7 +223,7 @@ describe('NativeParamsService', () => {
         );
     });
 
-    describe('method `isCurrentVersionHigherOrEqual`', () => {
+    describe('method isCurrentVersionHigherOrEqual', () => {
         it.each([
             ['5.0.0', '0.0.0', true],
             ['0.0.0', '5.0.0', false],
@@ -255,7 +255,7 @@ describe('NativeParamsService', () => {
         );
     });
 
-    describe('isValidVersionFormat', () => {
+    describe('method isValidVersionFormat', () => {
         it.each([
             ['0.1.2', true],
             ['0.1.2.', false],
@@ -276,7 +276,7 @@ describe('NativeParamsService', () => {
         });
     });
 
-    describe('method `getAppId`', () => {
+    describe('method getAppId', () => {
         it('should always return alfabank in Android environment', () => {
             emulateAndroidEnv();
 
@@ -329,7 +329,7 @@ describe('NativeParamsService', () => {
         });
     });
 
-    describe('readNativeParamsCookie', () => {
+    describe('method readNativeParamsCookie', () => {
         it('should parse and return data from cookie', () => {
             const expectedCookieData = emulateClientCookieWithBridgeToNativeData();
 

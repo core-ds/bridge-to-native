@@ -82,19 +82,20 @@ export class ExternalLinksService {
     }
 
     openPdf(url: string, type: PdfType = 'pdfFile', title?: string) {
-        const params = new URLSearchParams();
-
-        params.append('type', type);
-        params.append('url', decodeURIComponent(url));
-
-        if (title) {
-            params.append('title', title.replace(/\s/g, '_'));
-        }
-
         let replaceUrl = url;
-        const paramsStr = params.toString();
 
         if (this.nativeParamsService.environment === 'ios') {
+            const params = new URLSearchParams();
+
+            params.append('type', type);
+            params.append('url', decodeURIComponent(url));
+
+            if (title) {
+                params.append('title', title.replace(/\s/g, '_'));
+            }
+
+            const paramsStr = params.toString();
+
             replaceUrl = `${this.nativeParamsService.appId}:///dashboard/pdf_viewer?${paramsStr}`;
         }
 
