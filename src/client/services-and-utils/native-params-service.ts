@@ -28,15 +28,11 @@ export class NativeParamsService {
     constructor(private logError?: LogError) {
         const nativeParams = this.readNativeParamsCookie();
 
-        if (!nativeParams) {
-            this.nativeParamsReadErrorFlag = true;
-        }
-
-        this.appId = this.getAppId(nativeParams?.iosAppId);
-
         this.appVersion = NativeParamsService.isValidVersionFormat(nativeParams?.appVersion)
             ? nativeParams.appVersion
             : '0.0.0';
+
+        this.appId = this.getAppId(nativeParams?.iosAppId);
 
         this.nextPageId = nativeParams?.nextPageId || null;
 
@@ -118,6 +114,7 @@ export class NativeParamsService {
 
             nativeParams = JSON.parse(deserializedNativeParams);
         } catch (e) {
+            this.nativeParamsReadErrorFlag = true;
             nativeParams = null;
 
             if (this.logError) {
