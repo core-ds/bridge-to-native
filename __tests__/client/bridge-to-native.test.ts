@@ -1,317 +1,384 @@
-/* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
-
 import { BridgeToNative } from '../../src/client';
-import { CLOSE_WEBVIEW_SEARCH_KEY, CLOSE_WEBVIEW_SEARCH_VALUE } from '../../src/client/constants';
-import { Mediator } from '../../src/client/mediator';
 
-declare let window: Window & typeof globalThis & { Android?: object };
-
-const mockedNativeFallbacksInstance = {};
-const mockedNativeNavigationAndTitleInstance = {
-    saveCurrentState: jest.fn(),
+const mockedExternalLinksServiceInstance = {
+    getHrefToOpenInBrowser: jest.fn(),
+    handleNativeDeeplink: jest.fn(),
+    openInBrowser: jest.fn(),
+    openInNewWebview: jest.fn(),
+    openPdf: jest.fn(),
 };
-const MockedNativeNavigationAndTitleConstructor = jest.fn(
-    () => mockedNativeNavigationAndTitleInstance,
+
+const MockedExternalLinksServiceConstructor = jest.fn(() => mockedExternalLinksServiceInstance);
+
+const mockedNativeNavigationAndTitleServiceInstance = {
+    closeWebview: jest.fn(),
+    goBack: jest.fn(),
+    goBackAFewStepsClientSide: jest.fn(),
+    navigateClientSide: jest.fn(),
+    navigateServerSide: jest.fn(),
+    setTitle: jest.fn(),
+};
+
+const MockedNativeNavigationAndTitleServiceConstructor = jest.fn(
+    () => mockedNativeNavigationAndTitleServiceInstance,
 );
 
-jest.mock('../../src/client/native-fallbacks', () => ({
+const mockedNativeParamsServiceInstance = {
+    appId: 'alfabank',
+    appVersion: '1.0.0',
+    environment: 'android',
+    nativeParamsReadErrorFlag: false,
+    originalWebviewParams: 'theme=false',
+    theme: 'light',
+    canUseNativeFeature: jest.fn(),
+    isCurrentVersionHigherOrEqual: jest.fn(),
+};
+
+const MockedNativeParamsServiceConstructor = jest.fn(() => mockedNativeParamsServiceInstance);
+
+jest.mock('../../src/client/services-and-utils/external-links-service', () => ({
     __esModule: true,
-    NativeFallbacks: function MockedNativeFallbacksConstructor() {
-        return mockedNativeFallbacksInstance;
+    get ExternalLinksService() {
+        return MockedExternalLinksServiceConstructor;
     },
 }));
 
-jest.mock('../../src/client/native-navigation-and-title', () => ({
+jest.mock('../../src/client/services-and-utils/native-navigation-and-title-service', () => ({
     __esModule: true,
-    get NativeNavigationAndTitle() {
-        return MockedNativeNavigationAndTitleConstructor;
+    get NativeNavigationAndTitleService() {
+        return MockedNativeNavigationAndTitleServiceConstructor;
+    },
+}));
+
+jest.mock('../../src/client/services-and-utils/native-params-service', () => ({
+    __esModule: true,
+    get NativeParamsService() {
+        return MockedNativeParamsServiceConstructor;
     },
 }));
 
 describe('BridgeToNative', () => {
-    const defaultAmParams = {
-        appVersion: '12.0.0',
-        theme: 'light',
-        nextPageId: null,
-        originalWebviewParams: '',
-    };
+    let bridge: BridgeToNative;
 
-    describe('constructor and methods', () => {
-        afterEach(() => {
-            delete window.Android;
+    beforeEach(() => {
+        jest.clearAllMocks();
+        bridge = new BridgeToNative();
+    });
+
+    describe('Initialization', () => {
+        it('should pass logError to NativeParamsService', () => {
+            const logError = jest.fn();
+
+            // eslint-disable-next-line no-new
+            new BridgeToNative({ logError });
+
+            expect(MockedNativeParamsServiceConstructor).toHaveBeenCalledWith(logError);
         });
 
-        describe('constructor', () => {
-            it('should pass `initialAmTitle` to `AmNavigationAndTitle` constructor', () => {
-                // eslint-disable-next-line no-new -- создаём экземпляр в целях тестирования
-                new BridgeToNative(undefined, {
-                    ...defaultAmParams,
-                });
+        it('should pass nativeParamsService to ExternalLinksService', () => {
+            expect(MockedExternalLinksServiceConstructor).toHaveBeenCalledWith(
+                mockedNativeParamsServiceInstance,
+            );
+        });
 
-                expect(MockedNativeNavigationAndTitleConstructor).toBeCalledWith(
-                    expect.any(Mediator),
-                    null,
+        it('should pass nativeParamsService to NativeNavigationAndTitleService', () => {
+            expect(MockedNativeNavigationAndTitleServiceConstructor).toHaveBeenCalledWith(
+                mockedNativeParamsServiceInstance,
+                undefined,
+                undefined,
+            );
+        });
+
+        it('should pass browserHistoryApiWrappers to NativeNavigationAndTitleService', () => {
+            const browserHistoryApiWrappers = {};
+
+            // eslint-disable-next-line no-new
+            new BridgeToNative({ browserHistoryApiWrappers });
+
+            expect(MockedNativeNavigationAndTitleServiceConstructor).toHaveBeenCalledWith(
+                expect.anything(),
+                browserHistoryApiWrappers,
+                undefined,
+            );
+        });
+
+        it('should pass logError to NativeNavigationAndTitleService', () => {
+            const logError = jest.fn();
+
+            // eslint-disable-next-line no-new
+            new BridgeToNative({ logError });
+
+            expect(MockedNativeNavigationAndTitleServiceConstructor).toHaveBeenCalledWith(
+                expect.anything(),
+                undefined,
+                logError,
+            );
+        });
+    });
+
+    describe('Getters', () => {
+        it('should return correct appId', () => {
+            expect(bridge.appId).toBe(mockedNativeParamsServiceInstance.appId);
+        });
+
+        it('should return correct appVersion', () => {
+            expect(bridge.appVersion).toBe(mockedNativeParamsServiceInstance.appVersion);
+        });
+
+        it('should return correct environment', () => {
+            expect(bridge.environment).toBe(mockedNativeParamsServiceInstance.environment);
+        });
+
+        it('should return correct wasNativeParamsDataFailedToRead', () => {
+            expect(bridge.wasNativeParamsDataFailedToRead).toBe(
+                !mockedNativeParamsServiceInstance.nativeParamsReadErrorFlag,
+            );
+        });
+
+        it('should return correct originalWebviewParams', () => {
+            expect(bridge.originalWebviewParams).toBe(
+                mockedNativeParamsServiceInstance.originalWebviewParams,
+            );
+        });
+
+        it('should return correct theme', () => {
+            expect(bridge.theme).toBe(mockedNativeParamsServiceInstance.theme);
+        });
+    });
+
+    describe('Methods', () => {
+        describe('canUseNativeFeature', () => {
+            it('should call nativeParamsService.canUseNativeFeature', () => {
+                const feature = 'geolocation';
+
+                bridge.canUseNativeFeature(feature);
+                expect(mockedNativeParamsServiceInstance.canUseNativeFeature).toHaveBeenCalledWith(
+                    feature,
+                );
+            });
+
+            it('should return value from nativeParamsService.canUseNativeFeature', () => {
+                jest.spyOn(
+                    mockedNativeParamsServiceInstance,
+                    'canUseNativeFeature',
+                ).mockImplementationOnce(() => true);
+
+                expect(bridge.canUseNativeFeature('geolocation')).toBe(true);
+            });
+        });
+
+        describe('closeWebview', () => {
+            it('should call nativeNavigationAndTitleService.closeWebview', () => {
+                bridge.closeWebview();
+                expect(
+                    mockedNativeNavigationAndTitleServiceInstance.closeWebview,
+                ).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        describe('getHrefToOpenInBrowser', () => {
+            it('should call externalLinksService.getHrefToOpenInBrowser', () => {
+                const link = 'http://example.com';
+
+                bridge.getHrefToOpenInBrowser(link);
+                expect(
+                    mockedExternalLinksServiceInstance.getHrefToOpenInBrowser,
+                ).toHaveBeenCalledWith(link);
+            });
+
+            it('should return value from nativeParamsService.getHrefToOpenInBrowser', () => {
+                const modifiedLink = 'http://example.com?openInBrowser=true';
+
+                jest.spyOn(
+                    mockedExternalLinksServiceInstance,
+                    'getHrefToOpenInBrowser',
+                ).mockImplementationOnce(() => modifiedLink);
+
+                expect(bridge.getHrefToOpenInBrowser('http://example.com')).toBe(modifiedLink);
+            });
+        });
+
+        describe('goBack', () => {
+            it('should call nativeNavigationAndTitleService.goBack', () => {
+                bridge.goBack();
+                expect(mockedNativeNavigationAndTitleServiceInstance.goBack).toHaveBeenCalledTimes(
+                    1,
+                );
+            });
+        });
+
+        describe('goBackAFewStepsClientSide', () => {
+            it('should call nativeNavigationAndTitleService.goBackAFewStepsClientSide', () => {
+                const steps = 3;
+
+                bridge.goBackAFewStepsClientSide(steps);
+                expect(
+                    mockedNativeNavigationAndTitleServiceInstance.goBackAFewStepsClientSide,
+                ).toHaveBeenCalledWith(steps, false);
+            });
+
+            it('should call nativeNavigationAndTitleService.goBackAFewStepsClientSide with autoCloseWebview flag', () => {
+                const steps = 5;
+
+                bridge.goBackAFewStepsClientSide(steps, true);
+                expect(
+                    mockedNativeNavigationAndTitleServiceInstance.goBackAFewStepsClientSide,
+                ).toHaveBeenCalledWith(steps, true);
+            });
+        });
+
+        describe('handleNativeDeeplink', () => {
+            it('should call externalLinksService.handleNativeDeeplink', () => {
+                const deeplink = 'test-deeplink';
+
+                bridge.handleNativeDeeplink(deeplink);
+                expect(
+                    mockedExternalLinksServiceInstance.handleNativeDeeplink,
+                ).toHaveBeenCalledWith(deeplink, false);
+            });
+
+            it('should call externalLinksService.handleNativeDeeplink with closeWebviewBeforeCallNativeDeeplinkHandler flag', () => {
+                const deeplink = 'test-deeplink';
+
+                bridge.handleNativeDeeplink(deeplink, true);
+                expect(
+                    mockedExternalLinksServiceInstance.handleNativeDeeplink,
+                ).toHaveBeenCalledWith(deeplink, true);
+            });
+        });
+
+        describe('isCurrentVersionHigherOrEqual', () => {
+            it('should call nativeParamsService.isCurrentVersionHigherOrEqual', () => {
+                const version = '2.0.0';
+
+                bridge.isCurrentVersionHigherOrEqual(version);
+                expect(
+                    mockedNativeParamsServiceInstance.isCurrentVersionHigherOrEqual,
+                ).toHaveBeenCalledWith(version);
+            });
+
+            it('should return value from nativeParamsService.isCurrentVersionHigherOrEqual', () => {
+                jest.spyOn(
+                    mockedNativeParamsServiceInstance,
+                    'isCurrentVersionHigherOrEqual',
+                ).mockImplementationOnce(() => true);
+
+                expect(bridge.isCurrentVersionHigherOrEqual('2.0.0')).toBe(true);
+            });
+        });
+
+        describe('navigateClientSide', () => {
+            it('should call nativeNavigationAndTitleService.navigateClientSide', () => {
+                const url = 'http://example.com';
+
+                bridge.navigateClientSide(url);
+                expect(
+                    mockedNativeNavigationAndTitleServiceInstance.navigateClientSide,
+                ).toHaveBeenCalledWith(url, undefined, '');
+            });
+
+            it('should call nativeNavigationAndTitleService.navigateClientSide with optional parameters', () => {
+                const url = 'http://example.com';
+                const state = { test: true };
+                const nativeTitle = 'Test Title';
+
+                bridge.navigateClientSide(url, state, nativeTitle);
+                expect(
+                    mockedNativeNavigationAndTitleServiceInstance.navigateClientSide,
+                ).toHaveBeenCalledWith(url, state, nativeTitle);
+            });
+        });
+
+        describe('navigateServerSide', () => {
+            it('should call nativeNavigationAndTitleService.navigateServerSide', () => {
+                const url = 'http://example.com';
+
+                bridge.navigateServerSide(url);
+                expect(
+                    mockedNativeNavigationAndTitleServiceInstance.navigateServerSide,
+                ).toHaveBeenCalledWith(url, '');
+            });
+
+            it('should call nativeNavigationAndTitleService.navigateServerSide with nativeTitle parameter', () => {
+                const url = 'http://example.com';
+                const nativeTitle = 'Test Title';
+
+                bridge.navigateServerSide(url, nativeTitle);
+                expect(
+                    mockedNativeNavigationAndTitleServiceInstance.navigateServerSide,
+                ).toHaveBeenCalledWith(url, nativeTitle);
+            });
+        });
+
+        describe('openInBrowser', () => {
+            it('should call externalLinksService.openInBrowser', () => {
+                const link = 'https://example.com';
+
+                bridge.openInBrowser(link);
+                expect(mockedExternalLinksServiceInstance.openInBrowser).toHaveBeenCalledWith(link);
+            });
+        });
+
+        describe('openInNewWebview', () => {
+            it('should call externalLinksService.openInNewWebview', () => {
+                const link = 'https://example.com';
+
+                bridge.openInNewWebview(link);
+                expect(mockedExternalLinksServiceInstance.openInNewWebview).toHaveBeenCalledWith(
+                    link,
+                    '',
+                    false,
+                );
+            });
+
+            it('should call externalLinksService.openInNewWebview with optional parameters', () => {
+                const link = 'https://example.com';
+                const nativeTitle = 'Test Title';
+                const closeCurrentWebview = true;
+
+                bridge.openInNewWebview(link, nativeTitle, closeCurrentWebview);
+                expect(mockedExternalLinksServiceInstance.openInNewWebview).toHaveBeenCalledWith(
+                    link,
+                    nativeTitle,
+                    closeCurrentWebview,
+                );
+            });
+        });
+
+        describe('openPdf', () => {
+            it('should call externalLinksService.pdfType', () => {
+                const url = 'https://example.com/file.pdf';
+
+                bridge.openPdf(url);
+                expect(mockedExternalLinksServiceInstance.openPdf).toHaveBeenCalledWith(
+                    url,
+                    'pdfFile',
                     undefined,
                 );
             });
-        });
 
-        describe('public props', () => {
-            it('should save theme used by AM in `theme` property', () => {
-                const inst1 = new BridgeToNative(undefined, defaultAmParams);
-                const inst2 = new BridgeToNative(undefined, {
-                    ...defaultAmParams,
-                    theme: 'dark',
-                });
+            it('should call externalLinksService.pdfType with optional parameters', () => {
+                const url = 'https://example.com/file.pdf';
+                const type = 'base64';
+                const title = 'PDF Title';
 
-                expect(inst1.theme).toBe('light');
-                expect(inst2.theme).toBe('dark');
-            });
-
-            it('should save original AM query params in `originalWebviewParams` property', () => {
-                const originalWebviewParamsExample =
-                    'device_uuid=8441576F-A09F-41E9-89A7-EE1FA486C20A&device_id=2E32AFD5-F50B-4B2F-B758-CAE59DF2BF6C&applicationId=1842D0AA-0008-4941-93E0-4FD80E087841&device_os_version=com.aconcierge.app&device_app_version=iOS 16.1&scope=12.26.0&device_boot_time=openid mobile-bank';
-                const inst = new BridgeToNative(undefined, {
-                    ...defaultAmParams,
-                    originalWebviewParams: originalWebviewParamsExample,
-                });
-
-                expect(inst.originalWebviewParams).toBe(originalWebviewParamsExample);
-            });
-
-            it('should save nextPageId in `nextPageId` property and send it into `AmNavigationAndTitle` constructor', () => {
-                const inst = new BridgeToNative(undefined, {
-                    ...defaultAmParams,
-                    title: 'Test',
-                    nextPageId: 7,
-                });
-
-                expect(inst['nextPageId']).toBe(7);
-                expect(MockedNativeNavigationAndTitleConstructor).toBeCalledWith(
-                    expect.any(Mediator),
-                    7,
-                    'Test',
+                bridge.openPdf(url, type, title);
+                expect(mockedExternalLinksServiceInstance.openPdf).toHaveBeenCalledWith(
+                    url,
+                    type,
+                    title,
                 );
             });
+        });
 
-            it('should provide `NativeFallbacks` instance', () => {
-                const inst = new BridgeToNative(undefined, defaultAmParams);
+        describe('setTitle', () => {
+            it('should call nativeNavigationAndTitleService.setTitle', () => {
+                const nativeTitle = 'New Title';
 
-                expect(inst.nativeFallbacks).toEqual(mockedNativeFallbacksInstance);
-            });
-
-            it('should provide `AmNavigationAndTitle` instance', () => {
-                const inst = new BridgeToNative(undefined, defaultAmParams);
-
-                expect(inst.nativeNavigationAndTitle).toEqual(
-                    mockedNativeNavigationAndTitleInstance,
+                bridge.setTitle(nativeTitle);
+                expect(mockedNativeNavigationAndTitleServiceInstance.setTitle).toHaveBeenCalledWith(
+                    nativeTitle,
                 );
-            });
-
-            describe('Android environment', () => {
-                beforeEach(() => {
-                    window.Android = {};
-                });
-
-                it('should provide `AndroidBridge` property', () => {
-                    const inst = new BridgeToNative(undefined, defaultAmParams);
-
-                    expect(inst.AndroidBridge).toEqual(window.Android);
-                });
-
-                it('should set `environment` property correctly', () => {
-                    const inst = new BridgeToNative(undefined, defaultAmParams);
-
-                    expect(inst.environment).toBe('android');
-                });
-
-                it('should set `appId` property correctly', () => {
-                    const ins = new BridgeToNative(undefined, defaultAmParams);
-
-                    expect(ins.appId).toBe('alfabank');
-                });
-            });
-
-            describe('iOS environment', () => {
-                it('should not provide `AndroidBridge` property', () => {
-                    const ins = new BridgeToNative(undefined, defaultAmParams);
-
-                    expect(ins.AndroidBridge).not.toBeDefined();
-                });
-
-                it('should set `environment` property correctly', () => {
-                    const ins = new BridgeToNative(undefined, defaultAmParams);
-
-                    expect(ins.environment).toBe('ios');
-                });
-
-                it.each([
-                    ['11.1.1', 'alfabank'],
-                    ['12.21.99', 'alfabank'],
-                    ['12.22.0', 'aconcierge'],
-                    ['12.22.1', 'aconcierge'],
-                    ['12.25.83', 'aconcierge'],
-                    ['12.26.0', 'kittycash'],
-                    ['13.1.99', 'kittycash'],
-                    ['13.2.0', 'triptally'],
-                    ['13.3.99', 'triptally'],
-                    ['13.4.0', 'cashline'],
-                    ['13.4.99', 'cashline'],
-                    ['13.5.0', 'assistmekz'],
-                    ['14.4.99', 'assistmekz'],
-                    ['14.5.00', 'smartfinancementor'],
-                ])(
-                    'should detect app scheme for version %s correctly and save it in `appId` property',
-                    (appVersion, expected) => {
-                        const ins = new BridgeToNative(undefined, {
-                            ...defaultAmParams,
-                            appVersion,
-                        });
-
-                        expect(ins.appId).toBe(expected);
-                    },
-                );
-
-                it('should use `appId` parameter as value for `iosApplicationId` while parameter exists', () => {
-                    const inst1 = new BridgeToNative(undefined, {
-                        ...defaultAmParams,
-                        appVersion: '0.0.0',
-                        iosAppId: 'kittycash',
-                    });
-                    const inst2 = new BridgeToNative(undefined, {
-                        ...defaultAmParams,
-                        appVersion: '12.22.0',
-                        iosAppId: 'kittycash',
-                    });
-
-                    expect(inst1.appId).toBe('kittycash');
-                    expect(inst2.appId).toBe('kittycash');
-                });
-            });
-        });
-
-        describe('method `canUseNativeFeature`', () => {
-            it.each([
-                [false, 'is too low', 'iOS', '13.2.99'],
-                [true, 'is minimum required', 'iOS', '13.3.0'],
-                [true, 'is higher than minimum required', 'iOS', '14.0.0'],
-                [false, 'is too low', 'Android', '11.70.99'],
-                [true, 'is minimum required', 'Android', '11.71.0'],
-                [true, 'is higher than minimum required', 'Android', '12.0.0'],
-            ])(
-                'should return `%s` for feature while AM version %s in %s environment',
-                (expected, _, env, appVersion) => {
-                    if (env === 'Android') {
-                        window.Android = {};
-                    }
-
-                    const inst = new BridgeToNative(undefined, {
-                        ...defaultAmParams,
-                        appVersion,
-                    });
-
-                    expect(inst.canUseNativeFeature('linksInBrowser')).toBe(expected);
-                },
-            );
-        });
-
-        describe('method `closeWebview`', () => {
-            const testUrl = 'http://test.com';
-
-            window = Object.create(window);
-            Object.defineProperty(window, 'location', {
-                value: {
-                    href: testUrl,
-                },
-                writable: true,
-            });
-
-            const inst = new BridgeToNative(undefined, defaultAmParams);
-
-            inst.closeWebview();
-            expect(window.location.href).toBe(
-                `${testUrl}/?${CLOSE_WEBVIEW_SEARCH_KEY}=${CLOSE_WEBVIEW_SEARCH_VALUE}`,
-            );
-        });
-
-        describe('method `isCurrentVersionHigherOrEqual`', () => {
-            it.each([
-                ['5.0.0', '0.0.0', true],
-                ['0.0.0', '5.0.0', false],
-                ['0.0.1', 'unknown', false],
-                ['5.0.0', '5.0.0', true],
-                ['1.3.4', '1.2.4', true],
-                ['1.3.4', '1.4.4', false],
-                ['1.2.3', '1.2.2', true],
-                ['1.2.3', '1.2.3', true],
-                ['1.2.3', '1.2.4', false],
-                ['2.3.4', '1.2.3', true],
-                ['2.3.4', '3.4.5', false],
-                ['1.99.0', '2.0.0', false],
-                ['2.0.0', '1.99.0', true],
-                ['1.1.1', '1.1.0', true],
-                ['1.1.0', '1.1.1', false],
-            ])(
-                'should compare current version `%s` with `%s` and return `%s`',
-                (currentVersion, versionToCompare, result) => {
-                    const inst = new BridgeToNative(undefined, {
-                        ...defaultAmParams,
-
-                        appVersion: currentVersion,
-                    });
-
-                    expect(inst.isCurrentVersionHigherOrEqual(versionToCompare)).toBe(result);
-                },
-            );
-        });
-
-        describe('method `getAppId`', () => {
-            it('should always return `alfabank` in Android environment', () => {
-                window.Android = {};
-
-                const inst = new BridgeToNative(undefined, defaultAmParams);
-
-                expect(inst['getAppId']()).toBe('alfabank');
-                expect(inst['getAppId']('aconcierge')).toBe('alfabank');
-            });
-
-            it.each([
-                ['1.0.0', 'alfabank'],
-                ['12.0.0', 'alfabank'],
-                ['12.21.0', 'alfabank'],
-                ['12.21.99', 'alfabank'],
-                ['12.22.0', 'aconcierge'],
-                ['12.22.1', 'aconcierge'],
-                ['12.25.0', 'aconcierge'],
-                ['12.25.99', 'aconcierge'],
-                ['12.26.0', 'kittycash'],
-                ['13.1.99', 'kittycash'],
-                ['13.2.0', 'triptally'],
-                ['13.3.99', 'triptally'],
-                ['13.4.0', 'cashline'],
-                ['13.4.99', 'cashline'],
-                ['13.5.0', 'assistmekz'],
-                ['14.4.99', 'assistmekz'],
-                ['14.5.00', 'smartfinancementor'],
-            ])(
-                'should detect app scheme for version `%s` as `%s` while parameter is not passed',
-                (version, appId) => {
-                    const inst = new BridgeToNative(undefined, {
-                        ...defaultAmParams,
-                        appVersion: version,
-                    });
-
-                    expect(inst['getAppId']()).toBe(appId);
-                },
-            );
-
-            it('should use app scheme from parameter', () => {
-                const inst = new BridgeToNative(undefined, {
-                    ...defaultAmParams,
-                    appVersion: '1.0.0',
-                });
-
-                expect(inst['getAppId']('aconcierge')).toBe('aconcierge');
             });
         });
     });

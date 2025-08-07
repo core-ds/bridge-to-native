@@ -87,9 +87,10 @@ export class BridgeToNative {
      * в текущей версии NA.
      *
      * @param feature Ключ (ID) функциональности, которую нужно проверить.
+     * @returns Результат проверки.
      */
     canUseNativeFeature(feature: NativeFeatureKey) {
-        this.nativeParamsService.canUseNativeFeature(feature);
+        return this.nativeParamsService.canUseNativeFeature(feature);
     }
 
     /**
@@ -115,7 +116,7 @@ export class BridgeToNative {
      *  ресурс в новом WV.
      */
     getHrefToOpenInBrowser(link: string) {
-        this.externalLinksService.getHrefToOpenInBrowser(link);
+        return this.externalLinksService.getHrefToOpenInBrowser(link);
     }
 
     /**
