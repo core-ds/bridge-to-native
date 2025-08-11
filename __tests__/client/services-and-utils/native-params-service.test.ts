@@ -14,21 +14,7 @@ describe('NativeParamsService', () => {
         });
     };
 
-    const emulateClientCookieWithBridgeToNativeData = () => {
-        const bridgeToNativeData = { appId: '1.2.3', appVersion: 'kittycash' };
-        const encodedBridgeToNativeData = encodeURIComponent(JSON.stringify(bridgeToNativeData));
-
-        document.cookie = 'foo=bar';
-        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${encodedBridgeToNativeData}`;
-        document.cookie = 'baz=foo';
-
-        return bridgeToNativeData;
-    };
-
     afterEach(() => {
-        document.cookie = 'foo=; max-age=-1';
-        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=; max-age=-1`;
-        document.cookie = 'baz=; max-age=-1';
         // eslint-disable-next-line no-global-assign
         window = originalWindow;
     });
@@ -326,12 +312,22 @@ describe('NativeParamsService', () => {
 
     describe('method readNativeParamsCookie', () => {
         it('should parse and return data from cookie', () => {
-            const expectedCookieData = emulateClientCookieWithBridgeToNativeData();
+            const bridgeToNativeData = { appId: '1.2.3', appVersion: 'kittycash' };
+
+            document.cookie = 'foo=bar';
+            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${encodeURIComponent(
+                JSON.stringify(bridgeToNativeData),
+            )}`;
+            document.cookie = 'baz=foo';
 
             const inst = new NativeParamsService();
 
             // @ts-expect-error -- Проверка private метода
-            expect(inst.readNativeParamsCookie()).toMatchObject(expectedCookieData);
+            expect(inst.readNativeParamsCookie()).toMatchObject(bridgeToNativeData);
+
+            document.cookie = 'foo=; max-age=-1';
+            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=; max-age=-1`;
+            document.cookie = 'baz=; max-age=-1';
         });
 
         it('should return null while there is no bridgeToNativeData cookie', () => {

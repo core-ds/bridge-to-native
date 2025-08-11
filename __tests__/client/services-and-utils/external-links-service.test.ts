@@ -22,19 +22,11 @@ const mockedNativeParamsServiceInstance = {
 } as unknown as NativeParamsService;
 
 describe('ExternalLinksService', () => {
-    const mockedLocationReplace = jest.fn();
     const locationReplaceSpy = jest.spyOn(window.location, 'replace');
-
-    const mockedWindowOpen = jest.fn();
-    const windowOpenSpy = jest.spyOn(window, 'open');
+    const windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(jest.fn());
 
     beforeEach(() => {
-        locationReplaceSpy.mockImplementation(mockedLocationReplace);
-        windowOpenSpy.mockImplementation(mockedWindowOpen);
-    });
-
-    afterEach(() => {
-        jest.resetAllMocks();
+        jest.clearAllMocks();
     });
 
     describe('method handleNativeDeeplink', () => {
@@ -54,7 +46,7 @@ describe('ExternalLinksService', () => {
 
                 inst.handleNativeDeeplink(deeplink);
 
-                expect(mockedLocationReplace).toHaveBeenCalledWith(expectedValue);
+                expect(locationReplaceSpy).toHaveBeenCalledWith(expectedValue);
             },
         );
 
@@ -122,7 +114,7 @@ describe('ExternalLinksService', () => {
 
             inst.openInBrowser(link);
 
-            expect(mockedLocationReplace).toHaveBeenCalledWith(`${link}/?openInBrowser=true`);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(`${link}/?openInBrowser=true`);
         });
 
         it('should open link in new webview for old NA versions', () => {
@@ -137,7 +129,7 @@ describe('ExternalLinksService', () => {
 
             inst.openInBrowser(link);
 
-            expect(mockedLocationReplace).toHaveBeenCalledWith(
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
             );
         });
@@ -151,7 +143,7 @@ describe('ExternalLinksService', () => {
 
             inst.openInNewWebview(link);
 
-            expect(mockedLocationReplace).toHaveBeenCalledWith(
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
             );
         });
@@ -164,7 +156,7 @@ describe('ExternalLinksService', () => {
 
             inst.openInNewWebview(link, title);
 
-            expect(mockedLocationReplace).toHaveBeenCalledWith(
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F%3Fb2n-title%3DCustom%2BTitle',
             );
         });
@@ -190,11 +182,11 @@ describe('ExternalLinksService', () => {
             const testUrl = 'https://example.com/file.pdf';
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
-            mockedWindowOpen.mockImplementationOnce(() => null);
+            windowOpenSpy.mockImplementationOnce(() => null);
 
             inst.openPdf(testUrl);
-            expect(mockedWindowOpen).toHaveBeenCalledWith(testUrl);
-            expect(mockedLocationReplace).toHaveBeenCalledWith(testUrl);
+            expect(windowOpenSpy).toHaveBeenCalledWith(testUrl);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(testUrl);
         });
 
         describe('Android environment', () => {
@@ -203,10 +195,10 @@ describe('ExternalLinksService', () => {
                 const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
                 inst.openPdf(testUrl);
-                expect(mockedWindowOpen).toHaveBeenCalledWith(testUrl);
+                expect(windowOpenSpy).toHaveBeenCalledWith(testUrl);
 
                 inst.openPdf(testUrl, 'binary');
-                expect(mockedWindowOpen).toHaveBeenCalledWith(testUrl);
+                expect(windowOpenSpy).toHaveBeenCalledWith(testUrl);
             });
         });
 
@@ -226,7 +218,7 @@ describe('ExternalLinksService', () => {
                     } as NativeParamsService);
 
                     inst.openPdf('https://example.com/file.pdf');
-                    expect(mockedWindowOpen).toHaveBeenCalledWith(
+                    expect(windowOpenSpy).toHaveBeenCalledWith(
                         `${appId}:///dashboard/pdf_viewer?type=pdfFile&url=https%3A%2F%2Fexample.com%2Ffile.pdf`,
                     );
                 },
@@ -236,7 +228,7 @@ describe('ExternalLinksService', () => {
                 const inst = new ExternalLinksService(iOSMockedNativeParamsServiceInstance);
 
                 inst.openPdf('https://example.com/file.pdf', 'binary');
-                expect(mockedWindowOpen).toHaveBeenCalledWith(
+                expect(windowOpenSpy).toHaveBeenCalledWith(
                     'kittycash:///dashboard/pdf_viewer?type=binary&url=https%3A%2F%2Fexample.com%2Ffile.pdf',
                 );
             });
@@ -245,7 +237,7 @@ describe('ExternalLinksService', () => {
                 const inst = new ExternalLinksService(iOSMockedNativeParamsServiceInstance);
 
                 inst.openPdf('https://example.com/file.pdf', 'pdfFile', 'Test Title');
-                expect(mockedWindowOpen).toHaveBeenCalledWith(
+                expect(windowOpenSpy).toHaveBeenCalledWith(
                     'kittycash:///dashboard/pdf_viewer?type=pdfFile&url=https%3A%2F%2Fexample.com%2Ffile.pdf&title=Test_Title',
                 );
             });

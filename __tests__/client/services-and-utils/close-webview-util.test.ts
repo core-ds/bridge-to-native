@@ -1,14 +1,8 @@
 import { closeWebviewUtil } from '../../../src/client/services-and-utils/close-webview-util';
 
 describe('closeWebview', () => {
-    const originalWindow = window;
-
-    afterEach(() => {
-        // eslint-disable-next-line no-global-assign
-        window = originalWindow;
-    });
-
     it('should modify URL correctly', () => {
+        const originalWindow = window;
         const testUrl = 'http://example.com';
 
         // eslint-disable-next-line no-global-assign
@@ -22,5 +16,8 @@ describe('closeWebview', () => {
 
         closeWebviewUtil();
         expect(window.location.href).toBe(`${testUrl}/?closeWebView=true`);
+
+        // eslint-disable-next-line no-global-assign
+        window = originalWindow;
     });
 });

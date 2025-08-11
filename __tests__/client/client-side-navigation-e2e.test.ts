@@ -1,8 +1,6 @@
 import { BridgeToNative } from '../../src/client/bridge-to-native';
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../src/query-and-headers-keys';
 
-declare let window: Window & typeof globalThis & { Android?: object };
-
 const mockedCloseWebviewUtil = jest.fn();
 
 jest.mock('../../src/client/services-and-utils/close-webview-util', () => ({
@@ -12,7 +10,6 @@ jest.mock('../../src/client/services-and-utils/close-webview-util', () => ({
     },
 }));
 
-// TODO Покрыть интеграционно server-side навигацию.
 describe('BridgeToNative client-side navigation integration testing', () => {
     const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
     const historyGoSpy = jest.spyOn(window.history, 'go');
@@ -53,6 +50,7 @@ describe('BridgeToNative client-side navigation integration testing', () => {
 
         beforeAll(() => {
             document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${encodeURIComponent(JSON.stringify(mockedNativeData))}`;
+            // @ts-expect-error -- Специфика Андроид окружения
             window.Android = {
                 setPageSettings: mockedSetPageSettings,
             };
@@ -60,6 +58,7 @@ describe('BridgeToNative client-side navigation integration testing', () => {
 
         afterAll(() => {
             document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=; max-age=-1`;
+            // @ts-expect-error -- Специфика Андроид окружения
             delete window.Android;
         });
 
