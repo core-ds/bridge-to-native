@@ -14,7 +14,7 @@ export const COOKIE_KEY_BRIDGE_TO_NATIVE_DATA = 'bridgeToNativeData';
 
 // Ключ cookie, с помощью которого клиентская часть B2N сохраняет своё состояние
 // при server-side навигации.
-export const COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK = 'bridgeToNativeData';
+export const COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK = 'bridgeToNativeHistoryStack';
 
 // Нативное приложение на обеих платформах подмешивает этот заголовок к запросу за HTML.
 // TODO:

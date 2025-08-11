@@ -82,7 +82,7 @@ export class NativeNavigationAndTitleService {
 
     navigateClientSide(
         url: HistoryPushStateParams[2],
-        state?: HistoryPushStateParams[0],
+        state: HistoryPushStateParams[0] = null,
         nativeTitle = '',
     ) {
         if (this.browserHistoryApiWrappers?.push) {
@@ -181,26 +181,20 @@ export class NativeNavigationAndTitleService {
             // Сценарий 2 – `nextPageId` ставит метод `this.navigateServerSide`.
             this.nativeHistoryStack = new Array(nextPageId).fill(''); // Заголовки другого WA здесь не интересны.
             this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = title;
-            this.syncHistoryWithNative();
-
-            return;
-        }
-
-        if (!NativeNavigationAndTitleService.hasHistoryStackCookie()) {
-            // Сценарий 1 - куку ставит метод `this.navigateServerSide`, её не будет, если это новое WV.
-            this.setInitialView(title);
-
-            return;
-        }
-
-        try {
+        } else if (NativeNavigationAndTitleService.hasHistoryStackCookie()) {
             // Сценарий 3 - кука есть, значит вернулись назад server-side навигацией.
-            this.nativeHistoryStack = this.readNativeHistoryStackFromCookie();
-            this.syncHistoryWithNative();
-            this.saveNativeHistoryStack(true);
-        } catch {
-            this.setInitialView();
+            try {
+                this.nativeHistoryStack = this.readNativeHistoryStackFromCookie();
+                this.saveNativeHistoryStack(true);
+            } catch {
+                this.nativeHistoryStack = [''];
+            }
+        } else {
+            // Сценарий 1 - куку ставит метод `this.navigateServerSide`, её не будет, если это новое WV.
+            this.nativeHistoryStack = [title];
         }
+
+        this.syncHistoryWithNative();
     }
 
     /**
@@ -253,7 +247,8 @@ export class NativeNavigationAndTitleService {
      * Метод для сохранения текущего состояния связи с NA текущего WA,
      * чтобы было возможно восстановить его при переходе сюда.
      *
-     * @param previousPage Сохранить состояние предыдущей страницы.
+     * @param previousPage Сохранить состояние предыдущей страницы
+     *  (только что вернулись «назад» и кука содержит данные текущей страницы).
      */
     private saveNativeHistoryStack(previousPage = false) {
         const stackToSave = previousPage
@@ -273,13 +268,8 @@ export class NativeNavigationAndTitleService {
         const { pageId, pageTitle } = this.getNativePageIdAndTitle();
 
         if (this.nativeParamsService.environment === 'android') {
-            const pageSettingsObj: { pageTitle: string; pageId?: number } = { pageTitle };
-
-            if (pageId) {
-                pageSettingsObj.pageId = pageId;
-            }
-
-            const paramsToSend = JSON.stringify(pageSettingsObj);
+            const narrowedPageId = pageId ?? 1;
+            const paramsToSend = JSON.stringify({ pageId: narrowedPageId, pageTitle });
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
                 this.nativeParamsService.AndroidBridge?.setPageSettings(paramsToSend);

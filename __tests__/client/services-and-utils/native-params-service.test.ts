@@ -3,7 +3,6 @@ import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../../src/query-and-headers
 
 describe('NativeParamsService', () => {
     const AndroidBridge = {};
-    const originalDocument = document;
     const originalWindow = window;
 
     const emulateAndroidEnv = () => {
@@ -19,21 +18,17 @@ describe('NativeParamsService', () => {
         const bridgeToNativeData = { appId: '1.2.3', appVersion: 'kittycash' };
         const encodedBridgeToNativeData = encodeURIComponent(JSON.stringify(bridgeToNativeData));
 
-        const cookies = `foo=bar; ${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${encodedBridgeToNativeData}; baz=foo`;
-
-        // eslint-disable-next-line no-global-assign
-        document = Object.create(document);
-        Object.defineProperty(document, 'cookie', {
-            value: cookies,
-            writable: true,
-        });
+        document.cookie = 'foo=bar';
+        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${encodedBridgeToNativeData}`;
+        document.cookie = 'baz=foo';
 
         return bridgeToNativeData;
     };
 
     afterEach(() => {
-        // eslint-disable-next-line no-global-assign
-        document = originalDocument;
+        document.cookie = 'foo=; max-age=-1';
+        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=; max-age=-1`;
+        document.cookie = 'baz=; max-age=-1';
         // eslint-disable-next-line no-global-assign
         window = originalWindow;
     });
