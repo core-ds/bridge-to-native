@@ -10,7 +10,7 @@ jest.mock('../../src/client/services-and-utils/close-webview-util', () => ({
     },
 }));
 
-describe('BridgeToNative client-side navigation integration testing', () => {
+describe('B2N client-side navigation e2e testing', () => {
     const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
     const historyGoSpy = jest.spyOn(window.history, 'go');
     const locationReplaceSpy = jest.spyOn(window.location, 'replace');
@@ -248,7 +248,7 @@ describe('BridgeToNative client-side navigation integration testing', () => {
             expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
 
-        it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
+        it('should act and use AM interface correctly when using `goBackAFewStepsClientSide`', async () => {
             const inst = new BridgeToNative();
 
             inst.navigateClientSide('/page2', null, 'Title 2');

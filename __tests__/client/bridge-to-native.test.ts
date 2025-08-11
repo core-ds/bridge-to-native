@@ -16,6 +16,7 @@ const mockedNativeNavigationAndTitleServiceInstance = {
     goBackAFewStepsClientSide: jest.fn(),
     navigateClientSide: jest.fn(),
     navigateServerSide: jest.fn(),
+    setInitialView: jest.fn(),
     setTitle: jest.fn(),
 };
 
@@ -66,7 +67,7 @@ describe('BridgeToNative', () => {
     });
 
     describe('Initialization', () => {
-        it('should pass logError to NativeParamsService', () => {
+        it('should pass `logError` to `NativeParamsService`', () => {
             const logError = jest.fn();
 
             // eslint-disable-next-line no-new
@@ -75,13 +76,13 @@ describe('BridgeToNative', () => {
             expect(MockedNativeParamsServiceConstructor).toHaveBeenCalledWith(logError);
         });
 
-        it('should pass nativeParamsService to ExternalLinksService', () => {
+        it('should pass `nativeParamsService` to `ExternalLinksService`', () => {
             expect(MockedExternalLinksServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
             );
         });
 
-        it('should pass nativeParamsService to NativeNavigationAndTitleService', () => {
+        it('should pass `nativeParamsService` to `NativeNavigationAndTitleService`', () => {
             expect(MockedNativeNavigationAndTitleServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
                 undefined,
@@ -89,7 +90,7 @@ describe('BridgeToNative', () => {
             );
         });
 
-        it('should pass browserHistoryApiWrappers to NativeNavigationAndTitleService', () => {
+        it('should pass `browserHistoryApiWrappers` to `NativeNavigationAndTitleService`', () => {
             const browserHistoryApiWrappers = {};
 
             // eslint-disable-next-line no-new
@@ -102,7 +103,7 @@ describe('BridgeToNative', () => {
             );
         });
 
-        it('should pass logError to NativeNavigationAndTitleService', () => {
+        it('should pass `logError` to `NativeNavigationAndTitleService`', () => {
             const logError = jest.fn();
 
             // eslint-disable-next-line no-new
@@ -117,38 +118,38 @@ describe('BridgeToNative', () => {
     });
 
     describe('Getters', () => {
-        it('should return correct appId', () => {
+        it('should return correct `appId`', () => {
             expect(bridge.appId).toBe(mockedNativeParamsServiceInstance.appId);
         });
 
-        it('should return correct appVersion', () => {
+        it('should return correct `appVersion`', () => {
             expect(bridge.appVersion).toBe(mockedNativeParamsServiceInstance.appVersion);
         });
 
-        it('should return correct environment', () => {
+        it('should return correct `environment`', () => {
             expect(bridge.environment).toBe(mockedNativeParamsServiceInstance.environment);
         });
 
-        it('should return correct wasNativeParamsDataFailedToRead', () => {
+        it('should return correct `wasNativeParamsDataFailedToRead`', () => {
             expect(bridge.wasNativeParamsDataFailedToRead).toBe(
                 !mockedNativeParamsServiceInstance.nativeParamsReadErrorFlag,
             );
         });
 
-        it('should return correct originalWebviewParams', () => {
+        it('should return correct `originalWebviewParams`', () => {
             expect(bridge.originalWebviewParams).toBe(
                 mockedNativeParamsServiceInstance.originalWebviewParams,
             );
         });
 
-        it('should return correct theme', () => {
+        it('should return correct `theme`', () => {
             expect(bridge.theme).toBe(mockedNativeParamsServiceInstance.theme);
         });
     });
 
     describe('Methods', () => {
-        describe('canUseNativeFeature', () => {
-            it('should call nativeParamsService.canUseNativeFeature', () => {
+        describe('method `canUseNativeFeature`', () => {
+            it('should call `nativeParamsService.canUseNativeFeature`', () => {
                 const feature = 'geolocation';
 
                 bridge.canUseNativeFeature(feature);
@@ -157,7 +158,7 @@ describe('BridgeToNative', () => {
                 );
             });
 
-            it('should return value from nativeParamsService.canUseNativeFeature', () => {
+            it('should return value from `nativeParamsService.canUseNativeFeature`', () => {
                 jest.spyOn(
                     mockedNativeParamsServiceInstance,
                     'canUseNativeFeature',
@@ -167,8 +168,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('closeWebview', () => {
-            it('should call nativeNavigationAndTitleService.closeWebview', () => {
+        describe('method `closeWebview`', () => {
+            it('should call `nativeNavigationAndTitleService.closeWebview`', () => {
                 bridge.closeWebview();
                 expect(
                     mockedNativeNavigationAndTitleServiceInstance.closeWebview,
@@ -176,8 +177,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('getHrefToOpenInBrowser', () => {
-            it('should call externalLinksService.getHrefToOpenInBrowser', () => {
+        describe('method `getHrefToOpenInBrowser`', () => {
+            it('should call `externalLinksService.getHrefToOpenInBrowser`', () => {
                 const link = 'http://example.com';
 
                 bridge.getHrefToOpenInBrowser(link);
@@ -186,7 +187,7 @@ describe('BridgeToNative', () => {
                 ).toHaveBeenCalledWith(link);
             });
 
-            it('should return value from nativeParamsService.getHrefToOpenInBrowser', () => {
+            it('should return value from `nativeParamsService.getHrefToOpenInBrowser`', () => {
                 const modifiedLink = 'http://example.com?openInBrowser=true';
 
                 jest.spyOn(
@@ -198,8 +199,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('goBack', () => {
-            it('should call nativeNavigationAndTitleService.goBack', () => {
+        describe('method `goBack`', () => {
+            it('should call `nativeNavigationAndTitleService.goBack`', () => {
                 bridge.goBack();
                 expect(mockedNativeNavigationAndTitleServiceInstance.goBack).toHaveBeenCalledTimes(
                     1,
@@ -207,8 +208,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('goBackAFewStepsClientSide', () => {
-            it('should call nativeNavigationAndTitleService.goBackAFewStepsClientSide', () => {
+        describe('method `goBackAFewStepsClientSide`', () => {
+            it('should call `nativeNavigationAndTitleService.goBackAFewStepsClientSide`', () => {
                 const steps = 3;
 
                 bridge.goBackAFewStepsClientSide(steps);
@@ -227,8 +228,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('handleNativeDeeplink', () => {
-            it('should call externalLinksService.handleNativeDeeplink', () => {
+        describe('method `handleNativeDeeplink`', () => {
+            it('should call `externalLinksService.handleNativeDeeplink`', () => {
                 const deeplink = 'test-deeplink';
 
                 bridge.handleNativeDeeplink(deeplink);
@@ -237,7 +238,7 @@ describe('BridgeToNative', () => {
                 ).toHaveBeenCalledWith(deeplink, false);
             });
 
-            it('should call externalLinksService.handleNativeDeeplink with closeWebviewBeforeCallNativeDeeplinkHandler flag', () => {
+            it('should call `externalLinksService.handleNativeDeeplink` with `closeWebviewBeforeCallNativeDeeplinkHandler` flag', () => {
                 const deeplink = 'test-deeplink';
 
                 bridge.handleNativeDeeplink(deeplink, true);
@@ -247,8 +248,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('isCurrentVersionHigherOrEqual', () => {
-            it('should call nativeParamsService.isCurrentVersionHigherOrEqual', () => {
+        describe('method `isCurrentVersionHigherOrEqual`', () => {
+            it('should call `nativeParamsService.isCurrentVersionHigherOrEqual`', () => {
                 const version = '2.0.0';
 
                 bridge.isCurrentVersionHigherOrEqual(version);
@@ -257,7 +258,7 @@ describe('BridgeToNative', () => {
                 ).toHaveBeenCalledWith(version);
             });
 
-            it('should return value from nativeParamsService.isCurrentVersionHigherOrEqual', () => {
+            it('should return value from `nativeParamsService.isCurrentVersionHigherOrEqual`', () => {
                 jest.spyOn(
                     mockedNativeParamsServiceInstance,
                     'isCurrentVersionHigherOrEqual',
@@ -267,8 +268,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('navigateClientSide', () => {
-            it('should call nativeNavigationAndTitleService.navigateClientSide', () => {
+        describe('method `navigateClientSide`', () => {
+            it('should call `nativeNavigationAndTitleService.navigateClientSide`', () => {
                 const url = 'http://example.com';
 
                 bridge.navigateClientSide(url);
@@ -277,7 +278,7 @@ describe('BridgeToNative', () => {
                 ).toHaveBeenCalledWith(url, undefined, '');
             });
 
-            it('should call nativeNavigationAndTitleService.navigateClientSide with optional parameters', () => {
+            it('should call `nativeNavigationAndTitleService.navigateClientSide` with optional parameters', () => {
                 const url = 'http://example.com';
                 const state = { test: true };
                 const nativeTitle = 'Test Title';
@@ -289,8 +290,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('navigateServerSide', () => {
-            it('should call nativeNavigationAndTitleService.navigateServerSide', () => {
+        describe('method `navigateServerSide`', () => {
+            it('should call `nativeNavigationAndTitleService.navigateServerSide`', () => {
                 const url = 'http://example.com';
 
                 bridge.navigateServerSide(url);
@@ -299,7 +300,7 @@ describe('BridgeToNative', () => {
                 ).toHaveBeenCalledWith(url, '');
             });
 
-            it('should call nativeNavigationAndTitleService.navigateServerSide with nativeTitle parameter', () => {
+            it('should call `nativeNavigationAndTitleService.navigateServerSide` with `nativeTitle` parameter', () => {
                 const url = 'http://example.com';
                 const nativeTitle = 'Test Title';
 
@@ -310,8 +311,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('openInBrowser', () => {
-            it('should call externalLinksService.openInBrowser', () => {
+        describe('method `openInBrowser`', () => {
+            it('should call `externalLinksService.openInBrowser`', () => {
                 const link = 'https://example.com';
 
                 bridge.openInBrowser(link);
@@ -319,8 +320,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('openInNewWebview', () => {
-            it('should call externalLinksService.openInNewWebview', () => {
+        describe('method `openInNewWebview`', () => {
+            it('should call `externalLinksService.openInNewWebview`', () => {
                 const link = 'https://example.com';
 
                 bridge.openInNewWebview(link);
@@ -331,7 +332,7 @@ describe('BridgeToNative', () => {
                 );
             });
 
-            it('should call externalLinksService.openInNewWebview with optional parameters', () => {
+            it('should call `externalLinksService.openInNewWebview` with optional parameters', () => {
                 const link = 'https://example.com';
                 const nativeTitle = 'Test Title';
                 const closeCurrentWebview = true;
@@ -345,8 +346,8 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('openPdf', () => {
-            it('should call externalLinksService.pdfType', () => {
+        describe('method `openPdf`', () => {
+            it('should call `externalLinksService.pdfType`', () => {
                 const url = 'https://example.com/file.pdf';
 
                 bridge.openPdf(url);
@@ -357,7 +358,7 @@ describe('BridgeToNative', () => {
                 );
             });
 
-            it('should call externalLinksService.pdfType with optional parameters', () => {
+            it('should call `externalLinksService.pdfType` with optional parameters', () => {
                 const url = 'https://example.com/file.pdf';
                 const type = 'base64';
                 const title = 'PDF Title';
@@ -371,8 +372,26 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('setTitle', () => {
-            it('should call nativeNavigationAndTitleService.setTitle', () => {
+        describe('method `setInitialView`', () => {
+            it('should call `nativeNavigationAndTitleService.setInitialView`', () => {
+                bridge.setInitialView();
+                expect(
+                    mockedNativeNavigationAndTitleServiceInstance.setInitialView,
+                ).toHaveBeenCalledWith('');
+            });
+
+            it('should call `nativeNavigationAndTitleService.setInitialView` with `nativeTitle` parameter', () => {
+                const nativeTitle = 'Initial Title';
+
+                bridge.setInitialView(nativeTitle);
+                expect(
+                    mockedNativeNavigationAndTitleServiceInstance.setInitialView,
+                ).toHaveBeenCalledWith(nativeTitle);
+            });
+        });
+
+        describe('method `setTitle`', () => {
+            it('should call `nativeNavigationAndTitleService.setTitle`', () => {
                 const nativeTitle = 'New Title';
 
                 bridge.setTitle(nativeTitle);

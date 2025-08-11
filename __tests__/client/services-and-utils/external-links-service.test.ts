@@ -29,7 +29,7 @@ describe('ExternalLinksService', () => {
         jest.clearAllMocks();
     });
 
-    describe('method handleNativeDeeplink', () => {
+    describe('method `handleNativeDeeplink`', () => {
         it.each([
             [
                 'webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app',
@@ -40,17 +40,16 @@ describe('ExternalLinksService', () => {
             ['alfabank://deeplink_template', 'alfabank://deeplink_template'],
             ['/deeplink_template', 'alfabank://deeplink_template'],
         ])(
-            'should modify input deeplink `%s` and call locationReplace with `%s`',
+            'should modify input deeplink `%s` and call `location.replace` with `%s`',
             (deeplink, expectedValue) => {
                 const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
                 inst.handleNativeDeeplink(deeplink);
-
                 expect(locationReplaceSpy).toHaveBeenCalledWith(expectedValue);
             },
         );
 
-        it('should use closeWebviewBeforeCallNativeDeeplinkHandler argument', () => {
+        it('should use `closeWebviewBeforeCallNativeDeeplinkHandler` argument', () => {
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
             const deeplink = 'webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app';
 
@@ -60,12 +59,11 @@ describe('ExternalLinksService', () => {
             );
 
             inst.handleNativeDeeplink(deeplink, true);
-
             expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
     });
 
-    describe('method getHrefToOpenInBrowser', () => {
+    describe('method `getHrefToOpenInBrowser`', () => {
         it('should modify URL to force opening it in browser for NA versions that support it', () => {
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
@@ -77,8 +75,7 @@ describe('ExternalLinksService', () => {
             expect(inst.getHrefToOpenInBrowser('https://ya.ru')).toBe(
                 'https://ya.ru/?openInBrowser=true',
             );
-
-            expect(inst.getHrefToOpenInBrowser('https://ya.ru/?otherQuery=whyNot')).toStrictEqual(
+            expect(inst.getHrefToOpenInBrowser('https://ya.ru/?otherQuery=whyNot')).toBe(
                 'https://ya.ru/?otherQuery=whyNot&openInBrowser=true',
             );
         });
@@ -94,14 +91,13 @@ describe('ExternalLinksService', () => {
             expect(inst.getHrefToOpenInBrowser('https://ya.ru')).toBe(
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru',
             );
-
-            expect(inst.getHrefToOpenInBrowser('https://ya.ru/?otherQuery=whyNot')).toStrictEqual(
+            expect(inst.getHrefToOpenInBrowser('https://ya.ru/?otherQuery=whyNot')).toBe(
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F%3FotherQuery%3DwhyNot',
             );
         });
     });
 
-    describe('method openInBrowser', () => {
+    describe('method `openInBrowser`', () => {
         it('should open link in browser for NA versions that support it', () => {
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
@@ -113,11 +109,10 @@ describe('ExternalLinksService', () => {
             const link = 'https://ya.ru';
 
             inst.openInBrowser(link);
-
             expect(locationReplaceSpy).toHaveBeenCalledWith(`${link}/?openInBrowser=true`);
         });
 
-        it('should open link in new webview for old NA versions', () => {
+        it('should open link in new WV for old NA versions', () => {
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error –– Мокаем приватный метод
@@ -128,40 +123,37 @@ describe('ExternalLinksService', () => {
             const link = 'https://ya.ru';
 
             inst.openInBrowser(link);
-
             expect(locationReplaceSpy).toHaveBeenCalledWith(
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
             );
         });
     });
 
-    describe('method openInNewWebview', () => {
-        it('should open link in new webview with default title', () => {
+    describe('method `openInNewWebview`', () => {
+        it('should open link in new WV with default title', () => {
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
             const link = 'https://ya.ru';
 
             inst.openInNewWebview(link);
-
             expect(locationReplaceSpy).toHaveBeenCalledWith(
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
             );
         });
 
-        it('should open link in new webview with custom title', () => {
+        it('should open link in new WV with custom title', () => {
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
             const link = 'https://ya.ru';
             const title = 'Custom Title';
 
             inst.openInNewWebview(link, title);
-
             expect(locationReplaceSpy).toHaveBeenCalledWith(
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F%3Fb2n-title%3DCustom%2BTitle',
             );
         });
 
-        it('should close current webview before opening new one', () => {
+        it('should close current WV before opening a new one', () => {
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error –– Мокаем приватный метод
@@ -172,13 +164,12 @@ describe('ExternalLinksService', () => {
             const link = 'https://ya.ru';
 
             inst.openInNewWebview(link, '', true);
-
             expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
     });
 
-    describe('method openPdf', () => {
-        it('should call location.replace if window.open returns null', () => {
+    describe('method `openPdf`', () => {
+        it('should call `location.replace` if `window.open` returns null', () => {
             const testUrl = 'https://example.com/file.pdf';
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
@@ -210,7 +201,7 @@ describe('ExternalLinksService', () => {
             } as NativeParamsService;
 
             it.each(['alfabank', 'aconcierge', 'kittycash'])(
-                'should work for %s scheme of NA',
+                'should work for `%s` scheme of NA',
                 (appId) => {
                     const inst = new ExternalLinksService({
                         ...iOSMockedNativeParamsServiceInstance,
@@ -224,7 +215,7 @@ describe('ExternalLinksService', () => {
                 },
             );
 
-            it('should use type parameter', () => {
+            it('should use `type` parameter', () => {
                 const inst = new ExternalLinksService(iOSMockedNativeParamsServiceInstance);
 
                 inst.openPdf('https://example.com/file.pdf', 'binary');
@@ -233,7 +224,7 @@ describe('ExternalLinksService', () => {
                 );
             });
 
-            it('should use title parameter', () => {
+            it('should use `title` parameter', () => {
                 const inst = new ExternalLinksService(iOSMockedNativeParamsServiceInstance);
 
                 inst.openPdf('https://example.com/file.pdf', 'pdfFile', 'Test Title');

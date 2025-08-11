@@ -20,7 +20,7 @@ describe('NativeParamsService', () => {
     });
 
     describe('Initialization', () => {
-        it('should set AndroidBridge in android evironment', () => {
+        it('should set `AndroidBridge` in android evironment', () => {
             emulateAndroidEnv();
 
             const inst = new NativeParamsService();
@@ -28,19 +28,19 @@ describe('NativeParamsService', () => {
             expect(inst.AndroidBridge).toBe(AndroidBridge);
         });
 
-        it('should not set AndroidBridge not in android environment', () => {
+        it('should not set `AndroidBridge` not in android environment', () => {
             const inst = new NativeParamsService();
 
             expect(inst.AndroidBridge).not.toBeDefined();
         });
 
-        it('should set default appId', () => {
+        it('should set default `appId`', () => {
             const inst = new NativeParamsService();
 
             expect(inst.appId).toBe('alfabank');
         });
 
-        it('should set appId', () => {
+        it('should set `appId`', () => {
             // См. `VERSION_TO_IOS_APP_ID` в `src/client/constants.ts`.
             const kittyAppId = 'kittycash';
             const kittyVersion = '12.26.0';
@@ -57,13 +57,13 @@ describe('NativeParamsService', () => {
             expect(inst.appId).toBe(kittyAppId);
         });
 
-        it('should set default appVersion', () => {
+        it('should set default `appVersion`', () => {
             const inst = new NativeParamsService();
 
             expect(inst.appVersion).toBe('0.0.0');
         });
 
-        it('should set appVersion', () => {
+        it('should set `appVersion`', () => {
             const testVersion = '1.2.3';
 
             jest.spyOn(
@@ -78,13 +78,13 @@ describe('NativeParamsService', () => {
             expect(inst.appVersion).toBe(testVersion);
         });
 
-        it('should set ios environment', () => {
+        it('should set ios `environment`', () => {
             const inst = new NativeParamsService();
 
             expect(inst.environment).toBe('ios');
         });
 
-        it('should set android environment', () => {
+        it('should set android `environment`', () => {
             emulateAndroidEnv();
 
             const inst = new NativeParamsService();
@@ -92,13 +92,13 @@ describe('NativeParamsService', () => {
             expect(inst.environment).toBe('android');
         });
 
-        it('should set default nextPageId', () => {
+        it('should set default `nextPageId`', () => {
             const inst = new NativeParamsService();
 
             expect(inst.nextPageId).toBeNull();
         });
 
-        it('should set nextPageId', () => {
+        it('should set `nextPageId`', () => {
             const nextPageId = 10;
 
             jest.spyOn(
@@ -113,13 +113,13 @@ describe('NativeParamsService', () => {
             expect(inst.nextPageId).toBe(nextPageId);
         });
 
-        it('should set default originalWebviewParams', () => {
+        it('should set default `originalWebviewParams`', () => {
             const inst = new NativeParamsService();
 
             expect(inst.originalWebviewParams).toBeNull();
         });
 
-        it('should set originalWebviewParams', () => {
+        it('should set `originalWebviewParams`', () => {
             const originalWebviewParams = 'theme=dark';
 
             jest.spyOn(
@@ -134,13 +134,13 @@ describe('NativeParamsService', () => {
             expect(inst.originalWebviewParams).toBe(originalWebviewParams);
         });
 
-        it('should set default theme', () => {
+        it('should set default `theme`', () => {
             const inst = new NativeParamsService();
 
             expect(inst.theme).toBe('light');
         });
 
-        it('should set theme', () => {
+        it('should set `theme`', () => {
             const theme = 'dark';
 
             jest.spyOn(
@@ -155,13 +155,13 @@ describe('NativeParamsService', () => {
             expect(inst.theme).toBe(theme);
         });
 
-        it('should set default title', () => {
+        it('should set default `title`', () => {
             const inst = new NativeParamsService();
 
             expect(inst.title).toBe('');
         });
 
-        it('should set title', () => {
+        it('should set `title`', () => {
             const title = 'Test Title';
 
             jest.spyOn(
@@ -177,7 +177,7 @@ describe('NativeParamsService', () => {
         });
     });
 
-    describe('method canUseNativeFeature', () => {
+    describe('method `canUseNativeFeature`', () => {
         it.each([
             [false, 'is too low', 'iOS', '13.2.99'],
             [true, 'is minimum required', 'iOS', '13.3.0'],
@@ -186,7 +186,7 @@ describe('NativeParamsService', () => {
             [true, 'is minimum required', 'Android', '11.71.0'],
             [true, 'is higher than minimum required', 'Android', '12.0.0'],
         ])(
-            'should return %s for feature while AM version %s in %s environment',
+            'should return `%s` for feature while AM version %s in `%s` environment',
             (expected, _, env, appVersion) => {
                 if (env === 'Android') {
                     emulateAndroidEnv();
@@ -204,7 +204,7 @@ describe('NativeParamsService', () => {
         );
     });
 
-    describe('method isCurrentVersionHigherOrEqual', () => {
+    describe('method `isCurrentVersionHigherOrEqual`', () => {
         it.each([
             ['5.0.0', '0.0.0', true],
             ['0.0.0', '5.0.0', false],
@@ -222,7 +222,7 @@ describe('NativeParamsService', () => {
             ['1.1.1', '1.1.0', true],
             ['1.1.0', '1.1.1', false],
         ])(
-            'should compare current version %s with %s and return %s',
+            'should compare current version `%`s with argument version `%s` and return `%s`',
             (currentVersion, versionToCompare, result) => {
                 jest.spyOn(
                     NativeParamsService.prototype,
@@ -236,7 +236,7 @@ describe('NativeParamsService', () => {
         );
     });
 
-    describe('method isValidVersionFormat', () => {
+    describe('method `isValidVersionFormat`', () => {
         it.each([
             ['0.1.2', true],
             ['0.1.2.', false],
@@ -251,14 +251,14 @@ describe('NativeParamsService', () => {
             ['6666.7777.8888', true],
             ['hello', false],
             ['10.infinity.1', false],
-        ])('should check version %s and return %s', (version, result) => {
+        ])('should check version `%s` and return %s', (version, result) => {
             // @ts-expect-error -- Проверка private метода
             expect(NativeParamsService.isValidVersionFormat(version)).toBe(result);
         });
     });
 
-    describe('method getAppId', () => {
-        it('should always return alfabank in Android environment', () => {
+    describe('method `getAppId`', () => {
+        it('should always return `alfabank` in Android environment', () => {
             emulateAndroidEnv();
 
             const inst = new NativeParamsService();
@@ -288,7 +288,7 @@ describe('NativeParamsService', () => {
             ['14.4.99', 'assistmekz'],
             ['14.5.00', 'smartfinancementor'],
         ])(
-            'should detect app scheme for version %s as %s while parameter is not passed',
+            'should detect app scheme for version `%s` as `%s` while parameter is not passed',
             (appVersion, appId) => {
                 jest.spyOn(
                     NativeParamsService.prototype,
@@ -310,7 +310,7 @@ describe('NativeParamsService', () => {
         });
     });
 
-    describe('method readNativeParamsCookie', () => {
+    describe('method `readNativeParamsCookie`', () => {
         it('should parse and return data from cookie', () => {
             const bridgeToNativeData = { appId: '1.2.3', appVersion: 'kittycash' };
 
@@ -337,7 +337,7 @@ describe('NativeParamsService', () => {
             expect(inst.readNativeParamsCookie()).toBeNull();
         });
 
-        it('should set nativeParamsReadErrorFlag to true when there is no bridgeToNativeData cookie', () => {
+        it('should set `nativeParamsReadErrorFlag` to true when there is no bridgeToNativeData cookie', () => {
             const inst = new NativeParamsService();
 
             // @ts-expect-error -- Проверка private метода

@@ -275,7 +275,7 @@ export class BridgeToNative {
      *
      * @param pageTitle Текст заголовка, для «нативной» части WV, пустая строка — отсутствие заголовка.
      */
-    setInitialView(nativeTitle: string) {
+    setInitialView(nativeTitle = '') {
         this.nativeNavigationAndTitleService.setInitialView(nativeTitle);
     }
 
