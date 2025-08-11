@@ -1,30 +1,29 @@
-/* eslint-disable @typescript-eslint/dot-notation -- отключено, чтобы можно было обращаться к приватным полям для их тестирования */
-
 import { BridgeToNative } from '../../src/client/bridge-to-native';
+import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../src/query-and-headers-keys';
 
-declare let window: Window & typeof globalThis & { Android?: object; history: History };
+declare let window: Window & typeof globalThis & { Android?: object };
 
-describe('BridgeToNative integration testing', () => {
-    const defaultAmParams = {
-        appVersion: '12.0.0',
-        theme: 'light',
-        originalWebviewParams: '',
-        nextPageId: null,
-    };
+const mockedCloseWebviewUtil = jest.fn();
 
-    const mockedHistoryPushState = jest.fn();
-    const mockedLocationReplace = jest.fn();
-    const mockedSetPageSettings = jest.fn();
+jest.mock('../../src/client/services-and-utils/close-webview-util', () => ({
+    __esModule: true,
+    get closeWebviewUtil() {
+        return mockedCloseWebviewUtil;
+    },
+}));
 
+// TODO Покрыть интеграционно server-side навигацию.
+describe('BridgeToNative client-side navigation integration testing', () => {
     const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
     const historyGoSpy = jest.spyOn(window.history, 'go');
-    const historyPushStateSpy = jest.spyOn(window.history, 'pushState');
     const locationReplaceSpy = jest.spyOn(window.location, 'replace');
+
+    jest.spyOn(window.history, 'pushState');
 
     let emulateAmBackButtonTap: () => void;
     let emulatePopStateHandler: () => void;
 
-    beforeEach(() => {
+    beforeAll(() => {
         addEventListenerSpy.mockImplementation((_, handler) => {
             // eslint-disable-next-line @typescript-eslint/ban-types -- это моки, каст к Function 👌
             const asyncHandler = () => process.nextTick(handler as Function);
@@ -34,256 +33,272 @@ describe('BridgeToNative integration testing', () => {
         });
 
         historyGoSpy.mockImplementation(() => emulatePopStateHandler());
-        historyPushStateSpy.mockImplementation(mockedHistoryPushState);
-        locationReplaceSpy.mockImplementation(mockedLocationReplace);
     });
 
-    afterEach(() => {
-        delete window.Android;
-        jest.resetAllMocks();
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
     describe('Android environment', () => {
-        beforeEach(() => {
+        const mockedSetPageSettings = jest.fn();
+        const mockedNativeData = {
+            appId: 'alfabank',
+            appVersion: '1.0.0',
+            environment: 'android',
+            nativeParamsReadErrorFlag: false,
+            originalWebviewParams: 'theme=light',
+            theme: 'light',
+            title: 'Title 1',
+        };
+
+        beforeAll(() => {
+            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${encodeURIComponent(JSON.stringify(mockedNativeData))}`;
             window.Android = {
                 setPageSettings: mockedSetPageSettings,
             };
         });
 
-        it('should use AM interface correctly when moving forward and then backward', async () => {
-            const inst = new BridgeToNative(undefined, {
-                ...defaultAmParams,
-                title: 'Initial Title',
-            });
-            const mockedCloseWebview = jest.fn();
-
-            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
-
-            expect(mockedSetPageSettings).toBeCalledTimes(1);
-            expect(mockedSetPageSettings).toBeCalledWith(
-                '{"pageTitle":"Initial Title","pageId":1}',
-            );
-
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
-            expect(mockedSetPageSettings).toBeCalledTimes(2);
-            expect(mockedSetPageSettings).toBeCalledWith('{"pageTitle":"Title 2","pageId":2}');
-
-            inst.nativeNavigationAndTitle.setTitle('Changed Title 2');
-            expect(mockedSetPageSettings).toBeCalledTimes(3);
-            expect(mockedSetPageSettings).toBeCalledWith(
-                '{"pageTitle":"Changed Title 2","pageId":2}',
-            );
-
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, '');
-            expect(mockedSetPageSettings).toBeCalledTimes(4);
-            expect(mockedSetPageSettings).toBeCalledWith('{"pageTitle":"","pageId":3}');
-
-            inst.nativeNavigationAndTitle.navigate('http://example.com');
-            expect(mockedSetPageSettings).toBeCalledTimes(5);
-            expect(mockedSetPageSettings).toBeCalledWith('{"pageTitle":"","pageId":4}');
-
-            emulateAmBackButtonTap();
-            await new Promise(process.nextTick);
-            expect(mockedSetPageSettings).toBeCalledTimes(6);
-            expect(mockedSetPageSettings).toBeCalledWith('{"pageTitle":"","pageId":3}');
-
-            emulateAmBackButtonTap();
-            await new Promise(process.nextTick);
-            expect(mockedSetPageSettings).toBeCalledTimes(7);
-            expect(mockedSetPageSettings).toBeCalledWith(
-                '{"pageTitle":"Changed Title 2","pageId":2}',
-            );
-
-            emulateAmBackButtonTap();
-            await new Promise(process.nextTick);
-            expect(mockedSetPageSettings).toBeCalledTimes(8);
-            expect(mockedSetPageSettings).toBeCalledWith(
-                '{"pageTitle":"Initial Title","pageId":1}',
-            );
-
-            expect(mockedCloseWebview).not.toBeCalled();
-            emulateAmBackButtonTap();
-            await new Promise(process.nextTick);
-            expect(mockedSetPageSettings).toBeCalledTimes(8);
-            expect(mockedCloseWebview).toBeCalled();
+        afterAll(() => {
+            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=; max-age=-1`;
+            delete window.Android;
         });
 
-        it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
-            const inst = new BridgeToNative(undefined, defaultAmParams);
-            const mockedCloseWebview = jest.fn();
+        it('should use AM interface correctly when moving forward and then backward', async () => {
+            const inst = new BridgeToNative();
 
-            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(1);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith(
+                '{"pageId":1,"pageTitle":"Title 1"}',
+            );
 
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 3');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 4');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 5');
-            expect(mockedSetPageSettings).toBeCalledTimes(5);
+            inst.navigateClientSide('/page2', null, 'Title 2');
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(2);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith(
+                '{"pageId":2,"pageTitle":"Title 2"}',
+            );
 
-            inst.nativeNavigationAndTitle.goBackAFewSteps(3);
-            await new Promise(process.nextTick);
+            inst.setTitle('Changed Title 2');
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(3);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith(
+                '{"pageId":2,"pageTitle":"Changed Title 2"}',
+            );
 
-            expect(mockedSetPageSettings).toBeCalledTimes(6);
-            expect(mockedSetPageSettings).toBeCalledWith('{"pageTitle":"Title 2","pageId":2}');
+            inst.navigateClientSide('/page3', null, '');
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(4);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith('{"pageId":3,"pageTitle":""}');
+
+            inst.navigateClientSide('/page4');
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(5);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith('{"pageId":4,"pageTitle":""}');
 
             emulateAmBackButtonTap();
             await new Promise(process.nextTick);
-            expect(mockedSetPageSettings).toBeCalledTimes(7);
-            expect(mockedSetPageSettings).toBeCalledWith('{"pageTitle":"","pageId":1}');
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(6);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith('{"pageId":3,"pageTitle":""}');
 
-            expect(mockedCloseWebview).not.toBeCalled();
             emulateAmBackButtonTap();
             await new Promise(process.nextTick);
-            expect(mockedSetPageSettings).toBeCalledTimes(7);
-            expect(mockedCloseWebview).toBeCalled();
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(7);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith(
+                '{"pageId":2,"pageTitle":"Changed Title 2"}',
+            );
+
+            emulateAmBackButtonTap();
+            await new Promise(process.nextTick);
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(8);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith(
+                '{"pageId":1,"pageTitle":"Title 1"}',
+            );
+
+            expect(mockedCloseWebviewUtil).not.toHaveBeenCalled();
+            emulateAmBackButtonTap();
+            await new Promise(process.nextTick);
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(8);
+            expect(mockedCloseWebviewUtil).toHaveBeenCalled();
+        });
+
+        it('should act and use AM interface correctly when using `goBackAFewStepsClientSide`', async () => {
+            const inst = new BridgeToNative();
+
+            inst.navigateClientSide('/page2', null, 'Title 2');
+            inst.navigateClientSide('/page3', null, 'Title 3');
+            inst.navigateClientSide('/page4', null, 'Title 4');
+            inst.navigateClientSide('/page5', null, 'Title 5');
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(5);
+
+            inst.goBackAFewStepsClientSide(3);
+            await new Promise(process.nextTick);
+
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(6);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith(
+                '{"pageId":2,"pageTitle":"Title 2"}',
+            );
+
+            emulateAmBackButtonTap();
+            await new Promise(process.nextTick);
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(7);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith(
+                '{"pageId":1,"pageTitle":"Title 1"}',
+            );
+
+            expect(mockedCloseWebviewUtil).not.toHaveBeenCalled();
+            emulateAmBackButtonTap();
+            await new Promise(process.nextTick);
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(7);
+            expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
 
         it('should act and use AM interface correctly when using `setInitialView`', async () => {
-            const inst = new BridgeToNative(undefined, defaultAmParams);
-            const mockedCloseWebview = jest.fn();
+            const inst = new BridgeToNative();
 
-            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
+            inst.navigateClientSide('/page2', null, 'Title 2');
+            inst.navigateClientSide('/page3', null, 'Title 3');
+            inst.navigateClientSide('/page4', null, 'Title 4');
+            inst.navigateClientSide('/page5', null, 'Title 5');
 
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 3');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 4');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 5');
-
-            inst.nativeNavigationAndTitle.setInitialView('New Title After Reset');
-            expect(mockedSetPageSettings).toBeCalledTimes(6);
-            expect(mockedSetPageSettings).toBeCalledWith(
-                '{"pageTitle":"New Title After Reset","pageId":1}',
+            inst.setInitialView('New Title After Reset');
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(6);
+            expect(mockedSetPageSettings).toHaveBeenCalledWith(
+                '{"pageId":1,"pageTitle":"New Title After Reset"}',
             );
 
-            expect(mockedCloseWebview).not.toBeCalled();
+            expect(mockedCloseWebviewUtil).not.toHaveBeenCalled();
             emulateAmBackButtonTap();
             await new Promise(process.nextTick);
-            expect(mockedSetPageSettings).toBeCalledTimes(6);
-            expect(mockedCloseWebview).toBeCalled();
+            expect(mockedSetPageSettings).toHaveBeenCalledTimes(6);
+            expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
     });
 
     describe('iOS environment', () => {
+        const mockedNativeData = {
+            appId: 'alfabank',
+            appVersion: '1.0.0',
+            environment: 'ios',
+            nativeParamsReadErrorFlag: false,
+            originalWebviewParams: 'theme=light',
+            theme: 'light',
+            title: 'Title 1',
+        };
+
+        beforeAll(() => {
+            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${encodeURIComponent(JSON.stringify(mockedNativeData))}`;
+        });
+
+        afterAll(() => {
+            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=; max-age=-1`;
+        });
+
         it('should use AM interface correctly when moving forward and then backward', async () => {
-            const inst = new BridgeToNative(undefined, {
-                ...defaultAmParams,
-                title: 'Initial Title',
-            });
-            const mockedCloseWebview = jest.fn();
+            const inst = new BridgeToNative();
 
-            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
-
-            expect(mockedLocationReplace).toBeCalledTimes(1);
-            expect(mockedLocationReplace).toBeCalledWith(
-                `ios:setPageSettings/?pageTitle=${encodeURIComponent('Initial Title')}`,
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(1);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
+                `ios:setPageSettings/?pageTitle=${encodeURIComponent('Title 1')}`,
             );
 
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
-            expect(mockedLocationReplace).toBeCalledTimes(2);
-            expect(mockedLocationReplace).toBeCalledWith(
+            inst.navigateClientSide('/page2', null, 'Title 2');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(2);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 `ios:setPageSettings/?pageTitle=${encodeURIComponent('Title 2')}&pageId=2`,
             );
 
-            inst.nativeNavigationAndTitle.setTitle('Changed Title 2');
-            expect(mockedLocationReplace).toBeCalledTimes(3);
-            expect(mockedLocationReplace).toBeCalledWith(
+            inst.setTitle('Changed Title 2');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(3);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 `ios:setPageSettings/?pageTitle=${encodeURIComponent('Changed Title 2')}&pageId=2`,
             );
 
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, '');
-            expect(mockedLocationReplace).toBeCalledTimes(4);
-            expect(mockedLocationReplace).toBeCalledWith(
+            inst.navigateClientSide('/page3', null, '');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(4);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 'ios:setPageSettings/?pageTitle=&pageId=3',
             );
 
-            inst.nativeNavigationAndTitle.navigate('http://example.com');
-            expect(mockedLocationReplace).toBeCalledTimes(5);
-            expect(mockedLocationReplace).toBeCalledWith(
+            inst.navigateClientSide('/page4');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(5);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 'ios:setPageSettings/?pageTitle=&pageId=4',
             );
 
             emulateAmBackButtonTap();
             await new Promise(process.nextTick);
-            expect(mockedLocationReplace).toBeCalledTimes(6);
-            expect(mockedLocationReplace).toBeCalledWith(
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(6);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 'ios:setPageSettings/?pageTitle=&pageId=3',
             );
 
             emulateAmBackButtonTap();
             await new Promise(process.nextTick);
-            expect(mockedLocationReplace).toBeCalledTimes(7);
-            expect(mockedLocationReplace).toBeCalledWith(
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(7);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 `ios:setPageSettings/?pageTitle=${encodeURIComponent('Changed Title 2')}&pageId=2`,
             );
 
             emulateAmBackButtonTap();
             await new Promise(process.nextTick);
-            expect(mockedLocationReplace).toBeCalledTimes(8);
-            expect(mockedLocationReplace).toBeCalledWith(
-                `ios:setPageSettings/?pageTitle=${encodeURIComponent('Initial Title')}`,
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(8);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
+                `ios:setPageSettings/?pageTitle=${encodeURIComponent('Title 1')}`,
             );
 
-            expect(mockedCloseWebview).not.toBeCalled();
+            expect(mockedCloseWebviewUtil).not.toHaveBeenCalled();
             emulateAmBackButtonTap();
             await new Promise(process.nextTick);
-            expect(mockedLocationReplace).toBeCalledTimes(8);
-            expect(mockedCloseWebview).toBeCalled();
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(8);
+            expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
 
         it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
-            const inst = new BridgeToNative(undefined, defaultAmParams);
-            const mockedCloseWebview = jest.fn();
+            const inst = new BridgeToNative();
 
-            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
+            inst.navigateClientSide('/page2', null, 'Title 2');
+            inst.navigateClientSide('/page3', null, 'Title 3');
+            inst.navigateClientSide('/page4', null, 'Title 4');
+            inst.navigateClientSide('/page5', null, 'Title 5');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(5);
 
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 3');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 4');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 5');
-            expect(mockedLocationReplace).toBeCalledTimes(5);
-
-            inst.nativeNavigationAndTitle.goBackAFewSteps(3);
+            inst.goBackAFewStepsClientSide(3);
             await new Promise(process.nextTick);
 
-            expect(mockedLocationReplace).toBeCalledTimes(6);
-            expect(mockedLocationReplace).toBeCalledWith(
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(6);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 `ios:setPageSettings/?pageTitle=${encodeURIComponent('Title 2')}&pageId=2`,
             );
 
             emulateAmBackButtonTap();
             await new Promise(process.nextTick);
-            expect(mockedLocationReplace).toBeCalledTimes(7);
-            expect(mockedLocationReplace).toBeCalledWith('ios:setPageSettings/?pageTitle=');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(7);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
+                `ios:setPageSettings/?pageTitle=${encodeURIComponent('Title 1')}`,
+            );
 
-            expect(mockedCloseWebview).not.toBeCalled();
+            expect(mockedCloseWebviewUtil).not.toHaveBeenCalled();
             emulateAmBackButtonTap();
             await new Promise(process.nextTick);
-            expect(mockedLocationReplace).toBeCalledTimes(7);
-            expect(mockedCloseWebview).toBeCalled();
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(7);
+            expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
 
         it('should act and use AM interface correctly when using `setInitialView`', async () => {
-            const inst = new BridgeToNative(undefined, defaultAmParams);
-            const mockedCloseWebview = jest.fn();
+            const inst = new BridgeToNative();
 
-            inst['_nativeNavigationAndTitle']['mediator'].closeWebview = mockedCloseWebview;
+            inst.navigateClientSide('/page2', null, 'Title 2');
+            inst.navigateClientSide('/page3', null, 'Title 3');
+            inst.navigateClientSide('/page4', null, 'Title 4');
+            inst.navigateClientSide('/page5', null, 'Title 5');
 
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 2');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 3');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 4');
-            inst.nativeNavigationAndTitle.navigate('http://example.com', null, 'Title 5');
-
-            inst.nativeNavigationAndTitle.setInitialView('New Title After Reset');
-            expect(mockedLocationReplace).toBeCalledTimes(6);
-            expect(mockedLocationReplace).toBeCalledWith(
+            inst.setInitialView('New Title After Reset');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(6);
+            expect(locationReplaceSpy).toHaveBeenCalledWith(
                 `ios:setPageSettings/?pageTitle=${encodeURIComponent('New Title After Reset')}`,
             );
 
-            expect(mockedCloseWebview).not.toBeCalled();
+            expect(mockedCloseWebviewUtil).not.toHaveBeenCalled();
             emulateAmBackButtonTap();
             await new Promise(process.nextTick);
-            expect(mockedLocationReplace).toBeCalledTimes(6);
-            expect(mockedCloseWebview).toBeCalled();
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(6);
+            expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
     });
 });

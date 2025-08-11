@@ -270,6 +270,16 @@ export class BridgeToNative {
     }
 
     /**
+     * Информирует NA, что WA находится на первом экране. Это приведёт к тому,
+     * что следующее нажатие на кнопку «Назад» в NA закроет WV.
+     *
+     * @param pageTitle Текст заголовка, для «нативной» части WV, пустая строка — отсутствие заголовка.
+     */
+    setInitialView(nativeTitle: string) {
+        this.nativeNavigationAndTitleService.setInitialView(nativeTitle);
+    }
+
+    /**
      * Метод для смены заголовка в NA.
      *
      * @param nativeTitle Текст заголовка, для «нативной» части WV, пустая строка — отсутствие заголовка.
