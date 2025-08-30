@@ -1,4 +1,5 @@
-import { HEADER_KEY_COOKIE } from './constants';
+import { HEADER_KEY_COOKIE } from '../query-and-headers-keys';
+
 import { bridgeToNativeDataCookieExistencePattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
 

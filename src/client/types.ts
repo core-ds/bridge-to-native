@@ -1,11 +1,15 @@
-import { type NativeParams } from '../types';
-
-export type BrowserHistoryAbstractions = {
-    push: (url: HistoryPushStateParams[2], state: HistoryPushStateParams[0]) => void;
-    go: (delta: number) => void;
+export type BrowserHistoryApiWrappers = {
+    push?: (url: HistoryPushStateParams[2], state: HistoryPushStateParams[0]) => void;
+    go?: (delta: number) => void;
 };
 
+export type Environment = 'android' | 'ios';
+
 export type HistoryPushStateParams = Parameters<typeof window.history.pushState>;
+
+export type LocationAssignParam = Parameters<typeof window.location.assign>[0];
+
+export type LogError = (b2nErrorMessage: string, originalError: unknown) => void;
 
 export type NativeFeatureKey =
     // Возможность работы с геолокацией.
@@ -21,24 +25,6 @@ export type NativeFeaturesFromVersion = Readonly<{
     ios: NativeFeaturesParams;
 }>;
 
-export type Environment = 'android' | 'ios';
-
 export type PdfType = 'pdfFile' | 'base64' | 'binary';
 
-export type PreviousBridgeToNativeState = Omit<NativeParams, 'title' | 'theme'> & {
-    theme: 'dark' | 'light';
-};
-
-export type PreviousNativeNavigationAndTitleState = {
-    nativeHistoryStack: string[];
-    title: string;
-};
-
-export type SyncPurpose = 'initialization' | 'navigation' | 'title-replacing';
-
 export type Theme = 'light' | 'dark';
-
-export type ExternalNavigationOptions = {
-    onClick?: () => void;
-    forceOpenInWebview?: boolean;
-};

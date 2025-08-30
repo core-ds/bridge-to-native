@@ -1,4 +1,4 @@
-import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../constants';
+import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../query-and-headers-keys';
 
 // Проверка, согласно спецификации https://httpwg.org/specs/rfc6265.html#cookie
 export const bridgeToNativeDataCookieExistencePattern = new RegExp(
