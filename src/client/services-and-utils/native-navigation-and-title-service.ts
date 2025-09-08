@@ -1,7 +1,7 @@
 import {
-    COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
+    SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
 } from '../../query-and-headers-keys';
 import {
     type BrowserHistoryApiWrappers,
@@ -35,7 +35,7 @@ export class NativeNavigationAndTitleService {
         private logError?: LogError,
     ) {
         this.handleClientSideNavigationBack = this.handleClientSideNavigationBack.bind(this);
-        window.addEventListener('popstate', this.handleClientSideNavigationBack);
+        window.addEventListener('popstate', this.handleClientSideNavigationBack); // Без отписки т.к. Сервис используется в течение всей жизни WA
 
         this.initializeNativeHistoryStack();
     }
@@ -158,14 +158,8 @@ export class NativeNavigationAndTitleService {
         this.syncHistoryWithNative();
     }
 
-    private static hasHistoryStackCookie() {
-        const allCookies = document.cookie.split(';');
-
-        const historyStackCookieIdx = allCookies.findIndex((c) =>
-            c.trim().startsWith(COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK),
-        );
-
-        return historyStackCookieIdx !== -1;
+    private static hasSavedHistoryStack() {
+        return sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK) !== null;
     }
 
     /**
@@ -178,19 +172,22 @@ export class NativeNavigationAndTitleService {
         const { nextPageId, title } = this.nativeParamsService;
 
         if (nextPageId) {
-            // Сценарий 2 – `nextPageId` ставит метод `this.navigateServerSide`.
+            // Сценарий 2 – `nextPageId` ставит метод `this.navigateServerSide`,
+            // т.е. это инициализация сразу после перехода server-side навигацией.
             this.nativeHistoryStack = new Array(nextPageId).fill(''); // Заголовки другого WA здесь не интересны.
             this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = title;
-        } else if (NativeNavigationAndTitleService.hasHistoryStackCookie()) {
-            // Сценарий 3 - кука есть, значит вернулись назад server-side навигацией.
+        } else if (NativeNavigationAndTitleService.hasSavedHistoryStack()) {
+            // Сценарий 3 - в sessionStorage есть сохранённый nativeHistoryStack,
+            // значит это инициализация сразу после перехода назад server-side навигацией.
             try {
-                this.nativeHistoryStack = this.readNativeHistoryStackFromCookie();
+                this.nativeHistoryStack = this.readNativeHistoryStackSessionStorage();
                 this.saveNativeHistoryStack(true);
             } catch {
                 this.nativeHistoryStack = [''];
             }
         } else {
-            // Сценарий 1 - куку ставит метод `this.navigateServerSide`, её не будет, если это новое WV.
+            // Сценарий 1 - запись в sessionStorage ставит метод `this.navigateServerSide`,
+            // её нет, значит это инициализация сразу после открытия WV.
             this.nativeHistoryStack = [title];
         }
 
@@ -217,23 +214,21 @@ export class NativeNavigationAndTitleService {
         return modifiedUrl;
     }
 
-    private readNativeHistoryStackFromCookie() {
-        const allCookies = document.cookie.split(';');
-
-        const nativeHistoryStackCookie = allCookies.find((c) =>
-            c.trim().startsWith(COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK),
-        );
-
+    private readNativeHistoryStackSessionStorage() {
         try {
-            const deserializedNativeHistoryStack = decodeURIComponent(
-                nativeHistoryStackCookie?.split('=')[1] ?? '',
+            const nativeHistoryStack = sessionStorage.getItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
             );
 
-            return JSON.parse(deserializedNativeHistoryStack);
+            if (!nativeHistoryStack) {
+                throw new Error();
+            }
+
+            return JSON.parse(nativeHistoryStack);
         } catch (e) {
             if (this.logError) {
                 this.logError(
-                    'Клиентский код B2N не смог восстановить `nativeHistoryStack` из cookie. ' +
+                    'Клиентский код B2N не смог восстановить `nativeHistoryStack` из sessionStorage. ' +
                         'Могут возникнуть проблемы с кнопкой «Назад» в NA.',
                     e,
                 );
@@ -244,20 +239,24 @@ export class NativeNavigationAndTitleService {
     }
 
     /**
-     * Метод для сохранения текущего состояния связи с NA текущего WA,
-     * чтобы было возможно восстановить его при переходе сюда.
+     * Метод для сохранения состояния связи текущего WA с NA при server-side навигации.
      *
-     * @param previousPage Сохранить состояние предыдущей страницы
-     *  (только что вернулись «назад» и кука содержит данные текущей страницы).
+     * Метод используется в двух случаях:
+     * 1. Перед уходом server-side навигацией на другое WA или страницу текущего WA.
+     * 2. Сразу после перехода назад server-side навигацией — в этом случае требуется
+     *  сериализованный массив в sessionStorage уменьшить на одну запись, для возможного последующего
+     *  перехода назад server-side навигацией в рамках одного домена (т.к. sessionStorage общий).
+     *
+     * @param hasJustGoneBackward Флаг, для случая №2 (см. описание).
      */
-    private saveNativeHistoryStack(previousPage = false) {
-        const stackToSave = previousPage
+    private saveNativeHistoryStack(hasJustGoneBackward = false) {
+        const stackToSave = hasJustGoneBackward
             ? this.nativeHistoryStack.slice(0, -1)
             : this.nativeHistoryStack;
 
-        const serializedNativeHistoryStack = encodeURIComponent(JSON.stringify(stackToSave));
+        const serializedNativeHistoryStack = JSON.stringify(stackToSave);
 
-        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=${serializedNativeHistoryStack}`;
+        sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, serializedNativeHistoryStack);
     }
 
     /**
