@@ -62,10 +62,11 @@ export class BridgeToNative {
     }
 
     /**
-     * Индикатор проблемы чтения данных о NA (используются умолчания, возможно ошибочные).
+     * Индикатор проблемы чтения данных о NA. Если `true`, используются умолчания,
+     * возможно ошибочные (например, версия будет `0.0.0`).
      */
     get wasNativeParamsDataFailedToRead() {
-        return !this.nativeParamsService.nativeParamsReadErrorFlag;
+        return this.nativeParamsService.nativeParamsReadErrorFlag;
     }
 
     /**
