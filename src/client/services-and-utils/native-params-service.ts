@@ -105,17 +105,14 @@ export class NativeParamsService {
             c.trim().startsWith(COOKIE_KEY_BRIDGE_TO_NATIVE_DATA),
         );
 
-        let nativeParams: Partial<NativeParams> | null;
-
         try {
             const deserializedNativeParams = decodeURIComponent(
                 nativeParamsCookie?.split('=')[1] ?? '',
             );
 
-            nativeParams = JSON.parse(deserializedNativeParams);
+            return JSON.parse(deserializedNativeParams) as Partial<NativeParams>;
         } catch (e) {
             this.nativeParamsReadErrorFlag = true;
-            nativeParams = null;
 
             if (this.logError) {
                 this.logError(
@@ -124,8 +121,8 @@ export class NativeParamsService {
                     e,
                 );
             }
-        }
 
-        return nativeParams;
+            return null;
+        }
     }
 }
