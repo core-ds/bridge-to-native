@@ -1,8 +1,8 @@
 import { NativeNavigationAndTitleService } from '../../../src/client/services-and-utils/native-navigation-and-title-service';
 import { type NativeParamsService } from '../../../src/client/services-and-utils/native-params-service';
 import {
-    COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
     QUERY_B2N_NEXT_PAGEID,
+    SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
 } from '../../../src/query-and-headers-keys';
 
 const mockedCloseWebviewUtil = jest.fn();
@@ -469,30 +469,27 @@ describe('NativeNavigationAndTitleService', () => {
         });
     });
 
-    describe('method `hasHistoryStackCookie`', () => {
+    describe('method `hasSavedHistoryStack`', () => {
         afterEach(() => {
-            document.cookie = 'foo=; max-age=-1';
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=; max-age=-1`;
-            document.cookie = 'baz=; max-age=-1';
+            sessionStorage.clear();
         });
 
         it('should return true if `bridgeToNativeHistoryStack` is detected', () => {
             const bridgeToNativeHistoryStack = ['Title 1', 'Title 2', 'Title 3'];
-            const encodedBridgeToNativeHistoryStack = encodeURIComponent(
-                JSON.stringify(bridgeToNativeHistoryStack),
+            const serializedBridgeToNativeHistoryStack = JSON.stringify(bridgeToNativeHistoryStack);
+
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                serializedBridgeToNativeHistoryStack,
             );
 
-            document.cookie = 'foo=bar';
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=${encodedBridgeToNativeHistoryStack}`;
-            document.cookie = 'baz=foo';
-
             // @ts-expect-error -- Проверям приватный метод
-            expect(NativeNavigationAndTitleService.hasHistoryStackCookie()).toBeTruthy();
+            expect(NativeNavigationAndTitleService.hasSavedHistoryStack()).toBeTruthy();
         });
 
         it('should return false if `bridgeToNativeHistoryStack` is not detected', () => {
             // @ts-expect-error -- Проверям приватный метод
-            expect(NativeNavigationAndTitleService.hasHistoryStackCookie()).toBeFalsy();
+            expect(NativeNavigationAndTitleService.hasSavedHistoryStack()).toBeFalsy();
         });
     });
 
@@ -512,7 +509,7 @@ describe('NativeNavigationAndTitleService', () => {
         });
 
         afterEach(() => {
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=; max-age=-1`;
+            sessionStorage.clear();
         });
 
         afterAll(() => {
@@ -533,22 +530,22 @@ describe('NativeNavigationAndTitleService', () => {
             expect(syncHistoryWithNativeSpy).toHaveBeenCalled();
         });
 
-        it('should restore stack with cookie scenario', () => {
-            const cookieValue = encodeURIComponent(JSON.stringify(['Cookie Title']));
+        it('should restore stack with sessionStorage scenario', () => {
+            const sessionStorageValue = JSON.stringify(['Title']);
 
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=${cookieValue}`;
+            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, sessionStorageValue);
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error – Проверяем приватное свойство
-            expect(inst.nativeHistoryStack).toEqual(['Cookie Title']);
+            expect(inst.nativeHistoryStack).toEqual(['Title']);
             expect(syncHistoryWithNativeSpy).toHaveBeenCalled();
         });
 
-        it('should call `saveNativeHistoryStack` with cookie scenario', () => {
-            const cookieValue = encodeURIComponent(JSON.stringify(['Cookie Title']));
+        it('should call `saveNativeHistoryStack` with sessionStorage scenario', () => {
+            const sessionStorageValue = JSON.stringify(['Cookie Title']);
 
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=${cookieValue}`;
+            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, sessionStorageValue);
 
             // eslint-disable-next-line no-new
             new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
@@ -556,8 +553,8 @@ describe('NativeNavigationAndTitleService', () => {
             expect(saveNativeHistoryStackSpy).toHaveBeenCalledWith(true);
         });
 
-        it('should handle invalid cookie gracefully', () => {
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=broken-json`;
+        it('should handle invalid sessionStorage value gracefully', () => {
+            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, 'broken-json');
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
@@ -612,46 +609,42 @@ describe('NativeNavigationAndTitleService', () => {
         });
     });
 
-    describe('method `readNativeHistoryStackFromCookie`', () => {
+    describe('method `readNativeHistoryStackSessionStorage`', () => {
         afterEach(() => {
-            document.cookie = 'foo=; max-age=-1';
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=; max-age=-1`;
-            document.cookie = 'baz=; max-age=-1';
+            sessionStorage.clear();
         });
 
-        it('should throw on missing cookie', () => {
+        it('should throw while there is no data in sessionStorage', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             try {
                 // @ts-expect-error -- Проверяем приватный метод
-                inst.readNativeHistoryStackFromCookie();
+                inst.readNativeHistoryStackSessionStorage();
                 expect(false).toBeTruthy();
             } catch {
                 expect(true).toBeTruthy();
             }
         });
 
-        it('should successfully parse valid cookie', () => {
-            const cookieValue = encodeURIComponent(JSON.stringify(['Title 1', 'Title 2']));
+        it('should successfully parse data in sessionStorage', () => {
+            const serializedValue = JSON.stringify(['Title 1', 'Title 2']);
 
-            document.cookie = 'foo=bar';
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=${cookieValue}`;
-            document.cookie = 'baz=foo';
+            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, serializedValue);
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error -- Проверяем приватный метод
-            expect(inst.readNativeHistoryStackFromCookie()).toEqual(['Title 1', 'Title 2']);
+            expect(inst.readNativeHistoryStackSessionStorage()).toEqual(['Title 1', 'Title 2']);
         });
 
-        it('should throw on invalid cookie', () => {
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=invalid-json`;
+        it('should throw while there is invalid data is sessionStorage', () => {
+            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, 'invalid-json');
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             try {
                 // @ts-expect-error -- Проверяем приватный метод
-                inst.readNativeHistoryStackFromCookie();
+                inst.readNativeHistoryStackSessionStorage();
                 expect(false).toBeTruthy();
             } catch {
                 expect(true).toBeTruthy();
@@ -669,7 +662,7 @@ describe('NativeNavigationAndTitleService', () => {
 
             try {
                 // @ts-expect-error -- Проверяем приватный метод
-                inst.readNativeHistoryStackFromCookie();
+                inst.readNativeHistoryStackSessionStorage();
             } catch {
                 expect(logError).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
             }
@@ -677,14 +670,8 @@ describe('NativeNavigationAndTitleService', () => {
     });
 
     describe('method `saveNativeHistoryStack`', () => {
-        const getCookieValue = () =>
-            document.cookie
-                .split('; ')
-                .find((row) => row.startsWith(`${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=`))
-                ?.split('=')[1];
-
         afterEach(() => {
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=; max-age=-1`;
+            sessionStorage.clear();
         });
 
         it('should save full stack when `previousPage=false`', () => {
@@ -696,28 +683,35 @@ describe('NativeNavigationAndTitleService', () => {
 
             // @ts-expect-error – Проверяем приватный метод
             inst.saveNativeHistoryStack();
-            expect(getCookieValue()).toBe(encodeURIComponent(JSON.stringify(stack)));
+            expect(sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK)).toBe(
+                JSON.stringify(stack),
+            );
         });
 
         it('should save stack without last item when `previousPage=true`', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+            const stack = ['Page1', 'Page2', 'Page3'];
 
             // @ts-expect-error – Мокаем приватное свойство
-            inst.nativeHistoryStack = ['Page1', 'Page2', 'Page3'];
+            inst.nativeHistoryStack = stack;
 
             // @ts-expect-error – Проверяем приватный метод
             inst.saveNativeHistoryStack(true);
-            expect(getCookieValue()).toBe(encodeURIComponent(JSON.stringify(['Page1', 'Page2'])));
+            expect(sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK)).toBe(
+                JSON.stringify(stack.slice(0, -1)),
+            );
         });
 
         it('should overwrite existing cookie with new value', () => {
-            document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=old_value`;
+            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, 'old_value');
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error – Проверяем приватный метод
             inst.saveNativeHistoryStack();
-            expect(getCookieValue()).toBe(encodeURIComponent(JSON.stringify(['Title 1'])));
+            expect(sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK)).toBe(
+                JSON.stringify(['Title 1']),
+            );
         });
     });
 
