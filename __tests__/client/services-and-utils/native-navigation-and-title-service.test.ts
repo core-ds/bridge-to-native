@@ -323,6 +323,37 @@ describe('NativeNavigationAndTitleService', () => {
         });
     });
 
+    describe('method `reload`', () => {
+        it('should push `TemporaryReloadStub` to nativeHistoryStack', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+            // @ts-expect-error –– Используем приватное свойство
+            const initialLength = inst.nativeHistoryStack.length;
+
+            inst.reload();
+
+            // @ts-expect-error –– Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toHaveLength(initialLength + 1);
+            // @ts-expect-error –– Проверяем приватное свойство
+            expect(inst.nativeHistoryStack[inst.nativeHistoryStack.length - 1]).toBe(1); // 1 — значение `TemporaryReloadStub` из enum
+        });
+
+        it('should call `saveNativeHistoryStack` without parameters', () => {
+            const saveNativeHistoryStackSpy = jest.spyOn(
+                NativeNavigationAndTitleService.prototype,
+                // @ts-expect-error -- Мокаем приватный метод
+                'saveNativeHistoryStack',
+            ) as jest.SpyInstance;
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            inst.reload();
+
+            expect(saveNativeHistoryStackSpy).toHaveBeenCalledWith();
+
+            saveNativeHistoryStackSpy.mockRestore();
+        });
+    });
+
     describe('method `setInitialView`', () => {
         it('should reset `nativeHistoryStack`', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
@@ -526,11 +557,17 @@ describe('NativeNavigationAndTitleService', () => {
             const inst = new NativeNavigationAndTitleService(mockedParamsService);
 
             // @ts-expect-error – Проверяем приватное свойство
-            expect(inst.nativeHistoryStack).toEqual(['', '', 'Title 3']);
+            expect(inst.nativeHistoryStack).toEqual([0, 0, 'Title 3']); // 0 — значение `TemporaryReloadStub` из enum
             expect(syncHistoryWithNativeSpy).toHaveBeenCalled();
         });
 
         it('should restore stack with sessionStorage scenario', () => {
+            const readAndUpdateNativeHistoryStackSessionStorageSpy = jest.spyOn(
+                NativeNavigationAndTitleService.prototype,
+                // @ts-expect-error –– Мокаем приватный метод
+                'readAndUpdateNativeHistoryStackSessionStorage',
+            ) as jest.SpyInstance;
+
             const sessionStorageValue = JSON.stringify(['Title']);
 
             sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, sessionStorageValue);
@@ -539,18 +576,10 @@ describe('NativeNavigationAndTitleService', () => {
 
             // @ts-expect-error – Проверяем приватное свойство
             expect(inst.nativeHistoryStack).toEqual(['Title']);
+            expect(readAndUpdateNativeHistoryStackSessionStorageSpy).toHaveBeenCalled();
             expect(syncHistoryWithNativeSpy).toHaveBeenCalled();
-        });
 
-        it('should call `saveNativeHistoryStack` with sessionStorage scenario', () => {
-            const sessionStorageValue = JSON.stringify(['Cookie Title']);
-
-            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, sessionStorageValue);
-
-            // eslint-disable-next-line no-new
-            new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
-
-            expect(saveNativeHistoryStackSpy).toHaveBeenCalledWith(true);
+            readAndUpdateNativeHistoryStackSessionStorageSpy.mockRestore();
         });
 
         it('should handle invalid sessionStorage value gracefully', () => {
@@ -560,7 +589,6 @@ describe('NativeNavigationAndTitleService', () => {
 
             // @ts-expect-error – Проверяем приватное свойство
             expect(inst.nativeHistoryStack).toEqual(['']);
-            expect(saveNativeHistoryStackSpy).not.toHaveBeenCalled();
         });
 
         it('should initialize stack with default scenario', () => {
@@ -609,7 +637,7 @@ describe('NativeNavigationAndTitleService', () => {
         });
     });
 
-    describe('method `readNativeHistoryStackSessionStorage`', () => {
+    describe('method `readAndUpdateNativeHistoryStackSessionStorage`', () => {
         afterEach(() => {
             sessionStorage.clear();
         });
@@ -619,7 +647,7 @@ describe('NativeNavigationAndTitleService', () => {
 
             try {
                 // @ts-expect-error -- Проверяем приватный метод
-                inst.readNativeHistoryStackSessionStorage();
+                inst.readAndUpdateNativeHistoryStackSessionStorage();
                 expect(false).toBeTruthy();
             } catch {
                 expect(true).toBeTruthy();
@@ -634,7 +662,24 @@ describe('NativeNavigationAndTitleService', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error -- Проверяем приватный метод
-            expect(inst.readNativeHistoryStackSessionStorage()).toEqual(['Title 1', 'Title 2']);
+            expect(inst.readAndUpdateNativeHistoryStackSessionStorage()).toEqual([
+                'Title 1',
+                'Title 2',
+            ]);
+        });
+
+        it('should handle reload scenario', () => {
+            const serializedValue = JSON.stringify(['Title 1', 'Title 2', 1]); // 1 — значение `TemporaryReloadStub` из enum
+
+            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, serializedValue);
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            expect(inst.readAndUpdateNativeHistoryStackSessionStorage()).toEqual([
+                'Title 1',
+                'Title 2',
+            ]);
         });
 
         it('should throw while there is invalid data is sessionStorage', () => {
@@ -644,7 +689,7 @@ describe('NativeNavigationAndTitleService', () => {
 
             try {
                 // @ts-expect-error -- Проверяем приватный метод
-                inst.readNativeHistoryStackSessionStorage();
+                inst.readAndUpdateNativeHistoryStackSessionStorage();
                 expect(false).toBeTruthy();
             } catch {
                 expect(true).toBeTruthy();
@@ -662,10 +707,28 @@ describe('NativeNavigationAndTitleService', () => {
 
             try {
                 // @ts-expect-error -- Проверяем приватный метод
-                inst.readNativeHistoryStackSessionStorage();
+                inst.readAndUpdateNativeHistoryStackSessionStorage();
             } catch {
                 expect(logError).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
             }
+        });
+
+        it('should update sessionStorage correctly', () => {
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(['Title 1', 'Title 2']),
+            );
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            inst.readAndUpdateNativeHistoryStackSessionStorage();
+
+            const newSessionStorageValue = sessionStorage.getItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+            );
+
+            expect(newSessionStorageValue).toEqual(JSON.stringify(['Title 1']));
         });
     });
 
@@ -674,7 +737,7 @@ describe('NativeNavigationAndTitleService', () => {
             sessionStorage.clear();
         });
 
-        it('should save full stack when `previousPage=false`', () => {
+        it('should save full stack', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
             const stack = ['Page1', 'Page2', 'Page3'];
 
@@ -688,21 +751,7 @@ describe('NativeNavigationAndTitleService', () => {
             );
         });
 
-        it('should save stack without last item when `previousPage=true`', () => {
-            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
-            const stack = ['Page1', 'Page2', 'Page3'];
-
-            // @ts-expect-error – Мокаем приватное свойство
-            inst.nativeHistoryStack = stack;
-
-            // @ts-expect-error – Проверяем приватный метод
-            inst.saveNativeHistoryStack(true);
-            expect(sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK)).toBe(
-                JSON.stringify(stack.slice(0, -1)),
-            );
-        });
-
-        it('should overwrite existing cookie with new value', () => {
+        it('should overwrite existing sessionStorage with new value', () => {
             sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, 'old_value');
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);

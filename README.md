@@ -111,6 +111,7 @@ NA при открытии экрана c WV вместе с областью д
 * `navigateServerSide`
 * `goBack`
 * `goBackAFewStepsClientSide`
+* `reload`
 
 Каждый метод содержит JSDoc c описанием назначения и ограничений.
 

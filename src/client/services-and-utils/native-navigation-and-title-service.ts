@@ -1,3 +1,5 @@
+/* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
+
 import {
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
@@ -13,6 +15,11 @@ import {
 import { closeWebviewUtil } from './close-webview-util';
 import { type NativeParamsService } from './native-params-service';
 
+const enum NativeHistoryStackSpecialValues {
+    ServerSideNavigationStub,
+    TemporaryReloadStub,
+}
+
 /**
  * Сервис, отвечающий за взаимодействие WA с WV компонентами NA —
  * «заголовком» и кнопкой «назад».
@@ -20,7 +27,7 @@ import { type NativeParamsService } from './native-params-service';
 export class NativeNavigationAndTitleService {
     // Здесь храниться состояние связи WA с NA. Сервис всегда ориентируется на этот стек,
     // чтобы вычислить, какие `pageId` и `pageTitle` отправить в NA.
-    private nativeHistoryStack: string[];
+    private nativeHistoryStack: Array<string | NativeHistoryStackSpecialValues>;
 
     // Поле, помогающее правильно обработать переход «назад» на несколько шагов.
     private numOfBackSteps = 1;
@@ -109,6 +116,11 @@ export class NativeNavigationAndTitleService {
         window.location.assign(this.prepareExternalLinkBeforeOpen(url));
     }
 
+    reload() {
+        this.nativeHistoryStack.push(NativeHistoryStackSpecialValues.TemporaryReloadStub); // небольшой костыль, чтобы переиспользовать server-side сценарий
+        this.saveNativeHistoryStack();
+    }
+
     setInitialView(nativeTitle = '') {
         this.nativeHistoryStack = [nativeTitle];
         this.syncHistoryWithNative();
@@ -174,14 +186,16 @@ export class NativeNavigationAndTitleService {
         if (nextPageId) {
             // Сценарий 2 – `nextPageId` ставит метод `this.navigateServerSide`,
             // т.е. это инициализация сразу после перехода server-side навигацией.
-            this.nativeHistoryStack = new Array(nextPageId).fill(''); // Заголовки другого WA здесь не интересны.
+            this.nativeHistoryStack = new Array(nextPageId).fill(
+                NativeHistoryStackSpecialValues.ServerSideNavigationStub,
+            ); // Заголовки другого WA здесь не интересны.
             this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = title;
         } else if (NativeNavigationAndTitleService.hasSavedHistoryStack()) {
             // Сценарий 3 - в sessionStorage есть сохранённый nativeHistoryStack,
-            // значит это инициализация сразу после перехода назад server-side навигацией.
+            // значит это инициализация сразу после перехода назад server-side навигацией,
+            // или инициализация после использования метода `reload`.
             try {
-                this.nativeHistoryStack = this.readNativeHistoryStackSessionStorage();
-                this.saveNativeHistoryStack(true);
+                this.nativeHistoryStack = this.readAndUpdateNativeHistoryStackSessionStorage();
             } catch {
                 this.nativeHistoryStack = [''];
             }
@@ -214,17 +228,41 @@ export class NativeNavigationAndTitleService {
         return modifiedUrl;
     }
 
-    private readNativeHistoryStackSessionStorage() {
+    /**
+     * Читает сохраннённый в sessionStorage `nativeHistoryStack`,
+     * снова сохраняет его в sessionStorage, уменьшая список на 1 запись,
+     * на случай, если будет дальнейший переход назад server-side навигацией.
+     *
+     * @returns актуальное состояние `nativeHistoryStack` из sessionStorage.
+     */
+    private readAndUpdateNativeHistoryStackSessionStorage() {
         try {
-            const nativeHistoryStack = sessionStorage.getItem(
+            const serializedNativeHistoryStack = sessionStorage.getItem(
                 SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
             );
 
-            if (!nativeHistoryStack) {
+            if (!serializedNativeHistoryStack) {
                 throw new Error();
             }
 
-            return JSON.parse(nativeHistoryStack);
+            const nativeHistoryStack = JSON.parse(serializedNativeHistoryStack) as Array<
+                string | NativeHistoryStackSpecialValues
+            >; // внутри оператора `catch`, поэтому кастинг типа приемлем
+            const nativeHistoryStackToSerialize = nativeHistoryStack.slice(0, -1);
+
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(nativeHistoryStackToSerialize),
+            );
+
+            if (
+                nativeHistoryStack[nativeHistoryStack.length - 1] ===
+                NativeHistoryStackSpecialValues.TemporaryReloadStub
+            ) {
+                return nativeHistoryStack.slice(0, -1);
+            }
+
+            return nativeHistoryStack;
         } catch (e) {
             if (this.logError) {
                 this.logError(
@@ -239,22 +277,10 @@ export class NativeNavigationAndTitleService {
     }
 
     /**
-     * Метод для сохранения состояния связи текущего WA с NA при server-side навигации.
-     *
-     * Метод используется в двух случаях:
-     * 1. Перед уходом server-side навигацией на другое WA или страницу текущего WA.
-     * 2. Сразу после перехода назад server-side навигацией — в этом случае требуется
-     *  сериализованный массив в sessionStorage уменьшить на одну запись, для возможного последующего
-     *  перехода назад server-side навигацией в рамках одного домена (т.к. sessionStorage общий).
-     *
-     * @param hasJustGoneBackward Флаг, для случая №2 (см. описание).
+     * Сохранение состояния связи текущего WA с NA при server-side навигации в sessionStorage.
      */
-    private saveNativeHistoryStack(hasJustGoneBackward = false) {
-        const stackToSave = hasJustGoneBackward
-            ? this.nativeHistoryStack.slice(0, -1)
-            : this.nativeHistoryStack;
-
-        const serializedNativeHistoryStack = JSON.stringify(stackToSave);
+    private saveNativeHistoryStack() {
+        const serializedNativeHistoryStack = JSON.stringify(this.nativeHistoryStack);
 
         sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, serializedNativeHistoryStack);
     }

@@ -1,3 +1,5 @@
+/* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
+
 import { ExternalLinksService } from './services-and-utils/external-links-service';
 import { NativeNavigationAndTitleService } from './services-and-utils/native-navigation-and-title-service';
 import { NativeParamsService } from './services-and-utils/native-params-service';
@@ -214,11 +216,15 @@ export class BridgeToNative {
      * экзепляру B2N следующей страницы текущего WA (в случае multi-page application).
      *
      * ВАЖНО!
-     * Не поддерживается такой сценарий:
-     * > работа в WA 1 → переход к WA 2 → переход к WA 1
-     * т.е. при использовании server-side навигации, история переходов разных WA не должна смешиваться.
      *
-     * Снять это ограничение возможно, но нужны доработки.
+     * Не поддерживаются такие сценарии:
+     *
+     * 1. Микс client-side навигации и server-side навигации в рамках одного WA.
+     *  т.е. одно WA должно использовать либо только `navigateClientSide`, либо только `navigateServerSide`.
+     * 2. старт в WA 1 → переход к WA 2 → переход к WA 1
+     *  т.е. при использовании server-side навигации, история переходов разных WA не должна смешиваться.
+     *
+     * Снять эти ограничения возможно, но нужны доработки.
      *
      * @param url URL для перехода внутри WA server-side навигацией.
      * @param nativeTitle Текст заголовка, для «нативной» части WV, пустая строка — отсутствие заголовка.
@@ -276,6 +282,14 @@ export class BridgeToNative {
      */
     openPdf(url: string, type: PdfType = 'pdfFile', title?: string) {
         this.externalLinksService.openPdf(url, type, title);
+    }
+
+    /**
+     * Для перезагрузки страницы необходимо использовать этот метод.
+     * Иначе синхронизация состояния с NA будет потеряна.
+     */
+    reload() {
+        this.nativeNavigationAndTitleService.reload();
     }
 
     /**
