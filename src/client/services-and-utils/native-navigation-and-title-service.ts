@@ -42,7 +42,7 @@ export class NativeNavigationAndTitleService {
         private logError?: LogError,
     ) {
         this.handleClientSideNavigationBack = this.handleClientSideNavigationBack.bind(this);
-        window.addEventListener('popstate', this.handleClientSideNavigationBack); // Без отписки т.к. Сервис используется в течение всей жизни WA
+        window.addEventListener('popstate', this.handleClientSideNavigationBack); // без отписки т.к. Сервис используется в течение всей жизни WA
 
         this.initializeNativeHistoryStack();
     }
@@ -187,8 +187,9 @@ export class NativeNavigationAndTitleService {
             // Сценарий 2 – `nextPageId` ставит метод `this.navigateServerSide`,
             // т.е. это инициализация сразу после перехода server-side навигацией.
             this.nativeHistoryStack = new Array(nextPageId).fill(
+                // Текстовые заголовки другого WA здесь не интересны, используем явную заглушку.
                 NativeHistoryStackSpecialValues.ServerSideNavigationStub,
-            ); // Заголовки другого WA здесь не интересны.
+            );
             this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = title;
         } else if (NativeNavigationAndTitleService.hasSavedHistoryStack()) {
             // Сценарий 3 - в sessionStorage есть сохранённый nativeHistoryStack,
@@ -201,7 +202,7 @@ export class NativeNavigationAndTitleService {
             }
         } else {
             // Сценарий 1 - запись в sessionStorage ставит метод `this.navigateServerSide`,
-            // её нет, значит это инициализация сразу после открытия WV.
+            // её нет, значит это инициализация сразу после открытия нового WV.
             this.nativeHistoryStack = [title];
         }
 
@@ -230,10 +231,10 @@ export class NativeNavigationAndTitleService {
 
     /**
      * Читает сохраннённый в sessionStorage `nativeHistoryStack`,
-     * снова сохраняет его в sessionStorage, уменьшая список на 1 запись,
+     * снова сохраняет его в sessionStorage, уменьшая список на одну запись,
      * на случай, если будет дальнейший переход назад server-side навигацией.
      *
-     * @returns актуальное состояние `nativeHistoryStack` из sessionStorage.
+     * @returns Актуальное состояние `nativeHistoryStack` из sessionStorage.
      */
     private readAndUpdateNativeHistoryStackSessionStorage() {
         try {
@@ -247,7 +248,7 @@ export class NativeNavigationAndTitleService {
 
             const nativeHistoryStack = JSON.parse(serializedNativeHistoryStack) as Array<
                 string | NativeHistoryStackSpecialValues
-            >; // внутри оператора `catch`, поэтому кастинг типа приемлем
+            >; // происходит внутри оператора `catch`, поэтому кастинг типа приемлем
             const nativeHistoryStackToSerialize = nativeHistoryStack.slice(0, -1);
 
             sessionStorage.setItem(

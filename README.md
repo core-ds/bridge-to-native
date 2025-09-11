@@ -161,3 +161,8 @@ window.b2n.goBack()
 При этом «Второй пункт» не решить на стороне веба, надо иметь его ввиду.
 
 Метод `goBackAFewStepsClientSide` нельзя использовать в контексте server-side навигации (см. описание метода).
+
+## TODO
+
+* Перейти на Yarn 4;
+* Избавиться от ограничений `navigateServerSide` и `goBackAFewStepsClientSide` методов.

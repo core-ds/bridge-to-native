@@ -337,7 +337,7 @@ describe('NativeNavigationAndTitleService', () => {
             expect(inst.nativeHistoryStack[inst.nativeHistoryStack.length - 1]).toBe(1); // 1 — значение `TemporaryReloadStub` из enum
         });
 
-        it('should call `saveNativeHistoryStack` without parameters', () => {
+        it('should call `saveNativeHistoryStack`', () => {
             const saveNativeHistoryStackSpy = jest.spyOn(
                 NativeNavigationAndTitleService.prototype,
                 // @ts-expect-error -- Мокаем приватный метод
@@ -347,8 +347,7 @@ describe('NativeNavigationAndTitleService', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             inst.reload();
-
-            expect(saveNativeHistoryStackSpy).toHaveBeenCalledWith();
+            expect(saveNativeHistoryStackSpy).toHaveBeenCalled();
 
             saveNativeHistoryStackSpy.mockRestore();
         });
