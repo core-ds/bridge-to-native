@@ -12,10 +12,6 @@ export const HEADER_KEY_USER_AGENT = 'user-agent';
 // Ключ cookie, с помощью которого серверная часть B2N передаст на клиент информацию об NA.
 export const COOKIE_KEY_BRIDGE_TO_NATIVE_DATA = 'bridgeToNativeData';
 
-// Ключ cookie, с помощью которого клиентская часть B2N сохраняет своё состояние
-// при server-side навигации.
-export const COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK = 'bridgeToNativeHistoryStack';
-
 // Нативное приложение на обеих платформах подмешивает этот заголовок к запросу за HTML.
 // TODO:
 // * Исследовать, делает ли оно это при запросах к прочим ресурсам;
@@ -51,3 +47,7 @@ export const QUERY_NATIVE_IOS_APPVERSION = 'device_app_version';
 
 // NA на обеих платформах в этом параметре передаёт активную тему (светлая/тёмная).
 export const QUERY_NATIVE_THEME = 'theme';
+
+// Ключ sesseionStorage, с помощью которого клиентская часть B2N сохраняет своё состояние
+// при server-side навигации.
+export const SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK = 'bridgeToNativeHistoryStack';

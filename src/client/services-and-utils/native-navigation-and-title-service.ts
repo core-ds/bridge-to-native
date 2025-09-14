@@ -1,7 +1,9 @@
+/* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
+
 import {
-    COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
+    SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
 } from '../../query-and-headers-keys';
 import {
     type BrowserHistoryApiWrappers,
@@ -13,6 +15,11 @@ import {
 import { closeWebviewUtil } from './close-webview-util';
 import { type NativeParamsService } from './native-params-service';
 
+const enum NativeHistoryStackSpecialValues {
+    ServerSideNavigationStub,
+    TemporaryReloadStub,
+}
+
 /**
  * Сервис, отвечающий за взаимодействие WA с WV компонентами NA —
  * «заголовком» и кнопкой «назад».
@@ -20,7 +27,7 @@ import { type NativeParamsService } from './native-params-service';
 export class NativeNavigationAndTitleService {
     // Здесь храниться состояние связи WA с NA. Сервис всегда ориентируется на этот стек,
     // чтобы вычислить, какие `pageId` и `pageTitle` отправить в NA.
-    private nativeHistoryStack: string[];
+    private nativeHistoryStack: Array<string | NativeHistoryStackSpecialValues>;
 
     // Поле, помогающее правильно обработать переход «назад» на несколько шагов.
     private numOfBackSteps = 1;
@@ -35,7 +42,7 @@ export class NativeNavigationAndTitleService {
         private logError?: LogError,
     ) {
         this.handleClientSideNavigationBack = this.handleClientSideNavigationBack.bind(this);
-        window.addEventListener('popstate', this.handleClientSideNavigationBack);
+        window.addEventListener('popstate', this.handleClientSideNavigationBack); // без отписки т.к. Сервис используется в течение всей жизни WA
 
         this.initializeNativeHistoryStack();
     }
@@ -109,6 +116,11 @@ export class NativeNavigationAndTitleService {
         window.location.assign(this.prepareExternalLinkBeforeOpen(url));
     }
 
+    reload() {
+        this.nativeHistoryStack.push(NativeHistoryStackSpecialValues.TemporaryReloadStub); // небольшой костыль, чтобы переиспользовать server-side сценарий
+        this.saveNativeHistoryStack();
+    }
+
     setInitialView(nativeTitle = '') {
         this.nativeHistoryStack = [nativeTitle];
         this.syncHistoryWithNative();
@@ -158,14 +170,8 @@ export class NativeNavigationAndTitleService {
         this.syncHistoryWithNative();
     }
 
-    private static hasHistoryStackCookie() {
-        const allCookies = document.cookie.split(';');
-
-        const historyStackCookieIdx = allCookies.findIndex((c) =>
-            c.trim().startsWith(COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK),
-        );
-
-        return historyStackCookieIdx !== -1;
+    private static hasSavedHistoryStack() {
+        return sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK) !== null;
     }
 
     /**
@@ -178,19 +184,25 @@ export class NativeNavigationAndTitleService {
         const { nextPageId, title } = this.nativeParamsService;
 
         if (nextPageId) {
-            // Сценарий 2 – `nextPageId` ставит метод `this.navigateServerSide`.
-            this.nativeHistoryStack = new Array(nextPageId).fill(''); // Заголовки другого WA здесь не интересны.
+            // Сценарий 2 – `nextPageId` ставит метод `this.navigateServerSide`,
+            // т.е. это инициализация сразу после перехода server-side навигацией.
+            this.nativeHistoryStack = new Array(nextPageId).fill(
+                // Текстовые заголовки другого WA здесь не интересны, используем явную заглушку.
+                NativeHistoryStackSpecialValues.ServerSideNavigationStub,
+            );
             this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = title;
-        } else if (NativeNavigationAndTitleService.hasHistoryStackCookie()) {
-            // Сценарий 3 - кука есть, значит вернулись назад server-side навигацией.
+        } else if (NativeNavigationAndTitleService.hasSavedHistoryStack()) {
+            // Сценарий 3 - в sessionStorage есть сохранённый nativeHistoryStack,
+            // значит это инициализация сразу после перехода назад server-side навигацией,
+            // или инициализация после использования метода `reload`.
             try {
-                this.nativeHistoryStack = this.readNativeHistoryStackFromCookie();
-                this.saveNativeHistoryStack(true);
+                this.nativeHistoryStack = this.readAndUpdateNativeHistoryStackSessionStorage();
             } catch {
                 this.nativeHistoryStack = [''];
             }
         } else {
-            // Сценарий 1 - куку ставит метод `this.navigateServerSide`, её не будет, если это новое WV.
+            // Сценарий 1 - запись в sessionStorage ставит метод `this.navigateServerSide`,
+            // её нет, значит это инициализация сразу после открытия нового WV.
             this.nativeHistoryStack = [title];
         }
 
@@ -217,23 +229,45 @@ export class NativeNavigationAndTitleService {
         return modifiedUrl;
     }
 
-    private readNativeHistoryStackFromCookie() {
-        const allCookies = document.cookie.split(';');
-
-        const nativeHistoryStackCookie = allCookies.find((c) =>
-            c.trim().startsWith(COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK),
-        );
-
+    /**
+     * Читает сохраннённый в sessionStorage `nativeHistoryStack`,
+     * снова сохраняет его в sessionStorage, уменьшая список на одну запись,
+     * на случай, если будет дальнейший переход назад server-side навигацией.
+     *
+     * @returns Актуальное состояние `nativeHistoryStack` из sessionStorage.
+     */
+    private readAndUpdateNativeHistoryStackSessionStorage() {
         try {
-            const deserializedNativeHistoryStack = decodeURIComponent(
-                nativeHistoryStackCookie?.split('=')[1] ?? '',
+            const serializedNativeHistoryStack = sessionStorage.getItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
             );
 
-            return JSON.parse(deserializedNativeHistoryStack);
+            if (!serializedNativeHistoryStack) {
+                throw new Error();
+            }
+
+            const nativeHistoryStack = JSON.parse(serializedNativeHistoryStack) as Array<
+                string | NativeHistoryStackSpecialValues
+            >; // происходит внутри оператора `catch`, поэтому кастинг типа приемлем
+            const nativeHistoryStackToSerialize = nativeHistoryStack.slice(0, -1);
+
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(nativeHistoryStackToSerialize),
+            );
+
+            if (
+                nativeHistoryStack[nativeHistoryStack.length - 1] ===
+                NativeHistoryStackSpecialValues.TemporaryReloadStub
+            ) {
+                return nativeHistoryStack.slice(0, -1);
+            }
+
+            return nativeHistoryStack;
         } catch (e) {
             if (this.logError) {
                 this.logError(
-                    'Клиентский код B2N не смог восстановить `nativeHistoryStack` из cookie. ' +
+                    'Клиентский код B2N не смог восстановить `nativeHistoryStack` из sessionStorage. ' +
                         'Могут возникнуть проблемы с кнопкой «Назад» в NA.',
                     e,
                 );
@@ -244,20 +278,12 @@ export class NativeNavigationAndTitleService {
     }
 
     /**
-     * Метод для сохранения текущего состояния связи с NA текущего WA,
-     * чтобы было возможно восстановить его при переходе сюда.
-     *
-     * @param previousPage Сохранить состояние предыдущей страницы
-     *  (только что вернулись «назад» и кука содержит данные текущей страницы).
+     * Сохранение состояния связи текущего WA с NA при server-side навигации в sessionStorage.
      */
-    private saveNativeHistoryStack(previousPage = false) {
-        const stackToSave = previousPage
-            ? this.nativeHistoryStack.slice(0, -1)
-            : this.nativeHistoryStack;
+    private saveNativeHistoryStack() {
+        const serializedNativeHistoryStack = JSON.stringify(this.nativeHistoryStack);
 
-        const serializedNativeHistoryStack = encodeURIComponent(JSON.stringify(stackToSave));
-
-        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK}=${serializedNativeHistoryStack}`;
+        sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, serializedNativeHistoryStack);
     }
 
     /**

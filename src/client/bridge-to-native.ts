@@ -1,3 +1,5 @@
+/* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
+
 import { ExternalLinksService } from './services-and-utils/external-links-service';
 import { NativeNavigationAndTitleService } from './services-and-utils/native-navigation-and-title-service';
 import { NativeParamsService } from './services-and-utils/native-params-service';
@@ -62,10 +64,11 @@ export class BridgeToNative {
     }
 
     /**
-     * Индикатор проблемы чтения данных о NA (используются умолчания, возможно ошибочные).
+     * Индикатор проблемы чтения данных о NA. Если `true`, используются умолчания,
+     * возможно ошибочные (например, версия будет `0.0.0`).
      */
     get wasNativeParamsDataFailedToRead() {
-        return !this.nativeParamsService.nativeParamsReadErrorFlag;
+        return this.nativeParamsService.nativeParamsReadErrorFlag;
     }
 
     /**
@@ -135,8 +138,9 @@ export class BridgeToNative {
      *
      * ВАЖНО!
      * Метод можно использовать только в рамках истории по SPA WA! Движение назад
-     * server-side перходом на несколько шагов не поддерживается —
-     * произойдет рассинхрон связи с NA (станут очень вероятны ошибки при работе кнопки «Назад»).
+     * server-side переходом на несколько шагов не поддерживается.
+     *
+     * Снять это ограничение возможно, но нужны доработки.
      *
      * @param stepsNumber Количество шагов назад.
      *  Возможно передача как положительного, так и отрицательного числа. `0` будет проигнорирован.
@@ -211,6 +215,17 @@ export class BridgeToNative {
      * чтобы корректно передать информацию экземпляру B2N следующего WA или
      * экзепляру B2N следующей страницы текущего WA (в случае multi-page application).
      *
+     * ВАЖНО!
+     *
+     * Не поддерживаются такие сценарии:
+     *
+     * 1. Микс client-side навигации и server-side навигации в рамках одного WA.
+     *  т.е. одно WA должно использовать либо только `navigateClientSide`, либо только `navigateServerSide`.
+     * 2. Старт в WA 1 → переход к WA 2 → переход к WA 1,
+     *  т.е. при использовании server-side навигации, история переходов разных WA не должна смешиваться.
+     *
+     * Снять эти ограничения возможно, но нужны доработки.
+     *
      * @param url URL для перехода внутри WA server-side навигацией.
      * @param nativeTitle Текст заголовка, для «нативной» части WV, пустая строка — отсутствие заголовка.
      */
@@ -267,6 +282,14 @@ export class BridgeToNative {
      */
     openPdf(url: string, type: PdfType = 'pdfFile', title?: string) {
         this.externalLinksService.openPdf(url, type, title);
+    }
+
+    /**
+     * Для перезагрузки страницы необходимо использовать этот метод.
+     * Иначе синхронизация состояния с NA будет потеряна.
+     */
+    reload() {
+        this.nativeNavigationAndTitleService.reload();
     }
 
     /**

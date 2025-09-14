@@ -11,22 +11,19 @@
         "type": "git",
         "url": "git+https://github.com/core-ds/bridge-to-native.git"
     },
-    "main": "./index.js",
-    "module": "./esm/index.js",
     "exports": {
-        ".": {
-            "import": "./esm/index.js",
-            "require": "./index.js"
+        "./client": {
+            "import": "./client/index.js",
+            "require": "./client/index.js",
+            "types": "./client/index.d.ts"
         },
-        "./*": {
-            "import": "./esm/*",
-            "require": "./*"
+        "./server": {
+            "import": "./server/index.js",
+            "require": "./server/index.js",
+            "types": "./server/index.d.ts"
         }
     },
     "sideEffects": false,
-    "files": [
-        "*"
-    ],
     "bugs": {
         "url": "https://github.com/core-ds/bridge-to-native/issues"
     },
@@ -119,5 +116,6 @@
     },
     "publishConfig": {
         "registry": "https://registry.npmjs.org"
-    }
+    },
+    "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

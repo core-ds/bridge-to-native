@@ -132,7 +132,7 @@ describe('BridgeToNative', () => {
 
         it('should return correct `wasNativeParamsDataFailedToRead`', () => {
             expect(bridge.wasNativeParamsDataFailedToRead).toBe(
-                !mockedNativeParamsServiceInstance.nativeParamsReadErrorFlag,
+                mockedNativeParamsServiceInstance.nativeParamsReadErrorFlag,
             );
         });
 
