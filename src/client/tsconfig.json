@@ -1,0 +1,8 @@
+{
+    "compilerOptions": {
+        "strictPropertyInitialization": false,
+        "target": "es2015",
+        "types": []
+    },
+    "extends": "../../tsconfig.base.json"
+}

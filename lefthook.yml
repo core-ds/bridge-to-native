@@ -1,0 +1,2 @@
+extends:
+    - ./node_modules/arui-presets-lint/lefthook/index.yml
