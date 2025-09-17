@@ -1,6 +1,6 @@
 {
     "name": "@alfalab/bridge-to-native",
-    "version": "0.2.2",
+    "version": "1.0.0",
     "license": "MIT",
     "description": "Утилита для удобной работы веб приложения внутри нативного приложения и коммуникации с ним.",
     "engines": {
