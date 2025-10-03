@@ -107,7 +107,7 @@ function parseRequest(request: UniversalRequest) {
     return nativeParams;
 }
 
-// Возвращает результат сравнения темы полученной, из query params
+// Возвращает результат сравнения темы полученной, из query-параметров
 // с темой, полученной из cookie
 function isSameTheme(request: UniversalRequest, cookies: string | null) {
     if (!cookies) return false;
@@ -115,8 +115,6 @@ function isSameTheme(request: UniversalRequest, cookies: string | null) {
     const [themeFromQuery] = getQueryValues(request, [QUERY_NATIVE_THEME]);
     const parsedCookies = parseCookies(cookies);
     const bridgeCookie = parsedCookies[COOKIE_KEY_BRIDGE_TO_NATIVE_DATA];
-
-    console.log('bridgeCookie', bridgeCookie);
 
     try {
         return JSON.parse(bridgeCookie || '{}').theme === themeFromQuery;
