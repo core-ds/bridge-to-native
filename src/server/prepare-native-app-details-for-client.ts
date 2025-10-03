@@ -1,5 +1,6 @@
 import {
     COOKIE_KEY_BRIDGE_TO_NATIVE_DATA,
+    HEADER_KEY_COOKIE,
     HEADER_KEY_NATIVE_APPVERSION,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
@@ -13,7 +14,7 @@ import { type NativeParams } from '../types';
 import { extractNativeServiceQueries } from './extract-native-service-queries';
 import { iosAppIdPattern, versionPattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
-import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie } from './utils';
+import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie, parseCookies } from './utils';
 
 /**
  * Парсит запрос, доставая из него данные о нативном приложении,
@@ -30,13 +31,14 @@ export function prepareNativeAppDetailsForClient(
     request: UniversalRequest,
     setResponseHeader: (headerKey: string, headerValue: string) => void,
 ) {
-    // Если кука с данными о нативном приложении уже есть, информация уже собрана,
-    // делать больше ничего не нужно.
-    // Возможна смена темы нативного приложения (светлая/тёмная) во время вебвью-сессии.
-    // Но веб об этом не узнает, т.к. нативное приложение сообщает об этом
-    // только при старте нового вебвью.
-    if (hasBridgeToNativeDataCookie(request)) {
-        return;
+    // Если кука с данными о нативном приложении уже есть - информация уже собрана.
+    // Но нужно проверить тему (светлая/тёмная), так как она могла смениться во время вебвью-сессии.
+    // Если в query-параметрах пришла тема, отличная от установленной в куки, - перезаписываем.
+    // В противном случае делать больше ничего не нужно.
+    const cookieHeader = getHeaderValue(request, HEADER_KEY_COOKIE);
+
+    if (hasBridgeToNativeDataCookie(cookieHeader) && isSameTheme(request, cookieHeader)) {
+        return undefined;
     }
 
     const nativeParams = parseRequest(request);
@@ -46,6 +48,8 @@ export function prepareNativeAppDetailsForClient(
         'Set-Cookie',
         `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}`,
     );
+
+    return nativeParams;
 }
 
 function parseRequest(request: UniversalRequest) {
@@ -101,4 +105,22 @@ function parseRequest(request: UniversalRequest) {
     }
 
     return nativeParams;
+}
+
+// Возвращает результат сравнения темы полученной, из query params
+// с темой, полученной из cookie
+function isSameTheme(request: UniversalRequest, cookies: string | null) {
+    if (!cookies) return false;
+
+    const [themeFromQuery] = getQueryValues(request, [QUERY_NATIVE_THEME]);
+    const parsedCookies = parseCookies(cookies);
+    const bridgeCookie = parsedCookies[COOKIE_KEY_BRIDGE_TO_NATIVE_DATA];
+
+    console.log('bridgeCookie', bridgeCookie);
+
+    try {
+        return JSON.parse(bridgeCookie || '{}').theme === themeFromQuery;
+    } catch (_) {
+        return false;
+    }
 }

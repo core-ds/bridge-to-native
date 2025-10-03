@@ -1,5 +1,3 @@
-import { HEADER_KEY_COOKIE } from '../query-and-headers-keys';
-
 import { bridgeToNativeDataCookieExistencePattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
 
@@ -56,8 +54,20 @@ export function getQueryValues(request: UniversalRequest, queryKeys: string | st
  *
  * @param request Объект запроса (Request или IncomingMessage).
  */
-export function hasBridgeToNativeDataCookie(request: UniversalRequest) {
-    const cookies = getHeaderValue(request, HEADER_KEY_COOKIE);
-
+export function hasBridgeToNativeDataCookie(cookies: string | null) {
     return Boolean(cookies && bridgeToNativeDataCookieExistencePattern.test(cookies));
+}
+
+export function parseCookies(cookieHeader: string): Record<string, string> {
+    return cookieHeader.split(';').reduce(
+        (acc, part) => {
+            const [key, ...rest] = part.split('=');
+
+            if (!key) return acc;
+            acc[key.trim()] = decodeURIComponent(rest.join('=').trim());
+
+            return acc;
+        },
+        {} as Record<string, string>,
+    );
 }
