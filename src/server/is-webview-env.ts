@@ -1,4 +1,8 @@
-import { HEADER_KEY_NATIVE_APPVERSION, HEADER_KEY_USER_AGENT } from '../query-and-headers-keys';
+import {
+    HEADER_KEY_COOKIE,
+    HEADER_KEY_NATIVE_APPVERSION,
+    HEADER_KEY_USER_AGENT,
+} from '../query-and-headers-keys';
 
 import { versionPattern, webviewUaIOSPattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
@@ -11,7 +15,9 @@ import { getHeaderValue, hasBridgeToNativeDataCookie } from './utils';
  */
 export function isWebviewEnv(request: UniversalRequest) {
     // Выставленная ранее кука — однозначный индикатор вебвью окружения.
-    if (hasBridgeToNativeDataCookie(request)) {
+    const cookieHeader = getHeaderValue(request, HEADER_KEY_COOKIE);
+
+    if (hasBridgeToNativeDataCookie(cookieHeader)) {
         return true;
     }
 

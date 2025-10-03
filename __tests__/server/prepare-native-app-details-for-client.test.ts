@@ -14,16 +14,30 @@ describe('prepareNativeAppDetailsForClient', () => {
         setResonseHeader = jest.fn();
     });
 
-    it('should not do anything if b2native cookie exists in request', () => {
+    it('should not do anything if b2native cookie exists in request and themes are the same', () => {
         const mockedRequest = {
             headers: new Headers({
-                Cookie: 'bridgeToNativeData=foobarbaz',
+                Cookie: 'bridgeToNativeData={"theme":"light"}',
             }),
+            url: 'http://example.com?theme=light',
         } as Request;
 
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
         expect(setResonseHeader).not.toBeCalled();
+    });
+
+    it('should overwrite cookie if b2native cookie exists in request but themes are different', () => {
+        const mockedRequest = {
+            headers: new Headers({
+                Cookie: 'bridgeToNativeData={"theme":"dark"}',
+            }),
+            url: 'http://example.com?theme=light',
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalled();
     });
 
     it('should set default theme to light if theme is not provided', () => {
