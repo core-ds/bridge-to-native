@@ -54,8 +54,8 @@ export function getQueryValues(request: UniversalRequest, queryKeys: string | st
  *
  * @param request Объект запроса (Request или IncomingMessage).
  */
-export function hasBridgeToNativeDataCookie(cookies: string | null) {
-    return Boolean(cookies && bridgeToNativeDataCookieExistencePattern.test(cookies));
+export function hasBridgeToNativeDataCookie(cookieHeader: string | null) {
+    return Boolean(cookieHeader && bridgeToNativeDataCookieExistencePattern.test(cookieHeader));
 }
 
 export function parseCookies(cookieHeader: string): Record<string, string> {

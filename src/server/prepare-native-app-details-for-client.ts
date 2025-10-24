@@ -31,23 +31,27 @@ export function prepareNativeAppDetailsForClient(
     request: UniversalRequest,
     setResponseHeader: (headerKey: string, headerValue: string) => void,
 ) {
-    // Если кука с данными о нативном приложении уже есть - информация уже собрана.
-    // Но нужно проверить тему (светлая/тёмная), так как она могла смениться во время вебвью-сессии.
-    // Если в query-параметрах пришла тема, отличная от установленной в куки, - перезаписываем.
-    // В противном случае делать больше ничего не нужно.
+    // Проверяем наличие куки bridgeToNativeData в запросе. Если куки нет — устанавливаем её.
+    // Также сверяем тему из query-параметров с темой, сохранённой в куке, потому что
+    // при повторном открытии WebView сессионная кука может сохраниться, и если тема приложения
+    // изменилась между сессиями, WebView и нативное приложение будут не синхронизированы.
+    // В таком случае обновляем куку актуальными данными из query-параметров
     const cookieHeader = getHeaderValue(request, HEADER_KEY_COOKIE);
-
-    if (hasBridgeToNativeDataCookie(cookieHeader) && isSameTheme(request, cookieHeader)) {
-        return undefined;
-    }
-
     const nativeParams = parseRequest(request);
-    const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
 
-    setResponseHeader(
-        'Set-Cookie',
-        `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}`,
-    );
+    const shouldUpdateCookie =
+        !hasBridgeToNativeDataCookie(cookieHeader) || isSameTheme(request, cookieHeader);
+
+    if (shouldUpdateCookie) {
+        const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
+
+        setResponseHeader(
+            'Set-Cookie',
+            `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}`,
+        );
+
+        return nativeParams;
+    }
 
     return nativeParams;
 }
