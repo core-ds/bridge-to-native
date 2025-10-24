@@ -40,7 +40,7 @@ export function prepareNativeAppDetailsForClient(
     const nativeParams = parseRequest(request);
 
     const shouldUpdateCookie =
-        !hasBridgeToNativeDataCookie(cookieHeader) || isSameTheme(request, cookieHeader);
+        !hasBridgeToNativeDataCookie(cookieHeader) || !isSameTheme(request, cookieHeader);
 
     if (shouldUpdateCookie) {
         const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
