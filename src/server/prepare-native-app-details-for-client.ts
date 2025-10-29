@@ -47,7 +47,7 @@ export function prepareNativeAppDetailsForClient(
 
         setResponseHeader(
             'Set-Cookie',
-            `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}`,
+            `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}; Path=/`,
         );
 
         return nativeParams;
