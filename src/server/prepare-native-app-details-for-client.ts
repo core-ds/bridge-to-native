@@ -1,5 +1,6 @@
 import {
     COOKIE_KEY_BRIDGE_TO_NATIVE_DATA,
+    COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD,
     HEADER_KEY_COOKIE,
     HEADER_KEY_NATIVE_APPVERSION,
     QUERY_B2N_NEXT_PAGEID,
@@ -36,13 +37,16 @@ export function prepareNativeAppDetailsForClient(
     // при повторном открытии WebView сессионная кука может сохраниться, и если тема приложения
     // изменилась между сессиями, WebView и нативное приложение будут не синхронизированы.
     // В таком случае обновляем куку актуальными данными из query-параметров
+    // Для случая когда передан флаг reload куку перезаписывать не нужно
     const cookieHeader = getHeaderValue(request, HEADER_KEY_COOKIE);
     const nativeParams = parseRequest(request);
+
+    const hasReloadFlag = cookieHeader?.includes(`${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true`);
 
     const shouldUpdateCookie =
         !hasBridgeToNativeDataCookie(cookieHeader) || !isSameTheme(request, cookieHeader);
 
-    if (shouldUpdateCookie) {
+    if (!hasReloadFlag && shouldUpdateCookie) {
         const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
 
         setResponseHeader(
@@ -51,6 +55,13 @@ export function prepareNativeAppDetailsForClient(
         );
 
         return nativeParams;
+    }
+
+    if (hasReloadFlag) {
+        setResponseHeader(
+            'Set-Cookie',
+            `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=false; Max-Age=0; Path=/`,
+        );
     }
 
     return nativeParams;
