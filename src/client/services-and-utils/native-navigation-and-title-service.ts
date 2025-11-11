@@ -121,7 +121,7 @@ export class NativeNavigationAndTitleService {
         this.nativeHistoryStack.push(NativeHistoryStackSpecialValues.TemporaryReloadStub); // небольшой костыль, чтобы переиспользовать server-side сценарий
         this.saveNativeHistoryStack();
 
-        // сохраняем дополнительный флаг в куки, при наличии которого не нужно перезаписывать куку с нативными параметрами
+        // информация для серверной стороны B2N, что происходит `reload` и парсить запрос на предмет NA параметров не нужно (в нем их скорее всего не будет)
         document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true; Path=/`;
     }
 

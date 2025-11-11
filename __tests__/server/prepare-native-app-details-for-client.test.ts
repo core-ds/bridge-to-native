@@ -323,4 +323,25 @@ describe('prepareNativeAppDetailsForClient', () => {
             ),
         );
     });
+
+    it("should skip updating bridgeToNativeData cookie and remove bridgeToNativeReload cookie if it's provided", () => {
+        const mockedRequest = {
+            url: 'http://example.com?theme=dark',
+            headers: new Headers({
+                Cookie: 'bridgeToNativeReload=true; bridgeToNativeData={"theme":"light"}',
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).not.toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining('bridgeToNativeData='),
+        );
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining('bridgeToNativeReload=false; Max-Age=0; Path=/'),
+        );
+    });
 });

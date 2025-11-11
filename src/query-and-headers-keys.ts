@@ -12,7 +12,9 @@ export const HEADER_KEY_USER_AGENT = 'user-agent';
 // Ключ cookie, с помощью которого серверная часть B2N передаст на клиент информацию об NA.
 export const COOKIE_KEY_BRIDGE_TO_NATIVE_DATA = 'bridgeToNativeData';
 
-// Ключ cookie, с помощью которого серверная часть B2N передаст на клиент информацию об NA.
+// Ключ cookie, указывающий, что запрос выполнен после вызова `bridgeToNative.reload()`.
+// Используется для предотвращения перезаписи cookie bridgeToNativeData, чтобы сохранить
+// актуальные параметры нативного приложения
 export const COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD = 'bridgeToNativeReload';
 
 // Нативное приложение на обеих платформах подмешивает этот заголовок к запросу за HTML.
