@@ -1,5 +1,7 @@
 import {
     COOKIE_KEY_BRIDGE_TO_NATIVE_DATA,
+    COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD,
+    HEADER_KEY_COOKIE,
     HEADER_KEY_NATIVE_APPVERSION,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
@@ -13,7 +15,7 @@ import { type NativeParams } from '../types';
 import { extractNativeServiceQueries } from './extract-native-service-queries';
 import { iosAppIdPattern, versionPattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
-import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie } from './utils';
+import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie, parseCookies } from './utils';
 
 /**
  * Парсит запрос, доставая из него данные о нативном приложении,
@@ -30,22 +32,41 @@ export function prepareNativeAppDetailsForClient(
     request: UniversalRequest,
     setResponseHeader: (headerKey: string, headerValue: string) => void,
 ) {
-    // Если кука с данными о нативном приложении уже есть, информация уже собрана,
-    // делать больше ничего не нужно.
-    // Возможна смена темы нативного приложения (светлая/тёмная) во время вебвью-сессии.
-    // Но веб об этом не узнает, т.к. нативное приложение сообщает об этом
-    // только при старте нового вебвью.
-    if (hasBridgeToNativeDataCookie(request)) {
-        return;
+    // Проверяем наличие куки bridgeToNativeData в запросе. Если куки нет — устанавливаем её.
+    // Также сверяем тему из query-параметров с темой, сохранённой в куке, потому что
+    // при повторном открытии WebView сессионная кука может сохраниться, и если тема приложения
+    // изменилась между сессиями, WebView и нативное приложение будут не синхронизированы.
+    // В таком случае обновляем куку актуальными данными из query-параметров
+    // Для случая когда передан флаг `reload` куку перезаписывать не нужно, потому что:
+    // 1) Данных NA в запросе с большой вероятностью не будет;
+    // 2) клиентская сторона сохранит всё, что нужно в SessionStorage
+    const cookieHeader = getHeaderValue(request, HEADER_KEY_COOKIE);
+    const nativeParams = parseRequest(request);
+
+    const hasReloadFlag = cookieHeader?.includes(`${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true`);
+
+    const shouldUpdateCookie =
+        !hasBridgeToNativeDataCookie(cookieHeader) || !isSameTheme(request, cookieHeader);
+
+    if (!hasReloadFlag && shouldUpdateCookie) {
+        const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
+
+        setResponseHeader(
+            'Set-Cookie',
+            `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}; Path=/`,
+        );
+
+        return nativeParams;
     }
 
-    const nativeParams = parseRequest(request);
-    const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
+    if (hasReloadFlag) {
+        setResponseHeader(
+            'Set-Cookie',
+            `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=false; Max-Age=0; Path=/`,
+        );
+    }
 
-    setResponseHeader(
-        'Set-Cookie',
-        `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}`,
-    );
+    return nativeParams;
 }
 
 function parseRequest(request: UniversalRequest) {
@@ -101,4 +122,20 @@ function parseRequest(request: UniversalRequest) {
     }
 
     return nativeParams;
+}
+
+// Возвращает результат сравнения темы полученной, из query-параметров
+// с темой, полученной из cookie
+function isSameTheme(request: UniversalRequest, cookies: string | null) {
+    if (!cookies) return false;
+
+    const [themeFromQuery] = getQueryValues(request, [QUERY_NATIVE_THEME]);
+    const parsedCookies = parseCookies(cookies);
+    const bridgeCookie = parsedCookies[COOKIE_KEY_BRIDGE_TO_NATIVE_DATA];
+
+    try {
+        return JSON.parse(bridgeCookie || '{}').theme === themeFromQuery;
+    } catch (_) {
+        return false;
+    }
 }

@@ -4,6 +4,7 @@ import {
     getHeaderValue,
     getQueryValues,
     hasBridgeToNativeDataCookie,
+    parseCookies,
 } from '../../src/server/utils';
 
 describe('getHeaderValue', () => {
@@ -114,34 +115,52 @@ describe('getQueryValues', () => {
 
 describe('hasBridgeToNativeDataCookie', () => {
     it('should return false while there is no cookie', () => {
-        const mockRequest = { headers: new Headers({}) } as Request;
+        const mockСookies = null;
 
-        expect(hasBridgeToNativeDataCookie(mockRequest)).toBe(false);
+        expect(hasBridgeToNativeDataCookie(mockСookies)).toBe(false);
     });
 
     it('should return false while there is no desired cookie', () => {
-        const mockRequest = {
-            headers: new Headers({ Cookie: 'anotherCookie=value' }),
-        } as Request;
+        const mockСookies = 'anotherCookie=value';
 
-        expect(hasBridgeToNativeDataCookie(mockRequest)).toBe(false);
+        expect(hasBridgeToNativeDataCookie(mockСookies)).toBe(false);
     });
 
     it('should return true while desired cookie is found', () => {
-        const mockRequest = {
-            headers: new Headers({ Cookie: 'bridgeToNativeData=value' }),
-        } as Request;
+        const mockСookies = 'bridgeToNativeData=value';
 
-        expect(hasBridgeToNativeDataCookie(mockRequest)).toBe(true);
+        expect(hasBridgeToNativeDataCookie(mockСookies)).toBe(true);
     });
 
     it('should return true while desired cookie is found among others', () => {
-        const mockRequest = {
-            headers: new Headers({
-                Cookie: 'anotherCookie=value; bridgeToNativeData=value',
-            }),
-        } as Request;
+        const mockСookies = 'anotherCookie=value; bridgeToNativeData=value';
 
-        expect(hasBridgeToNativeDataCookie(mockRequest)).toBe(true);
+        expect(hasBridgeToNativeDataCookie(mockСookies)).toBe(true);
+    });
+});
+
+describe('parseCookies', () => {
+    it('should correctly parse a single cookie', () => {
+        const result = parseCookies('theme=light');
+
+        expect(result).toEqual({ theme: 'light' });
+    });
+
+    it('should correctly parse multiple cookies', () => {
+        const result = parseCookies('theme=light; foo=bar');
+
+        expect(result).toEqual({ theme: 'light', foo: 'bar' });
+    });
+
+    it('should correctly parse cookie with encoded values', () => {
+        const result = parseCookies('device_name=iPhone%2B14%2BPro%2BMax');
+
+        expect(result).toEqual({ device_name: 'iPhone+14+Pro+Max' });
+    });
+
+    it('should ignore empty keys and trim whitespace around keys and values', () => {
+        const result = parseCookies(' =value ; theme = light ');
+
+        expect(result).toEqual({ theme: 'light' });
     });
 });

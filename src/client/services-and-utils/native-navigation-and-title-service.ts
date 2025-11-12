@@ -1,6 +1,7 @@
 /* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
 
 import {
+    COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
     SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
@@ -119,6 +120,9 @@ export class NativeNavigationAndTitleService {
     reload() {
         this.nativeHistoryStack.push(NativeHistoryStackSpecialValues.TemporaryReloadStub); // небольшой костыль, чтобы переиспользовать server-side сценарий
         this.saveNativeHistoryStack();
+
+        // информация для серверной стороны B2N, что происходит `reload` и парсить запрос на предмет NA параметров не нужно (в нем их скорее всего не будет)
+        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true; Path=/`;
     }
 
     setInitialView(nativeTitle = '') {
