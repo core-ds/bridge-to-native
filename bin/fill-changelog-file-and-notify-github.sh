@@ -1,9 +1,5 @@
 #!/bin/bash
 changelog_file="CHANGELOG.md";
-new_line="
-";
-separator="
-- ";
 
 # Генерирует title для записи в changelog в формате: # 2.2.8 (24ewe456) (01.01.2024)
 function generateTitle {
@@ -16,7 +12,7 @@ function generateTitle {
 RELEASE_BODY=$(jq -r '.release.body' "$GITHUB_EVENT_PATH")
 
 if [[ -z "$RELEASE_BODY" ]]; then
-  echo "⚠️ В release body нет описания изменений для заполнения $changelog_file." >> "$GITHUB_STEP_SUMMARY"
+  echo "В release body нет описания изменений для заполнения $changelog_file." >> "$GITHUB_STEP_SUMMARY"
 else
   echo "$RELEASE_BODY" >> "$GITHUB_STEP_SUMMARY"
 fi
