@@ -1,61 +1,14 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-
-      # Input для ввода features changes (для CHANGELOG.md)
-      features:
-        type: text
-        description: changelog features
-        default: ''
-
-      # Input для ввода bugfixes changes (для CHANGELOG.md)
-      bugfixes:
-        type: text
-        description: changelog bugfixes
-        default: ''
-
-      # Input для ввода breaking changes (для CHANGELOG.md)
-      breaking-changes:
-        type: text
-        description: changelog breaking changes
-        default: ''
-
-      # Select для выбора версии
-      version:
-        type: choice
-        description: Choose which version to release
-        required: true
-        options:
-          - beta
-          - patch
-          - minor
-          - major
+  release:
+    types: [published]
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-
-      # Проверка прав доступа. Только пользователь из white_list может выполнить релизную сборку.
-      # Остальные могут только выпустить beta версию пакета.
-      - name: Check permissions
-        run: |
-          white_list=("DavidGuryanov","vahrammer","sashabull66")
-
-          if [[ "${white_list[@]}" =~ "${ACTOR}" ]]
-            then echo "Доступ разрешен."
-          elif [[ "${SELECTED_VERSION}" == "beta" ]]
-            then echo "Доступ разрешен только для публикации beta версии пакета."
-          else
-              echo "Вы не можете выполнить выпуск $SELECTED_VERSION версии пакета. Доступ запрещен!"
-              exit 1
-          fi
-        env:
-          SELECTED_VERSION: ${{ github.event.inputs.version }}
-          ACTOR: ${{ github.actor }}
 
       # Переключение на выбранную при запуске action ветку и скачивание файлов в окружение.
       - name: Checkout
@@ -68,13 +21,19 @@ jobs:
         run: |
           git config user.name ${{ secrets.BOT_USERNAME }}
           git config user.email ${{ secrets.BOT_EMAIL }}
-          echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+          echo "branch=main" >> $GITHUB_OUTPUT
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         id: branch
 
       # Установка зависимостей.
       - name: Install dependencies
         run: yarn install
+
+      # Обновление поля version в package.json.
+      - name: Update package.json version
+        run: |
+          VERSION=$(jq -r '.release.tag_name' "$GITHUB_EVENT_PATH")
+          npm version "$VERSION" --no-git-tag-version
 
       # Сборка приложения в /.publish.
       - name: Build app
@@ -89,32 +48,20 @@ jobs:
       # Публикация выбранной версии в npm.
       - name: Publish ${{ github.event.inputs.version }} version
         run: |
-          export TAG="latest"
-          export VERSION="$SELECTED_VERSION"
+          CURRENT_VERSION=$(jq -r '.version' package.json)
 
-          if [[ $SELECTED_VERSION == "beta" ]]
-            then
-              CURRENT_VERSION=$(grep -o '"version": "[^"]*' package.json | awk -F'"' '{print $4}')
-              export TAG="beta"
-              export VERSION="$CURRENT_VERSION-beta-${{ steps.branch.outputs.sha_short }}"
-          fi
+          export TAG="latest"
+          export VERSION="$CURRENT_VERSION"
 
           yarn release
-
-          if [[ $SELECTED_VERSION == "beta" ]]
-            then
-              echo "### Выпущена новая версия библиотеки: $VERSION" >> $GITHUB_STEP_SUMMARY
-          fi
         env:
           BRANCH: ${{ steps.branch.outputs.branch }}
-          SELECTED_VERSION: ${{ github.event.inputs.version }}
 
       # Заполнение файла changelog и выполнение release commit && push в релизную ветку.
       - name: Fill changelog file and create release branch
-        if: github.event.inputs.version != 'beta'
         id: changelog
         run: |
-          export VERSION=$(grep -o '"version": "[^"]*' package.json | awk -F'"' '{print $4}')
+          export VERSION=$(jq -r '.release.tag_name' "$GITHUB_EVENT_PATH")
           export RELEASE_BRANCH="release-$VERSION"
           export MESSAGE="Релиз версии $VERSION"
 
@@ -131,16 +78,11 @@ jobs:
           BRANCH: ${{ steps.branch.outputs.branch }}
           LAST_COMMIT_URL: https://github.com/${{ github.repository }}/commit/${{ steps.branch.outputs.sha_short }}
           SHA_SHORT: ${{ steps.branch.outputs.sha_short }}
-          SEMANTIC_VERSION: ${{ github.event.inputs.version }}
-          FEATURES: ${{ github.event.inputs.features }}
-          BUGFIXES: ${{ github.event.inputs.bugfixes }}
-          BREAKING_CHANGES: ${{ github.event.inputs.breaking-changes }}
           BOT_TOKEN: ${{ secrets.BOT_AUTH_TOKEN }}
           REPOSITORY: ${{ github.repository }}
 
       # Создание pull request из релизной ветки в целевую.
       - name: Create release pull request from ${{ steps.changelog.outputs.RELEASE_BRANCH }} to ${{ steps.branch.outputs.branch }}
-        if: github.event.inputs.version != 'beta'
         run: |
           curl --user "$BOT_USERNAME:$BOT_TOKEN" \
              --request POST \
