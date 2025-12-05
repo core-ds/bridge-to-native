@@ -2,7 +2,7 @@ name: Open PR check
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, reopened]
 
 jobs:
   pr-check:
@@ -34,18 +34,16 @@ jobs:
 
       # Комментарий в ПР или в консоль workflow
       - name: Comment lint result
-        uses: actions/github-script@v7
-        with:
-          script: |
-            PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+        run: |
+          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
 
-            curl --user "$BOT_USERNAME:$BOT_TOKEN" \
-              --request POST \
-              --url "https://api.github.com/repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
-              --header "content-type: application/json" \
-              --data "{
-                \"body\": \"$LINT_RESULT\"
-              }"
+          curl --user "$BOT_USERNAME:$BOT_TOKEN" \
+            --request POST \
+            --url "https://api.github.com/repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
+            --header "content-type: application/json" \
+            --data "{
+              \"body\": \"$LINT_RESULT\"
+            }"
 
         env:
           LINT_RESULT: ${{ steps.lint.outputs.result }}
