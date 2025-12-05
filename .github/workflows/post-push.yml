@@ -20,6 +20,62 @@ jobs:
       - name: Run tests
         run: yarn test
 
+      - name: Run Standard rules linter
+        id: lint
+        run: |
+          set +e
+          OUTPUT=$(npm_config_registry=http://binary/artifactory/api/npm/npm/ \
+          npx @alfa-bank/standard-rules@latest -c base-front-app)
+          echo "$OUTPUT"
+          echo "result<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          if echo "$OUTPUT" | grep -q "error"; then
+          echo "ПР заблокирован из-за наличия линтовых ошибок"
+          exit 1
+          fi
+
+      - name: Comment ESLint result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commentBody = process.env.LINT_RESULT
+            console.log('commentBody', commentBody)
+            const { owner, repo } = context.repo
+
+            console.log('owner', owner)
+            console.log('repo', repo)
+
+
+            // refs/heads/branchName
+            const branch = (process.env.GITHUB_REF || '').replace('refs/heads/', '');
+            console.log('branch', branch)
+
+            if (!branch) {
+              console.log('Не удалось определить ветку, вывод линта:');
+              console.log(commentBody);
+              return;
+            }
+
+            const prs = await github.rest.pulls.list({
+              owner,
+              repo,
+              head: `${owner}:${branch}`,
+              state: 'open'
+            })
+            console.log('prs', prs)
+            const pr = prs.data[0]
+
+            if (!pr) {
+              console.log('PR не найден, вывод линта:');
+              console.log(commentBody)
+              return
+            }
+
+        env:
+          LINT_RESULT: ${{ steps.lint.outputs.result }}
+
       # Выпуск beta версии библиотеки, если в commit message есть вхождение строки "deploy_beta"
       - name: Publish beta version
         if: "contains(github.event.head_commit.message, 'deploy_beta')"
