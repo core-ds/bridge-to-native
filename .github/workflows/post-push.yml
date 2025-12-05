@@ -74,7 +74,7 @@ jobs:
               owner,
               repo,
               issue_number: pr.number,
-              body
+              body: commentBody
             });
 
         env:
