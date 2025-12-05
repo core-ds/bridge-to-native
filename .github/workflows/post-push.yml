@@ -20,6 +20,7 @@ jobs:
       - name: Run tests
         run: yarn test
 
+      # Прогон линтера
       - name: Run Standard rules linter
         id: lint
         run: |
@@ -30,12 +31,8 @@ jobs:
           echo "$OUTPUT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          if echo "$OUTPUT" | grep -q "error"; then
-          echo "ПР заблокирован из-за наличия линтовых ошибок"
-          exit 1
-          fi
-
-      - name: Comment ESLint result
+      # Комментарий в ПР или в консоль workflow
+      - name: Comment lint result
         uses: actions/github-script@v7
         with:
           script: |
@@ -71,6 +68,17 @@ jobs:
               console.log(commentBody)
               return
             }
+
+        env:
+          LINT_RESULT: ${{ steps.lint.outputs.result }}
+
+      # Блокировка ПР при наличии линтовых ошибок
+      - name: Block PR if find errors
+        run: |
+          if echo "${{ steps.lint,output,result }}" | grep -q "error"; then
+          echo "ПР заблокирован из-за наличия линтовых ошибок"
+          exit 1
+          fi
 
         env:
           LINT_RESULT: ${{ steps.lint.outputs.result }}
