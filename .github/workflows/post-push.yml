@@ -24,7 +24,7 @@ jobs:
         id: lint
         run: |
           set +e
-          OUTPUT=$(OUTPUT=$(npx eslint . --ext .js || true))
+          OUTPUT=$(npx eslint . --ext .js || true)
           echo "$OUTPUT"
           echo "result<<EOF" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
