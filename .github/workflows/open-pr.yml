@@ -37,41 +37,21 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const commentBody = process.env.LINT_RESULT
-            console.log('commentBody', commentBody)
-            const { owner, repo } = context.repo
+            PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
 
-            console.log('owner', owner)
-            console.log('repo', repo)
-
-
-            // refs/heads/branchName
-            const branch = (process.env.GITHUB_REF || '').replace('refs/heads/', '');
-            console.log('branch', branch)
-
-            if (!branch) {
-              console.log('Не удалось определить ветку, вывод линта:');
-              console.log(commentBody);
-              return;
-            }
-
-            const prs = await github.rest.pulls.list({
-              owner,
-              repo,
-              head: `${owner}:${branch}`,
-              state: 'open'
-            })
-            console.log('prs', prs)
-            const pr = prs.data[0]
-
-            if (!pr) {
-              console.log('PR не найден, вывод линта:');
-              console.log(commentBody)
-              return
-            }
+            curl --user "$BOT_USERNAME:$BOT_TOKEN" \
+              --request POST \
+              --url "https://api.github.com/repos/$REPOSITORY/issues/$PR_NUMBER/comments" \
+              --header "content-type: application/json" \
+              --data "{
+                \"body\": \"$LINT_RESULT\"
+              }"
 
         env:
           LINT_RESULT: ${{ steps.lint.outputs.result }}
+          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
+          BOT_TOKEN: ${{ secrets.GH_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
 
       # Блокировка ПР при наличии линтовых ошибок
       - name: Block PR if find errors

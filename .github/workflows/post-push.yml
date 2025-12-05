@@ -35,6 +35,7 @@ jobs:
       - name: Comment lint result
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GH_TOKEN }}
           script: |
             const commentBody = process.env.LINT_RESULT
             console.log('commentBody', commentBody)
@@ -69,8 +70,18 @@ jobs:
               return
             }
 
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr.number,
+              body
+            });
+
         env:
-          LINT_RESULT: ${{ steps.lint.outputs.result }}
+           LINT_RESULT: ${{ steps.lint.outputs.result }}
+           BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
+           BOT_TOKEN: ${{ secrets.GH_TOKEN }}
+           REPOSITORY: ${{ github.repository }}
 
       # Блокировка ПР при наличии линтовых ошибок
       - name: Block PR if find errors
