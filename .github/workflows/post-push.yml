@@ -24,8 +24,7 @@ jobs:
         id: lint
         run: |
           set +e
-          OUTPUT=$(npm_config_registry=http://binary/artifactory/api/npm/npm/ \
-          npx @alfa-bank/standard-rules@latest -c base-front-app)
+          OUTPUT=$(OUTPUT=$(npx eslint . --ext .js || true))
           echo "$OUTPUT"
           echo "result<<EOF" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT

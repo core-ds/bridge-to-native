@@ -12,6 +12,9 @@ import {
     type PdfType,
 } from './types';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const unusedVar = '';
+
 /**
  * Сервис, предоставляет методы для WA, работающего внутри NA.
  */
