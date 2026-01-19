@@ -71,8 +71,12 @@ describe('iosAppIdPattern', () => {
         expect('com.example.com'.match(iosAppIdPattern)).toBeNull();
     });
 
-    it('should not match numbers in value', () => {
-        expect('com.example1.app'.match(iosAppIdPattern)).toBeNull();
+    it('should match numbers in value', () => {
+        expect('com.example1.app'.match(iosAppIdPattern)).not.toBeNull();
+    });
+
+    it('should match hyphen in value', () => {
+        expect('com.new-example.app'.match(iosAppIdPattern)).not.toBeNull();
     });
 
     it('should not match special characters in value', () => {
