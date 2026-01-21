@@ -121,12 +121,12 @@ export class NativeNavigationAndTitleService {
         this.nativeHistoryStack.push(NativeHistoryStackSpecialValues.TemporaryReloadStub); // небольшой костыль, чтобы переиспользовать server-side сценарий
         this.saveNativeHistoryStack();
 
+        // информация для серверной стороны B2N, что происходит `reload` и парсить запрос на предмет NA параметров не нужно (в нем их скорее всего не будет)
+        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true; Path=/`;
+
         if (!skipReload) {
             window.location.reload();
         }
-
-        // информация для серверной стороны B2N, что происходит `reload` и парсить запрос на предмет NA параметров не нужно (в нем их скорее всего не будет)
-        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true; Path=/`;
     }
 
     setInitialView(nativeTitle = '') {

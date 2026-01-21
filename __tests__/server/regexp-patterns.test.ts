@@ -71,12 +71,10 @@ describe('iosAppIdPattern', () => {
         expect('com.example.com'.match(iosAppIdPattern)).toBeNull();
     });
 
-    it('should match numbers in value', () => {
-        expect('com.example1.app'.match(iosAppIdPattern)).not.toBeNull();
-    });
+    it.each(['-', '.', '+', '1'])('should match allowed symbol', (symbol) => {
+        const appId = `com.new${symbol}example.app`;
 
-    it('should match hyphen in value', () => {
-        expect('com.new-example.app'.match(iosAppIdPattern)).not.toBeNull();
+        expect(appId).toMatch(iosAppIdPattern);
     });
 
     it('should not match special characters in value', () => {
