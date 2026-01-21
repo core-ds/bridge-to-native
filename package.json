@@ -32,7 +32,6 @@
         "build:clean": "shx rm -rf .publish",
         "build:copy-package-json": "shx cp package.json .publish/package.json",
         "build:ts": "tsc --build",
-        "changelog": "bash bin/fill-changelog-file-and-notify-github.sh",
         "format": "arui-presets-lint format",
         "format:check": "arui-presets-lint format:check",
         "lint": "yarn lint:scripts && yarn format:check",
