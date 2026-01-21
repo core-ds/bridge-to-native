@@ -175,6 +175,21 @@ describe('NativeParamsService', () => {
 
             expect(inst.title).toBe(title);
         });
+
+        it('should set `webviewLaunchTime`', () => {
+            const webviewLaunchTime = new Date('2025-12-01T14:05:23Z').getTime();
+
+            jest.spyOn(
+                NativeParamsService.prototype,
+                'readNativeParamsCookie',
+            ).mockImplementationOnce(() => ({
+                webviewLaunchTime,
+            }));
+
+            const inst = new NativeParamsService();
+
+            expect(inst.webviewLaunchTime).toBe(webviewLaunchTime);
+        });
     });
 
     describe('method `canUseNativeFeature`', () => {

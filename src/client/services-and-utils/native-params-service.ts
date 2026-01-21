@@ -25,6 +25,8 @@ export class NativeParamsService {
 
     title: string;
 
+    webviewLaunchTime: number | null;
+
     constructor(private logError?: LogError) {
         const nativeParams = this.readNativeParamsCookie();
 
@@ -41,6 +43,8 @@ export class NativeParamsService {
         this.theme = nativeParams?.theme === 'dark' ? 'dark' : 'light';
 
         this.title = nativeParams?.title || '';
+
+        this.webviewLaunchTime = nativeParams?.webviewLaunchTime || null;
     }
 
     canUseNativeFeature(feature: NativeFeatureKey) {

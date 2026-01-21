@@ -3,6 +3,7 @@ import {
     COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD,
     HEADER_KEY_COOKIE,
     HEADER_KEY_NATIVE_APPVERSION,
+    HEADER_KEY_WV_LAUNCH_TIME,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
     QUERY_B2N_TITLE_DEPRECATED,
@@ -15,7 +16,13 @@ import { type NativeParams } from '../types';
 import { extractNativeServiceQueries } from './extract-native-service-queries';
 import { iosAppIdPattern, versionPattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
-import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie, parseCookies } from './utils';
+import {
+    getHeaderValue,
+    getQueryValues,
+    hasBridgeToNativeDataCookie,
+    parseCookies,
+    parseHeaderTimestamp,
+} from './utils';
 
 /**
  * Парсит запрос, доставая из него данные о нативном приложении,
@@ -86,6 +93,9 @@ function parseRequest(request: UniversalRequest) {
             QUERY_B2N_TITLE_DEPRECATED,
         ]);
     const appVersionFromHeaders = getHeaderValue(request, HEADER_KEY_NATIVE_APPVERSION);
+    const webviewLaunchTime = parseHeaderTimestamp(
+        getHeaderValue(request, HEADER_KEY_WV_LAUNCH_TIME),
+    );
 
     const nativeParams: Partial<NativeParams> = {
         originalWebviewParams,
@@ -119,6 +129,10 @@ function parseRequest(request: UniversalRequest) {
         nativeParams.title = title;
     } else if (typeof deprecatedTitle === 'string') {
         nativeParams.title = deprecatedTitle;
+    }
+
+    if (webviewLaunchTime) {
+        nativeParams.webviewLaunchTime = webviewLaunchTime;
     }
 
     return nativeParams;

@@ -24,6 +24,9 @@ export const COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD = 'bridgeToNativeReload';
 //  только для первого документа в вебвью-сессии. Исследовать.
 export const HEADER_KEY_NATIVE_APPVERSION = 'app-version';
 
+// Ключ заголовка, в котором передается время старта открытия WV экрана в формате timestamp
+export const HEADER_KEY_WV_LAUNCH_TIME = 'webview-launch-time';
+
 // Флаг, предписывающий клиентскому коду B2N начать связь
 // с нативным приложением с указанного в этом параметре id, а не с 1.
 // Необходимо для server-side навигации.

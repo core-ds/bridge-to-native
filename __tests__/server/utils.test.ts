@@ -5,6 +5,7 @@ import {
     getQueryValues,
     hasBridgeToNativeDataCookie,
     parseCookies,
+    parseHeaderTimestamp,
 } from '../../src/server/utils';
 
 describe('getHeaderValue', () => {
@@ -162,5 +163,51 @@ describe('parseCookies', () => {
         const result = parseCookies(' =value ; theme = light ');
 
         expect(result).toEqual({ theme: 'light' });
+    });
+});
+
+describe('parseHeaderTimestamp', () => {
+    const TIMESTAMP = new Date('2025-11-01T13:05:23Z').getTime();
+
+    it('returns the number for a valid integer timestamp', () => {
+        expect(parseHeaderTimestamp(String(TIMESTAMP))).toBe(TIMESTAMP);
+    });
+
+    it('trims spaces around the number', () => {
+        expect(parseHeaderTimestamp(`   ${TIMESTAMP}   `)).toBe(TIMESTAMP);
+    });
+
+    it('returns null for empty string', () => {
+        expect(parseHeaderTimestamp('')).toBeNull();
+        expect(parseHeaderTimestamp('   ')).toBeNull();
+    });
+
+    it('returns null for null or undefined', () => {
+        expect(parseHeaderTimestamp(null)).toBeNull();
+        expect(parseHeaderTimestamp(undefined)).toBeNull();
+    });
+
+    it('returns null for strings "null", "undefined", "NaN"', () => {
+        expect(parseHeaderTimestamp('null')).toBeNull();
+        expect(parseHeaderTimestamp('undefined')).toBeNull();
+        expect(parseHeaderTimestamp('NaN')).toBeNull();
+    });
+
+    it('returns null for non-numeric strings', () => {
+        expect(parseHeaderTimestamp('abc')).toBeNull();
+        expect(parseHeaderTimestamp('123abc')).toBeNull();
+        expect(parseHeaderTimestamp('12.34')).toBeNull();
+    });
+
+    it('returns null for numbers outside the safe integer range', () => {
+        const huge = String(Number.MAX_SAFE_INTEGER + 1);
+
+        expect(parseHeaderTimestamp(huge)).toBeNull();
+    });
+
+    it('works for large but safe integers', () => {
+        const safe = Number.MAX_SAFE_INTEGER.toString();
+
+        expect(parseHeaderTimestamp(safe)).toBe(Number.MAX_SAFE_INTEGER);
     });
 });
