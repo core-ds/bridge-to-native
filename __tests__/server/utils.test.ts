@@ -167,14 +167,14 @@ describe('parseCookies', () => {
 });
 
 describe('parseHeaderTimestamp', () => {
-    const TIMESTAMP = new Date('2025-11-01T13:05:23Z').getTime();
+    const timestamp = new Date('2025-11-01T13:05:23Z').getTime();
 
     it('returns the number for a valid integer timestamp', () => {
-        expect(parseHeaderTimestamp(String(TIMESTAMP))).toBe(TIMESTAMP);
+        expect(parseHeaderTimestamp(String(timestamp))).toBe(timestamp);
     });
 
     it('trims spaces around the number', () => {
-        expect(parseHeaderTimestamp(`   ${TIMESTAMP}   `)).toBe(TIMESTAMP);
+        expect(parseHeaderTimestamp(`   ${timestamp}   `)).toBe(timestamp);
     });
 
     it('returns null for empty string', () => {

@@ -304,10 +304,11 @@ describe('prepareNativeAppDetailsForClient', () => {
     });
 
     it('should set webviewLaunchTime from header', () => {
+        const timestamp = 1764597923000;
         const mockedRequest = {
             url: 'http://example.com',
             headers: new Headers({
-                'webview-launch-time': '1764597923000',
+                'webview-launch-time': `${timestamp}`,
             }),
         } as Request;
 
@@ -315,7 +316,7 @@ describe('prepareNativeAppDetailsForClient', () => {
 
         expect(setResonseHeader).toBeCalledWith(
             'Set-Cookie',
-            expect.stringContaining(`webviewLaunchTime${ENCODED_PARTS['":']}1764597923000`),
+            expect.stringContaining(`webviewLaunchTime${ENCODED_PARTS['":']}${timestamp}`),
         );
     });
 
