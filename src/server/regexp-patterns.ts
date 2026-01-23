@@ -5,7 +5,12 @@ export const bridgeToNativeDataCookieExistencePattern = new RegExp(
     `^(.+;\\s?)?${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=`,
 );
 
-export const iosAppIdPattern = /^com\.([a-z]+)\.app$/;
+/**
+ * Схема опирается на стандарт RFC 3986
+ *
+ * @see https://datatracker.ietf.org/doc/html/rfc3986#section-3.1
+ */
+export const iosAppIdPattern = /^com\.([a-z0-9+.-]+)\.app$/i;
 
 // Вебвью Android приписывает после версии тип билда, например `feature`. Нам эта информация не нужна.
 export const versionPattern = /^(\d+\.\d+\.\d+)(\s.+)?$/;

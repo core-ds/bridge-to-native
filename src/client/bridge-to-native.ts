@@ -287,9 +287,11 @@ export class BridgeToNative {
     /**
      * Для перезагрузки страницы необходимо использовать этот метод.
      * Иначе синхронизация состояния с NA будет потеряна.
+     * По умолчанию метод сам делает location.reload,
+     * но с помощью аргумента можно отключить этот вызов
      */
-    reload() {
-        this.nativeNavigationAndTitleService.reload();
+    reload(skipReload?: boolean) {
+        this.nativeNavigationAndTitleService.reload(skipReload);
     }
 
     /**
