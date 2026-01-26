@@ -1,6 +1,13 @@
+## 1.1.0 ([bfe7607](https://github.com/core-ds/bridge-to-native/commit/bfe7607)) (26-01-2026)
+
+### Features
+
+- Миграция с yarn classic (1.22) на yarn Berry (4.12)
+
 ### 1.0.2 ([b6683a7](https://github.com/core-ds/bridge-to-native/commit/b6683a7)) (26-01-2026)
 
 ### Features
+
 - Изменен метод reload и регулярное выражение для iosAppId.
 
 ### 1.0.1 ([52d25f0](https://github.com/core-ds/bridge-to-native/commit/52d25f0)) (12-11-2025)
