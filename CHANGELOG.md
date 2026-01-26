@@ -1,3 +1,7 @@
+## 1.1.0 ([bfe7607](https://github.com/core-ds/bridge-to-native/commit/bfe7607)) (26-01-2026)
+
+### FeaturesМиграция с yarn classic (1.22) на yarn Berry (4.12)
+
 ### 1.0.2 ([b6683a7](https://github.com/core-ds/bridge-to-native/commit/b6683a7)) (26-01-2026)
 
 ### Features
