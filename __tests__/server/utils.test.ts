@@ -170,6 +170,14 @@ describe('parseHeaderTimestamp', () => {
     const timestamp = new Date('2025-11-01T13:05:23Z').getTime();
 
     it('returns the number for a valid integer timestamp', () => {
+        expect(parseHeaderTimestamp(timestamp)).toBe(timestamp);
+    });
+
+    it('returns the number for a valid fractional timestamp', () => {
+        expect(parseHeaderTimestamp(2086197911000.123)).toBe(2086197911000.123);
+    });
+
+    it('returns the number for a valid integer timestamp in string', () => {
         expect(parseHeaderTimestamp(String(timestamp))).toBe(timestamp);
     });
 
@@ -182,11 +190,6 @@ describe('parseHeaderTimestamp', () => {
         expect(parseHeaderTimestamp('   ')).toBeNull();
     });
 
-    it('returns null for null or undefined', () => {
-        expect(parseHeaderTimestamp(null)).toBeNull();
-        expect(parseHeaderTimestamp(undefined)).toBeNull();
-    });
-
     it('returns null for strings "null", "undefined", "NaN"', () => {
         expect(parseHeaderTimestamp('null')).toBeNull();
         expect(parseHeaderTimestamp('undefined')).toBeNull();
@@ -196,18 +199,10 @@ describe('parseHeaderTimestamp', () => {
     it('returns null for non-numeric strings', () => {
         expect(parseHeaderTimestamp('abc')).toBeNull();
         expect(parseHeaderTimestamp('123abc')).toBeNull();
-        expect(parseHeaderTimestamp('12.34')).toBeNull();
     });
 
-    it('returns null for numbers outside the safe integer range', () => {
-        const huge = String(Number.MAX_SAFE_INTEGER + 1);
-
-        expect(parseHeaderTimestamp(huge)).toBeNull();
-    });
-
-    it('works for large but safe integers', () => {
-        const safe = Number.MAX_SAFE_INTEGER.toString();
-
-        expect(parseHeaderTimestamp(safe)).toBe(Number.MAX_SAFE_INTEGER);
+    it('returns null for null or undefined', () => {
+        expect(parseHeaderTimestamp(null)).toBeNull();
+        expect(parseHeaderTimestamp(undefined)).toBeNull();
     });
 });

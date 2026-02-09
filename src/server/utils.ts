@@ -79,17 +79,9 @@ export function parseCookies(cookieHeader: string): Record<string, string> {
  *
  * @param headerValue Значение заголовка
  */
-export function parseHeaderTimestamp(headerValue: string | null): number | null {
-    if (!headerValue) return null;
+export function parseHeaderTimestamp(headerValue: string | number | null): number | null {
+    if (!headerValue || (typeof headerValue === 'string' && !headerValue?.trim())) return null;
+    const timestamp = Number(headerValue);
 
-    const trimmed = headerValue?.trim();
-
-    if (!trimmed || trimmed === 'null' || trimmed === 'undefined' || trimmed === 'NaN') return null;
-
-    // Если не целое число
-    if (!/^\d+$/.test(trimmed)) return null;
-
-    const num = Number(trimmed);
-
-    return Number.isSafeInteger(num) ? num : null;
+    return Number.isFinite(timestamp) ? timestamp : null;
 }
