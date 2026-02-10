@@ -86,6 +86,13 @@ export class BridgeToNative {
     }
 
     /**
+     * Время старта открытия WV экрана в формате timestamp. Значение никак не меняется в процессе всей жизни WV экрана.
+     */
+    get webviewLaunchTime() {
+        return this.nativeParamsService.webviewLaunchTime;
+    }
+
+    /**
      * Метод, проверяющий, можно ли использовать ли указанную функциональность
      * в текущей версии NA.
      *

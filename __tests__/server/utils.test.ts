@@ -5,6 +5,7 @@ import {
     getQueryValues,
     hasBridgeToNativeDataCookie,
     parseCookies,
+    parseHeaderTimestamp,
 } from '../../src/server/utils';
 
 describe('getHeaderValue', () => {
@@ -162,5 +163,46 @@ describe('parseCookies', () => {
         const result = parseCookies(' =value ; theme = light ');
 
         expect(result).toEqual({ theme: 'light' });
+    });
+});
+
+describe('parseHeaderTimestamp', () => {
+    const timestamp = new Date('2025-11-01T13:05:23Z').getTime();
+
+    it('returns the number for a valid integer timestamp', () => {
+        expect(parseHeaderTimestamp(timestamp)).toBe(timestamp);
+    });
+
+    it('returns the number for a valid fractional timestamp', () => {
+        expect(parseHeaderTimestamp(2086197911000.123)).toBe(2086197911000.123);
+    });
+
+    it('returns the number for a valid integer timestamp in string', () => {
+        expect(parseHeaderTimestamp(String(timestamp))).toBe(timestamp);
+    });
+
+    it('trims spaces around the number', () => {
+        expect(parseHeaderTimestamp(`   ${timestamp}   `)).toBe(timestamp);
+    });
+
+    it('returns null for empty string', () => {
+        expect(parseHeaderTimestamp('')).toBeNull();
+        expect(parseHeaderTimestamp('   ')).toBeNull();
+    });
+
+    it('returns null for strings "null", "undefined", "NaN"', () => {
+        expect(parseHeaderTimestamp('null')).toBeNull();
+        expect(parseHeaderTimestamp('undefined')).toBeNull();
+        expect(parseHeaderTimestamp('NaN')).toBeNull();
+    });
+
+    it('returns null for non-numeric strings', () => {
+        expect(parseHeaderTimestamp('abc')).toBeNull();
+        expect(parseHeaderTimestamp('123abc')).toBeNull();
+    });
+
+    it('returns null for null or undefined', () => {
+        expect(parseHeaderTimestamp(null)).toBeNull();
+        expect(parseHeaderTimestamp(undefined)).toBeNull();
     });
 });

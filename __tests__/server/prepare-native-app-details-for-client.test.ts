@@ -303,6 +303,53 @@ describe('prepareNativeAppDetailsForClient', () => {
         expect(setResonseHeader).not.toBeCalledWith('Set-Cookie', expect.stringContaining('title'));
     });
 
+    it('should set webviewLaunchTime from header', () => {
+        const timestamp = 1764597923000;
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers({
+                'webview-launch-time': `${timestamp}`,
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`webviewLaunchTime${ENCODED_PARTS['":']}${timestamp}`),
+        );
+    });
+
+    it('should not set webviewLaunchTime from header if its value is invalid', () => {
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers({
+                'webview-launch-time': 'null',
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).not.toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining('webviewLaunchTime'),
+        );
+    });
+
+    it('should not set webviewLaunchTime if this header is not set', () => {
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers(),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).not.toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining('webviewLaunchTime'),
+        );
+    });
+
     it('should set originalWebviewParams', () => {
         const webviewParams =
             'client_id=mobile-app&device_uuid=2E32AFD5-F50B-4B2F-B758-CAE59DF2BF6C';

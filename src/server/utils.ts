@@ -73,3 +73,15 @@ export function parseCookies(cookieHeader: string): Record<string, string> {
         {} as Record<string, string>,
     );
 }
+
+/**
+ * Преобразует значение из заголовка в timestamp
+ *
+ * @param headerValue Значение заголовка
+ */
+export function parseHeaderTimestamp(headerValue: string | number | null): number | null {
+    if (!headerValue || (typeof headerValue === 'string' && !headerValue?.trim())) return null;
+    const timestamp = Number(headerValue);
+
+    return Number.isFinite(timestamp) ? timestamp : null;
+}
