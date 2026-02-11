@@ -1,3 +1,8 @@
+## 1.2.0 ([6fa0bec](https://github.com/core-ds/bridge-to-native/commit/6fa0bec)) (11-02-2026)
+
+### Features
+- Добавлено свойство webviewLaunchTime, где будет храниться значение заголовка webview-launch-time, полученное от АМ
+
 ## 1.1.0 ([bfe7607](https://github.com/core-ds/bridge-to-native/commit/bfe7607)) (26-01-2026)
 
 ### Features
