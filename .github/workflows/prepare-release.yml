@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Установка учётных данных bot как gitUser в текущем окружении (для release commit).
+      # Извлечение имени текущей ветки.
+      # Извлечение sha последнего commit из выбранной ветки (нужно для построения версии beta).
+      - name: Git config
+        run: |
+          git config user.name ${{ secrets.BOT_USERNAME }}
+          git config user.email ${{ secrets.BOT_EMAIL }}
+          echo "branch=main" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        id: branch
+
+      # Установка зависимостей.
+      - name: Install dependencies
+        run: npm i
+
+      # Обновление поля version в package.json.
+      - name: Update package.json version
+        run: |
+          VERSION=$(jq -r '.release.tag_name' "$GITHUB_EVENT_PATH")
+          echo "Updating package.json to $VERSION"
+          npm version "$VERSION" --no-git-tag-version
+
+      # Генерация changelog и создание релизной ветки
+      - name: Fill changelog file and create release branch
+        id: changelog
+        run: |
+          export VERSION=$(jq -r '.release.tag_name' "$GITHUB_EVENT_PATH")
+          export RELEASE_BRANCH="release-$VERSION"
+          export MESSAGE="Релиз версии $VERSION"
+
+          echo "RELEASE_BRANCH=$RELEASE_BRANCH" >> $GITHUB_OUTPUT
+          echo "MESSAGE=$MESSAGE" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+          echo "==> Генерируем CHANGELOG..."
+          bash bin/prepare-changelog.sh
+
+          echo "==> Создаём ветку $RELEASE_BRANCH и коммитим изменения"
+          git checkout -b "$RELEASE_BRANCH"
+          git commit -m "$MESSAGE" package.json CHANGELOG.md
+          git push --set-upstream origin "$RELEASE_BRANCH"
+
+        env:
+          BRANCH: ${{ steps.branch.outputs.branch }}
+          LAST_COMMIT_URL: https://github.com/${{ github.repository }}/commit/${{ steps.branch.outputs.sha_short }}
+          SHA_SHORT: ${{ steps.branch.outputs.sha_short }}
+          BOT_TOKEN: ${{ secrets.BOT_AUTH_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+
+      # Создание pull request из релизной ветки в целевую.
+      - name: Create release pull request from ${{ steps.changelog.outputs.RELEASE_BRANCH }} to ${{ steps.branch.outputs.branch }}
+        id: create_pr
+        run: |
+          response=$(curl --user "$BOT_USERNAME:$BOT_TOKEN" \
+            --request POST \
+            --url "https://api.github.com/repos/$REPOSITORY/pulls" \
+            --header "content-type: application/json" \
+            --data "{
+              \"title\": \"$TITLE\",
+              \"head\": \"$HEAD\",
+              \"base\": \"$BASE\",
+              \"body\": \"$BODY\"
+            }")
+
+          pr_number=$(echo "$response" | jq -r '.number')
+          echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
+        env:
+          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
+          REPOSITORY: ${{ github.repository }}
+          BOT_TOKEN: ${{ secrets.GH_TOKEN }}
+          TITLE: ${{ steps.changelog.outputs.MESSAGE }}
+          BODY: Этот PR создан автоматически, после публикации версии ${{ steps.changelog.outputs.VERSION }} библиотеки в npm.
+          HEAD: ${{ steps.changelog.outputs.RELEASE_BRANCH }}
+          BASE: ${{ steps.branch.outputs.branch }}
+
+      # Добавление лейбла для созданного PR
+      - name: Add release label to PR
+        run: |
+          curl -s \
+            -u "$BOT_USERNAME:$BOT_TOKEN" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            https://api.github.com/repos/$REPOSITORY/issues/${{ steps.create_pr.outputs.pr_number }}/labels \
+            -d '["release"]'
+        env:
+          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
+          BOT_TOKEN: ${{ secrets.GH_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
