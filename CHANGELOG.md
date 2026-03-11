@@ -1,3 +1,7 @@
+### 1.2.1 ([4b161a7](https://github.com/core-ds/bridge-to-native/commit/4b161a7)) (11-03-2026)
+
+### Features- Добавлено обновление куки всегда, кроме случая вызова reload()
+
 ## 1.2.0 ([6fa0bec](https://github.com/core-ds/bridge-to-native/commit/6fa0bec)) (11-02-2026)
 
 ### Features
