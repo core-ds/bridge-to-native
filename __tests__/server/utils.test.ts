@@ -1,6 +1,7 @@
 import { type IncomingMessage } from 'http';
 
 import {
+    getBridgeToNativeDataCookie,
     getHeaderValue,
     getQueryValues,
     hasBridgeToNativeDataCookie,
@@ -177,5 +178,39 @@ describe('parseHeaderTimestamp', () => {
     it('returns null for null or undefined', () => {
         expect(parseHeaderTimestamp(null)).toBeNull();
         expect(parseHeaderTimestamp(undefined)).toBeNull();
+    });
+});
+
+describe('getBridgeToNativeDataCookie', () => {
+    it('returns undefined if input is null', () => {
+        expect(getBridgeToNativeDataCookie(null)).toBeUndefined();
+    });
+
+    it('returns undefined if cookie is not present', () => {
+        const cookieHeader = 'firstCookie=foo; secondCookie=bar';
+
+        expect(getBridgeToNativeDataCookie(cookieHeader)).toBeUndefined();
+    });
+
+    it('returns the value of the cookie if it exists', () => {
+        const cookieHeader =
+            'bridgeToNativeData=%7B%22theme%22%3A%22light%22%2C%22appVersion%22%3A%221.1.1%22%7D; secondCookie=foo';
+
+        expect(getBridgeToNativeDataCookie(cookieHeader)).toBe(
+            '%7B%22theme%22%3A%22light%22%2C%22appVersion%22%3A%221.1.1%22%7D',
+        );
+    });
+
+    it('trims spaces around cookies', () => {
+        const cookieHeader =
+            '  bridgeToNativeData=%7B%22theme%22%3A%22light%22%7D  ; secondCookie=foo ';
+
+        expect(getBridgeToNativeDataCookie(cookieHeader)).toBe('%7B%22theme%22%3A%22light%22%7D');
+    });
+
+    it('returns first matching cookie if multiple exist', () => {
+        const cookieHeader = 'bridgeToNativeData=firstValue; bridgeToNativeData=secondValue';
+
+        expect(getBridgeToNativeDataCookie(cookieHeader)).toBe('firstValue');
     });
 });
