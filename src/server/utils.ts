@@ -1,4 +1,5 @@
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../query-and-headers-keys';
+import { type NativeParams } from '../types';
 
 import { bridgeToNativeDataCookieExistencePattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
@@ -94,3 +95,20 @@ export const getBridgeToNativeDataCookie = (cookieName: string | null) => {
 
     return undefined;
 };
+
+/**
+ * Возвращает десериализованные данные из `bridgeToNativeData` cookie.
+ */
+export function readNativeParamsFromCookie(cookieHeader: string | null) {
+    const cookieData = getBridgeToNativeDataCookie(cookieHeader);
+
+    if (!cookieData) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(decodeURIComponent(cookieData)) as Partial<NativeParams>;
+    } catch {
+        return null;
+    }
+}

@@ -4,6 +4,7 @@ import {
     COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
+    QUERY_NATIVE_IOS_APPVERSION,
     SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
 } from '../../query-and-headers-keys';
 import {
@@ -191,9 +192,14 @@ export class NativeNavigationAndTitleService {
     private initializeNativeHistoryStack() {
         const { nextPageId, title } = this.nativeParamsService;
 
-        if (nextPageId) {
+        if (
+            nextPageId &&
+            NativeNavigationAndTitleService.shouldInitializeFromNextPageId(nextPageId)
+        ) {
             // Сценарий 2 – `nextPageId` ставит метод `this.navigateServerSide`,
             // т.е. это инициализация сразу после перехода server-side навигацией.
+            // Если в sessionStorage уже есть стек, используем `nextPageId` только для прямого
+            // перехода "вперёд", когда он на 1 больше сохранённой глубины истории.
             this.nativeHistoryStack = new Array(nextPageId).fill(
                 // Текстовые заголовки другого WA здесь не интересны, используем явную заглушку.
                 NativeHistoryStackSpecialValues.ServerSideNavigationStub,
@@ -226,15 +232,52 @@ export class NativeNavigationAndTitleService {
      */
     private prepareExternalLinkBeforeOpen(url: URL) {
         const currentPageId = this.nativeHistoryStack.length;
-        const divider = new URL(url).searchParams.toString() ? '&' : '?';
+        const modifiedUrl = new URL(url);
+        const { originalWebviewParams, appVersion } = this.nativeParamsService;
 
-        const modifiedUrl = new URL(
-            `${url}${divider}${this.nativeParamsService.originalWebviewParams}`,
-        );
+        if (originalWebviewParams) {
+            const originalWebviewSearchParams = new URLSearchParams(originalWebviewParams);
+
+            originalWebviewSearchParams.forEach((value, key) => {
+                modifiedUrl.searchParams.set(key, value);
+            });
+        }
+
+        // Переиспользуем существующий `device_app_version`, который исторически приходит из iOS,
+        // чтобы не вводить отдельный B2N query-параметр только для server-side переходов.
+        modifiedUrl.searchParams.set(QUERY_NATIVE_IOS_APPVERSION, appVersion);
 
         modifiedUrl.searchParams.set(QUERY_B2N_NEXT_PAGEID, (currentPageId + 1).toString());
 
         return modifiedUrl;
+    }
+
+    private static shouldInitializeFromNextPageId(nextPageId: number) {
+        if (!NativeNavigationAndTitleService.hasSavedHistoryStack()) {
+            return true;
+        }
+
+        try {
+            const serializedNativeHistoryStack = sessionStorage.getItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+            );
+
+            if (!serializedNativeHistoryStack) {
+                return true;
+            }
+
+            return (
+                nextPageId ===
+                (
+                    JSON.parse(serializedNativeHistoryStack) as Array<
+                        string | NativeHistoryStackSpecialValues
+                    >
+                ).length +
+                    1
+            );
+        } catch {
+            return true;
+        }
     }
 
     /**

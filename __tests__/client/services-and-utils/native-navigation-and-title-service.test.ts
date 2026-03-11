@@ -279,7 +279,7 @@ describe('NativeNavigationAndTitleService', () => {
         });
 
         const link = 'https://example.com';
-        const defaultPostFix = 'theme=light&b2n-next-page-id=2'; // добавляет `prepareExternalLinkBeforeOpen` на основе мока `mockedNativeParamsServiceInstance`
+        const defaultPostFix = 'theme=light&device_app_version=1.0.0&b2n-next-page-id=2'; // добавляет `prepareExternalLinkBeforeOpen` на основе мока `mockedNativeParamsServiceInstance`
 
         it('should call `location.assign` with correct URL', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
@@ -556,8 +556,44 @@ describe('NativeNavigationAndTitleService', () => {
             const inst = new NativeNavigationAndTitleService(mockedParamsService);
 
             // @ts-expect-error – Проверяем приватное свойство
-            expect(inst.nativeHistoryStack).toEqual([0, 0, 'Title 3']); // 0 — значение `TemporaryReloadStub` из enum
+            expect(inst.nativeHistoryStack).toEqual([0, 0, 'Title 3']); // 0 — значение `ServerSideNavigationStub` из enum
             expect(syncHistoryWithNativeSpy).toHaveBeenCalled();
+        });
+
+        it('should initialize stack with nextPageId only for direct forward navigation', () => {
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(['Title 1', 'Title 2']),
+            );
+
+            const mockedParamsService = {
+                ...mockedNativeParamsServiceInstance,
+                nextPageId: 3,
+                title: 'Title 3',
+            } as NativeParamsService;
+
+            const inst = new NativeNavigationAndTitleService(mockedParamsService);
+
+            // @ts-expect-error – Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual([0, 0, 'Title 3']);
+        });
+
+        it('should restore stack from sessionStorage for stale nextPageId after back navigation', () => {
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(['Title 1', 'Title 2']),
+            );
+
+            const mockedParamsService = {
+                ...mockedNativeParamsServiceInstance,
+                nextPageId: 2,
+                title: 'Title 3',
+            } as NativeParamsService;
+
+            const inst = new NativeNavigationAndTitleService(mockedParamsService);
+
+            // @ts-expect-error – Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Title 2']);
         });
 
         it('should restore stack with sessionStorage scenario', () => {
@@ -607,7 +643,9 @@ describe('NativeNavigationAndTitleService', () => {
             // @ts-expect-error -- Проверям приватный метод
             const result = inst.prepareExternalLinkBeforeOpen(url);
 
-            expect(result.href).toBe('https://example.com/?theme=light&b2n-next-page-id=2');
+            expect(result.href).toBe(
+                'https://example.com/?theme=light&device_app_version=1.0.0&b2n-next-page-id=2',
+            );
         });
 
         it('should handle existing query parameters', () => {
@@ -618,7 +656,7 @@ describe('NativeNavigationAndTitleService', () => {
             const result = inst.prepareExternalLinkBeforeOpen(url);
 
             expect(result.href).toBe(
-                'https://example.com/?existing=param&theme=light&b2n-next-page-id=2',
+                'https://example.com/?existing=param&theme=light&device_app_version=1.0.0&b2n-next-page-id=2',
             );
         });
 
