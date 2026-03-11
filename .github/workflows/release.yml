@@ -43,7 +43,7 @@ jobs:
       # Остальные могут только выпустить beta версию пакета.
       - name: Check permissions
         run: |
-          white_list=("DavidGuryanov","vahrammer","sashabull66")
+          white_list=("DavidGuryanov","vahrammer","sashabull66", "puptup")
 
           if [[ "${white_list[@]}" =~ "${ACTOR}" ]]
             then echo "Доступ разрешен."

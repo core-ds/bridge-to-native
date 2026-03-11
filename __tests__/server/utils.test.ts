@@ -1,10 +1,10 @@
 import { type IncomingMessage } from 'http';
 
 import {
+    getBridgeToNativeDataCookie,
     getHeaderValue,
     getQueryValues,
     hasBridgeToNativeDataCookie,
-    parseCookies,
     parseHeaderTimestamp,
 } from '../../src/server/utils';
 
@@ -140,32 +140,6 @@ describe('hasBridgeToNativeDataCookie', () => {
     });
 });
 
-describe('parseCookies', () => {
-    it('should correctly parse a single cookie', () => {
-        const result = parseCookies('theme=light');
-
-        expect(result).toEqual({ theme: 'light' });
-    });
-
-    it('should correctly parse multiple cookies', () => {
-        const result = parseCookies('theme=light; foo=bar');
-
-        expect(result).toEqual({ theme: 'light', foo: 'bar' });
-    });
-
-    it('should correctly parse cookie with encoded values', () => {
-        const result = parseCookies('device_name=iPhone%2B14%2BPro%2BMax');
-
-        expect(result).toEqual({ device_name: 'iPhone+14+Pro+Max' });
-    });
-
-    it('should ignore empty keys and trim whitespace around keys and values', () => {
-        const result = parseCookies(' =value ; theme = light ');
-
-        expect(result).toEqual({ theme: 'light' });
-    });
-});
-
 describe('parseHeaderTimestamp', () => {
     const timestamp = new Date('2025-11-01T13:05:23Z').getTime();
 
@@ -204,5 +178,39 @@ describe('parseHeaderTimestamp', () => {
     it('returns null for null or undefined', () => {
         expect(parseHeaderTimestamp(null)).toBeNull();
         expect(parseHeaderTimestamp(undefined)).toBeNull();
+    });
+});
+
+describe('getBridgeToNativeDataCookie', () => {
+    it('should return undefined if input is null', () => {
+        expect(getBridgeToNativeDataCookie(null)).toBeUndefined();
+    });
+
+    it('should return undefined if cookie is not present', () => {
+        const cookieHeader = 'firstCookie=foo; secondCookie=bar';
+
+        expect(getBridgeToNativeDataCookie(cookieHeader)).toBeUndefined();
+    });
+
+    it('should return the value of the cookie if it exists', () => {
+        const cookieHeader =
+            'bridgeToNativeData=%7B%22theme%22%3A%22light%22%2C%22appVersion%22%3A%221.1.1%22%7D; secondCookie=foo';
+
+        expect(getBridgeToNativeDataCookie(cookieHeader)).toBe(
+            '%7B%22theme%22%3A%22light%22%2C%22appVersion%22%3A%221.1.1%22%7D',
+        );
+    });
+
+    it('should trim spaces around cookies', () => {
+        const cookieHeader =
+            '  bridgeToNativeData=%7B%22theme%22%3A%22light%22%7D  ; secondCookie=foo ';
+
+        expect(getBridgeToNativeDataCookie(cookieHeader)).toBe('%7B%22theme%22%3A%22light%22%7D');
+    });
+
+    it('should return first matching cookie if multiple exist', () => {
+        const cookieHeader = 'bridgeToNativeData=firstValue; bridgeToNativeData=secondValue';
+
+        expect(getBridgeToNativeDataCookie(cookieHeader)).toBe('firstValue');
     });
 });
