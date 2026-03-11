@@ -17,10 +17,9 @@ import { extractNativeServiceQueries } from './extract-native-service-queries';
 import { iosAppIdPattern, versionPattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
 import {
+    getBridgeToNativeDataCookie,
     getHeaderValue,
     getQueryValues,
-    hasBridgeToNativeDataCookie,
-    parseCookies,
     parseHeaderTimestamp,
 } from './utils';
 
@@ -48,30 +47,32 @@ export function prepareNativeAppDetailsForClient(
     // 1) Данных NA в запросе с большой вероятностью не будет;
     // 2) клиентская сторона сохранит всё, что нужно в SessionStorage
     const cookieHeader = getHeaderValue(request, HEADER_KEY_COOKIE);
-    const nativeParams = parseRequest(request);
-
     const hasReloadFlag = cookieHeader?.includes(`${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true`);
-
-    const shouldUpdateCookie =
-        !hasBridgeToNativeDataCookie(cookieHeader) || !isSameTheme(request, cookieHeader);
-
-    if (!hasReloadFlag && shouldUpdateCookie) {
-        const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
-
-        setResponseHeader(
-            'Set-Cookie',
-            `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}; Path=/`,
-        );
-
-        return nativeParams;
-    }
 
     if (hasReloadFlag) {
         setResponseHeader(
             'Set-Cookie',
             `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=false; Max-Age=0; Path=/`,
         );
+
+        const cookieData = getBridgeToNativeDataCookie(cookieHeader);
+
+        if (cookieData) {
+            try {
+                return JSON.parse(decodeURIComponent(cookieData));
+            } catch {
+                return parseRequest(request);
+            }
+        }
     }
+
+    const nativeParams = parseRequest(request);
+    const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
+
+    setResponseHeader(
+        'Set-Cookie',
+        `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}; Path=/`,
+    );
 
     return nativeParams;
 }
@@ -136,20 +137,4 @@ function parseRequest(request: UniversalRequest) {
     }
 
     return nativeParams;
-}
-
-// Возвращает результат сравнения темы полученной, из query-параметров
-// с темой, полученной из cookie
-function isSameTheme(request: UniversalRequest, cookies: string | null) {
-    if (!cookies) return false;
-
-    const [themeFromQuery] = getQueryValues(request, [QUERY_NATIVE_THEME]);
-    const parsedCookies = parseCookies(cookies);
-    const bridgeCookie = parsedCookies[COOKIE_KEY_BRIDGE_TO_NATIVE_DATA];
-
-    try {
-        return JSON.parse(bridgeCookie || '{}').theme === themeFromQuery;
-    } catch (_) {
-        return false;
-    }
 }

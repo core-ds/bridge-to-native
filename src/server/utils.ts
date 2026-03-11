@@ -1,3 +1,5 @@
+import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../query-and-headers-keys';
+
 import { bridgeToNativeDataCookieExistencePattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
 
@@ -58,22 +60,6 @@ export function hasBridgeToNativeDataCookie(cookieHeader: string | null) {
     return Boolean(cookieHeader && bridgeToNativeDataCookieExistencePattern.test(cookieHeader));
 }
 
-export function parseCookies(cookieHeader: string): Record<string, string> {
-    return cookieHeader.split(';').reduce(
-        (acc, part) => {
-            const [key, ...rest] = part.split('=');
-
-            const trimmedKey = key.trim();
-
-            if (!trimmedKey) return acc;
-            acc[trimmedKey] = decodeURIComponent(rest.join('=').trim());
-
-            return acc;
-        },
-        {} as Record<string, string>,
-    );
-}
-
 /**
  * Преобразует значение из заголовка в timestamp
  *
@@ -85,3 +71,26 @@ export function parseHeaderTimestamp(headerValue: string | number | null): numbe
 
     return Number.isFinite(timestamp) ? timestamp : null;
 }
+
+/**
+ * Возвращает значение для нужной куки
+ *
+ * @param cookieName Имя куки
+ */
+export const getBridgeToNativeDataCookie = (cookieName: string | null) => {
+    if (!cookieName) {
+        return undefined;
+    }
+
+    const cookies = cookieName.split(';');
+
+    for (const cookie of cookies) {
+        const [key, value] = cookie.trim().split('=');
+
+        if (key === COOKIE_KEY_BRIDGE_TO_NATIVE_DATA) {
+            return value;
+        }
+    }
+
+    return undefined;
+};
