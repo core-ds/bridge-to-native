@@ -6,6 +6,7 @@ import {
     getQueryValues,
     hasBridgeToNativeDataCookie,
     parseHeaderTimestamp,
+    readNativeParamsFromCookie,
 } from '../../src/server/utils';
 
 describe('getHeaderValue', () => {
@@ -212,5 +213,22 @@ describe('getBridgeToNativeDataCookie', () => {
         const cookieHeader = 'bridgeToNativeData=firstValue; bridgeToNativeData=secondValue';
 
         expect(getBridgeToNativeDataCookie(cookieHeader)).toBe('firstValue');
+    });
+});
+
+describe('readNativeParamsFromCookie', () => {
+    it('should return null if bridgeToNativeData cookie is not present', () => {
+        expect(readNativeParamsFromCookie('firstCookie=foo; secondCookie=bar')).toBeNull();
+    });
+
+    it('should return parsed native params if bridgeToNativeData cookie is valid', () => {
+        const nativeParams = { theme: 'light', appVersion: '1.2.3' };
+        const cookieHeader = `bridgeToNativeData=${encodeURIComponent(JSON.stringify(nativeParams))}`;
+
+        expect(readNativeParamsFromCookie(cookieHeader)).toEqual(nativeParams);
+    });
+
+    it('should return null if bridgeToNativeData cookie is invalid', () => {
+        expect(readNativeParamsFromCookie('bridgeToNativeData=%7Bbroken-json')).toBeNull();
     });
 });

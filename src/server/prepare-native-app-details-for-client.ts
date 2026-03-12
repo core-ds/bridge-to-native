@@ -17,10 +17,10 @@ import { extractNativeServiceQueries } from './extract-native-service-queries';
 import { iosAppIdPattern, versionPattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
 import {
-    getBridgeToNativeDataCookie,
     getHeaderValue,
     getQueryValues,
     parseHeaderTimestamp,
+    readNativeParamsFromCookie,
 } from './utils';
 
 /**
@@ -46,6 +46,7 @@ export function prepareNativeAppDetailsForClient(
     // 1) Данных NA в запросе с большой вероятностью не будет;
     // 2) клиентская сторона сохранит всё, что нужно в SessionStorage
     const cookieHeader = getHeaderValue(request, HEADER_KEY_COOKIE);
+    const nativeParamsFromCookie = readNativeParamsFromCookie(cookieHeader);
     const hasReloadFlag = cookieHeader?.includes(`${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true`);
 
     if (hasReloadFlag) {
@@ -54,18 +55,14 @@ export function prepareNativeAppDetailsForClient(
             `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=false; Max-Age=0; Path=/`,
         );
 
-        const cookieData = getBridgeToNativeDataCookie(cookieHeader);
-
-        if (cookieData) {
-            try {
-                return JSON.parse(decodeURIComponent(cookieData));
-            } catch {
-                return parseRequest(request);
-            }
+        if (nativeParamsFromCookie) {
+            return nativeParamsFromCookie;
         }
+
+        return buildNativeParams(request);
     }
 
-    const nativeParams = parseRequest(request);
+    const nativeParams = buildNativeParams(request, nativeParamsFromCookie);
     const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
 
     setResponseHeader(
@@ -76,7 +73,10 @@ export function prepareNativeAppDetailsForClient(
     return nativeParams;
 }
 
-function parseRequest(request: UniversalRequest) {
+function buildNativeParams(
+    request: UniversalRequest,
+    nativeParamsFromCookie?: Partial<NativeParams> | null,
+) {
     // Прихраним «сервисные» query-параметры от нативного приложения,
     // чтобы подмешать их к URL при переходе в другое веб-приложение
     // в рамках одной вебвью-сессии.
@@ -112,10 +112,22 @@ function parseRequest(request: UniversalRequest) {
         nativeParams.iosAppId = appIdSubsting;
     }
 
+    // Версия приложения может приехать прямо в текущем request (в query-параметре `device_app_version`
+    // или заголовке `app-version`), а при server-side переходах / возврате назад может уже не приехать.
+    // В таких сценариях берём `appVersion` фолбэком из куки `bridgeToNativeData`.
     if (iosAppVersionQuery && versionPattern.test(iosAppVersionQuery)) {
         nativeParams.appVersion = iosAppVersionQuery;
     } else if (appVersionFromHeaders && versionPattern.test(appVersionFromHeaders)) {
         const [, versionSubstring] = appVersionFromHeaders.match(versionPattern) as string[]; // кастинг ок — в условии блока регулярка проверена
+
+        nativeParams.appVersion = versionSubstring;
+    } else if (
+        nativeParamsFromCookie?.appVersion &&
+        versionPattern.test(nativeParamsFromCookie.appVersion)
+    ) {
+        const [, versionSubstring] = nativeParamsFromCookie.appVersion.match(
+            versionPattern,
+        ) as string[];
 
         nativeParams.appVersion = versionSubstring;
     } else {

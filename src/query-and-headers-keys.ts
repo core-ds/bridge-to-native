@@ -41,7 +41,7 @@ export const QUERY_B2N_TITLE = 'b2n-title';
 // Игнорируется, если указан 'b2n-title'.
 export const QUERY_B2N_TITLE_DEPRECATED = 'title';
 
-// NA на iOS приложение передаёт в этом параметре схему,
+// NA на iOS передаёт в этом параметре схему,
 // под которым оно зарегистрировано в OS.
 // Известные проблемы:
 // * В старых версиях отсутствует, клиентский код использует хардкод (см. `src/client/constants.ts`);
@@ -50,7 +50,9 @@ export const QUERY_B2N_TITLE_DEPRECATED = 'title';
 //  Нужно просить iOS разработчика собрать сборку нормально.
 export const QUERY_NATIVE_IOS_APPID = 'applicationId';
 
-// NA на iOS приложение передаёт в этом параметре свою версию.
+// Исторически NA на iOS передаёт в этом параметре свою версию.
+// B2N сознательно переиспользует этот query и для server-side переходов в Android,
+// чтобы не вводить отдельный служебный параметр только для переноса версии между WA.
 export const QUERY_NATIVE_IOS_APPVERSION = 'device_app_version';
 
 // NA на обеих платформах в этом параметре передаёт активную тему (светлая/тёмная).
