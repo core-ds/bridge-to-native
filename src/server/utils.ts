@@ -76,14 +76,14 @@ export function parseHeaderTimestamp(headerValue: string | number | null): numbe
 /**
  * Возвращает значение для нужной куки
  *
- * @param cookieName Имя куки
+ * @param cookieHeader Имя куки
  */
-export const getBridgeToNativeDataCookie = (cookieName: string | null) => {
-    if (!cookieName) {
+export const getBridgeToNativeDataCookie = (cookieHeader: string | null) => {
+    if (!cookieHeader) {
         return undefined;
     }
 
-    const cookies = cookieName.split(';');
+    const cookies = cookieHeader.split(';');
 
     for (const cookie of cookies) {
         const [key, value] = cookie.trim().split('=');

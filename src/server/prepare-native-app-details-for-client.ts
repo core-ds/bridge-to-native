@@ -59,10 +59,10 @@ export function prepareNativeAppDetailsForClient(
             return nativeParamsFromCookie;
         }
 
-        return parseRequest(request);
+        return buildNativeParams(request);
     }
 
-    const nativeParams = parseRequest(request, nativeParamsFromCookie);
+    const nativeParams = buildNativeParams(request, nativeParamsFromCookie);
     const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
 
     setResponseHeader(
@@ -73,7 +73,7 @@ export function prepareNativeAppDetailsForClient(
     return nativeParams;
 }
 
-function parseRequest(
+function buildNativeParams(
     request: UniversalRequest,
     nativeParamsFromCookie?: Partial<NativeParams> | null,
 ) {

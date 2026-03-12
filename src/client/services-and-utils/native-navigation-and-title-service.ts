@@ -243,8 +243,9 @@ export class NativeNavigationAndTitleService {
             });
         }
 
-        // Переиспользуем существующий `device_app_version`, который исторически приходит из iOS,
-        // чтобы не вводить отдельный B2N query-параметр только для server-side переходов.
+        // Явно добавляем query-параметр `device_app_version` используемый NA на iOS, чтобы он был и в Android окружении.
+        // Таким образом гарантируется, что версию приложения будет видеть следующее WA
+        // (заголовок `app-version` может отсутствовать при server-side переходах).
         modifiedUrl.searchParams.set(QUERY_NATIVE_IOS_APPVERSION, appVersion);
 
         modifiedUrl.searchParams.set(QUERY_B2N_NEXT_PAGEID, (currentPageId + 1).toString());
