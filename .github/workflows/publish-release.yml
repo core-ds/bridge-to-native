@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+
+
+jobs:
+  publish:
+    # Данный воркфлоу запускается только при мерже в main релизного PR
+    if: >
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'release') &&
+      github.event.pull_request.base.ref == 'main'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      # Переключение на выбранную при запуске action ветку и скачивание файлов в окружение.
+      - name: Set npm token
+        uses: filipstefansson/set-npm-token-action@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Установка учётных данных bot как gitUser в текущем окружении (для release commit).
+      # Извлечение имени текущей ветки.
+      # Извлечение sha последнего commit из выбранной ветки (нужно для построения версии beta).
+      - name: Git config
+        run: |
+          git config user.name ${{ secrets.BOT_USERNAME }}
+          git config user.email ${{ secrets.BOT_EMAIL }}
+          echo "branch=main" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        id: branch
+
+      # Установка зависимостей.
+      - name: Install dependencies
+        run: npm i
+
+      # Сборка приложения в /.publish.
+      - name: Build app
+        run: npm run build
+
+      - name: Upload release assets
+        run: bash bin/upload-release-assets.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+
+      # Публикация выбранной версии в npm.
+      - name: Publish ${{ github.event.inputs.version }} version
+        run: |
+          CURRENT_VERSION=$(jq -r '.version' package.json)
+
+          export TAG="latest"
+          export VERSION="$CURRENT_VERSION"
+
+          yarn release
+        env:
+          BRANCH: ${{ steps.branch.outputs.branch }}
