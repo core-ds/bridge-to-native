@@ -40,11 +40,11 @@ jobs:
 
       # Установка зависимостей.
       - name: Install dependencies
-        run: npm i
+        run: yarn install
 
       # Сборка приложения в /.publish.
       - name: Build app
-        run: npm run build
+        run: yarn build
 
       - name: Upload release assets
         run: bash bin/upload-release-assets.sh

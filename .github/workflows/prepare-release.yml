@@ -25,7 +25,7 @@ jobs:
 
       # Установка зависимостей.
       - name: Install dependencies
-        run: npm i
+        run: yarn install
 
       # Обновление поля version в package.json.
       - name: Update package.json version
@@ -83,7 +83,7 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           BOT_TOKEN: ${{ secrets.GH_TOKEN }}
           TITLE: ${{ steps.changelog.outputs.MESSAGE }}
-          BODY: Этот PR создан автоматически, после публикации версии ${{ steps.changelog.outputs.VERSION }} библиотеки в npm.
+          BODY: Этот PR создан автоматически, после создания релиза ${{ steps.changelog.outputs.VERSION }}.
           HEAD: ${{ steps.changelog.outputs.RELEASE_BRANCH }}
           BASE: ${{ steps.branch.outputs.branch }}
 
