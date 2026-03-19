@@ -53,7 +53,7 @@ jobs:
           REPOSITORY: ${{ github.repository }}
 
       # Публикация выбранной версии в npm.
-      - name: Publish ${{ github.event.inputs.version }} version
+      - name: Publish new version
         run: |
           CURRENT_VERSION=$(jq -r '.version' package.json)
 
