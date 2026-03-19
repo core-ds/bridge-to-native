@@ -86,6 +86,13 @@ export class BridgeToNative {
     }
 
     /**
+     * Время старта открытия WV экрана в формате timestamp. Значение никак не меняется в процессе всей жизни WV экрана.
+     */
+    get webviewLaunchTime() {
+        return this.nativeParamsService.webviewLaunchTime;
+    }
+
+    /**
      * Метод, проверяющий, можно ли использовать ли указанную функциональность
      * в текущей версии NA.
      *
@@ -287,9 +294,11 @@ export class BridgeToNative {
     /**
      * Для перезагрузки страницы необходимо использовать этот метод.
      * Иначе синхронизация состояния с NA будет потеряна.
+     * По умолчанию метод сам делает location.reload,
+     * но с помощью аргумента можно отключить этот вызов
      */
-    reload() {
-        this.nativeNavigationAndTitleService.reload();
+    reload(skipReload?: boolean) {
+        this.nativeNavigationAndTitleService.reload(skipReload);
     }
 
     /**

@@ -71,8 +71,10 @@ describe('iosAppIdPattern', () => {
         expect('com.example.com'.match(iosAppIdPattern)).toBeNull();
     });
 
-    it('should not match numbers in value', () => {
-        expect('com.example1.app'.match(iosAppIdPattern)).toBeNull();
+    it.each(['-', '.', '+', '1'])('should match allowed symbol', (symbol) => {
+        const appId = `com.new${symbol}example.app`;
+
+        expect(appId).toMatch(iosAppIdPattern);
     });
 
     it('should not match special characters in value', () => {

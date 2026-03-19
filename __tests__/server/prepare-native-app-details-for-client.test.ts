@@ -14,32 +14,6 @@ describe('prepareNativeAppDetailsForClient', () => {
         setResonseHeader = jest.fn();
     });
 
-    it('should not do anything if b2native cookie exists in request and themes are the same', () => {
-        const mockedRequest = {
-            headers: new Headers({
-                Cookie: 'bridgeToNativeData={"theme":"light"}',
-            }),
-            url: 'http://example.com?theme=light',
-        } as Request;
-
-        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
-
-        expect(setResonseHeader).not.toBeCalled();
-    });
-
-    it('should overwrite cookie if b2native cookie exists in request but themes are different', () => {
-        const mockedRequest = {
-            headers: new Headers({
-                Cookie: 'bridgeToNativeData={"theme":"dark"}',
-            }),
-            url: 'http://example.com?theme=light',
-        } as Request;
-
-        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
-
-        expect(setResonseHeader).toBeCalled();
-    });
-
     it('should set default theme to light if theme is not provided', () => {
         const mockedRequest = {
             url: 'http://example.com',
@@ -301,6 +275,53 @@ describe('prepareNativeAppDetailsForClient', () => {
         prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
 
         expect(setResonseHeader).not.toBeCalledWith('Set-Cookie', expect.stringContaining('title'));
+    });
+
+    it('should set webviewLaunchTime from header', () => {
+        const timestamp = 1764597923000;
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers({
+                'webview-launch-time': `${timestamp}`,
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`webviewLaunchTime${ENCODED_PARTS['":']}${timestamp}`),
+        );
+    });
+
+    it('should not set webviewLaunchTime from header if its value is invalid', () => {
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers({
+                'webview-launch-time': 'null',
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).not.toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining('webviewLaunchTime'),
+        );
+    });
+
+    it('should not set webviewLaunchTime if this header is not set', () => {
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers(),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).not.toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining('webviewLaunchTime'),
+        );
     });
 
     it('should set originalWebviewParams', () => {

@@ -3,6 +3,7 @@ import {
     COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD,
     HEADER_KEY_COOKIE,
     HEADER_KEY_NATIVE_APPVERSION,
+    HEADER_KEY_WV_LAUNCH_TIME,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
     QUERY_B2N_TITLE_DEPRECATED,
@@ -15,7 +16,12 @@ import { type NativeParams } from '../types';
 import { extractNativeServiceQueries } from './extract-native-service-queries';
 import { iosAppIdPattern, versionPattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
-import { getHeaderValue, getQueryValues, hasBridgeToNativeDataCookie, parseCookies } from './utils';
+import {
+    getBridgeToNativeDataCookie,
+    getHeaderValue,
+    getQueryValues,
+    parseHeaderTimestamp,
+} from './utils';
 
 /**
  * Парсит запрос, доставая из него данные о нативном приложении,
@@ -32,39 +38,40 @@ export function prepareNativeAppDetailsForClient(
     request: UniversalRequest,
     setResponseHeader: (headerKey: string, headerValue: string) => void,
 ) {
-    // Проверяем наличие куки bridgeToNativeData в запросе. Если куки нет — устанавливаем её.
-    // Также сверяем тему из query-параметров с темой, сохранённой в куке, потому что
-    // при повторном открытии WebView сессионная кука может сохраниться, и если тема приложения
-    // изменилась между сессиями, WebView и нативное приложение будут не синхронизированы.
-    // В таком случае обновляем куку актуальными данными из query-параметров
-    // Для случая когда передан флаг `reload` куку перезаписывать не нужно, потому что:
+    // Поскольку вебвью модули имеют особенность сохранять сессионную куку подолгу,
+    // даже после перезагрузки устройства или обновления приложения/ОС, ее значение
+    // актуализируется при каждом запросе на сервер. Исключением является вызов `reload()`.
+    // В этом случае функция возвращает объект с параметрами, полученными из
+    // ранее сохраненной куки, но перезаписываться кука не будет, потому что:
     // 1) Данных NA в запросе с большой вероятностью не будет;
     // 2) клиентская сторона сохранит всё, что нужно в SessionStorage
     const cookieHeader = getHeaderValue(request, HEADER_KEY_COOKIE);
-    const nativeParams = parseRequest(request);
-
     const hasReloadFlag = cookieHeader?.includes(`${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true`);
-
-    const shouldUpdateCookie =
-        !hasBridgeToNativeDataCookie(cookieHeader) || !isSameTheme(request, cookieHeader);
-
-    if (!hasReloadFlag && shouldUpdateCookie) {
-        const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
-
-        setResponseHeader(
-            'Set-Cookie',
-            `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}; Path=/`,
-        );
-
-        return nativeParams;
-    }
 
     if (hasReloadFlag) {
         setResponseHeader(
             'Set-Cookie',
             `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=false; Max-Age=0; Path=/`,
         );
+
+        const cookieData = getBridgeToNativeDataCookie(cookieHeader);
+
+        if (cookieData) {
+            try {
+                return JSON.parse(decodeURIComponent(cookieData));
+            } catch {
+                return parseRequest(request);
+            }
+        }
     }
+
+    const nativeParams = parseRequest(request);
+    const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
+
+    setResponseHeader(
+        'Set-Cookie',
+        `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}; Path=/`,
+    );
 
     return nativeParams;
 }
@@ -86,6 +93,9 @@ function parseRequest(request: UniversalRequest) {
             QUERY_B2N_TITLE_DEPRECATED,
         ]);
     const appVersionFromHeaders = getHeaderValue(request, HEADER_KEY_NATIVE_APPVERSION);
+    const webviewLaunchTime = parseHeaderTimestamp(
+        getHeaderValue(request, HEADER_KEY_WV_LAUNCH_TIME),
+    );
 
     const nativeParams: Partial<NativeParams> = {
         originalWebviewParams,
@@ -121,21 +131,9 @@ function parseRequest(request: UniversalRequest) {
         nativeParams.title = deprecatedTitle;
     }
 
-    return nativeParams;
-}
-
-// Возвращает результат сравнения темы полученной, из query-параметров
-// с темой, полученной из cookie
-function isSameTheme(request: UniversalRequest, cookies: string | null) {
-    if (!cookies) return false;
-
-    const [themeFromQuery] = getQueryValues(request, [QUERY_NATIVE_THEME]);
-    const parsedCookies = parseCookies(cookies);
-    const bridgeCookie = parsedCookies[COOKIE_KEY_BRIDGE_TO_NATIVE_DATA];
-
-    try {
-        return JSON.parse(bridgeCookie || '{}').theme === themeFromQuery;
-    } catch (_) {
-        return false;
+    if (webviewLaunchTime) {
+        nativeParams.webviewLaunchTime = webviewLaunchTime;
     }
+
+    return nativeParams;
 }

@@ -7,4 +7,5 @@ export type NativeParams = {
     theme: string;
     nextPageId: number | null;
     originalWebviewParams: string;
+    webviewLaunchTime?: number;
 };

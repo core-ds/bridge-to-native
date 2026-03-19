@@ -31,6 +31,7 @@ const mockedNativeParamsServiceInstance = {
     nativeParamsReadErrorFlag: false,
     originalWebviewParams: 'theme=light',
     theme: 'light',
+    webviewLaunchTime: new Date('2025-12-31T14:05:23Z').getTime(),
     canUseNativeFeature: jest.fn(),
     isCurrentVersionHigherOrEqual: jest.fn(),
 };
@@ -144,6 +145,12 @@ describe('BridgeToNative', () => {
 
         it('should return correct `theme`', () => {
             expect(bridge.theme).toBe(mockedNativeParamsServiceInstance.theme);
+        });
+
+        it('should return correct `webviewLaunchTime`', () => {
+            expect(bridge.webviewLaunchTime).toBe(
+                mockedNativeParamsServiceInstance.webviewLaunchTime,
+            );
         });
     });
 
