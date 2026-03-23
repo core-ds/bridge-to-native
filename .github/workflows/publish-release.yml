@@ -17,15 +17,15 @@ jobs:
 
     steps:
       # Переключение на выбранную при запуске action ветку и скачивание файлов в окружение.
-      - name: Set npm token
-        uses: filipstefansson/set-npm-token-action@v1
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
-
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      - name: Set npm token
+        uses: filipstefansson/set-npm-token-action@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
 
       # Установка учётных данных bot как gitUser в текущем окружении (для release commit).
       # Извлечение имени текущей ветки.
