@@ -1,3 +1,9 @@
+# 1.3.1 ([81ae1c0](https://github.com/core-ds/bridge-to-native/commit/1614f20)) (20-03-2026)
+
+### Features
+
+- Изменен процесс релиза библиотеки
+
 ### 1.2.1 ([4b161a7](https://github.com/core-ds/bridge-to-native/commit/4b161a7)) (11-03-2026)
 
 ### Features

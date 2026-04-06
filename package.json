@@ -1,6 +1,6 @@
 {
     "name": "@alfalab/bridge-to-native",
-    "version": "1.2.1",
+    "version": "1.3.1",
     "license": "MIT",
     "description": "Утилита для удобной работы веб приложения внутри нативного приложения и коммуникации с ним.",
     "engines": {
@@ -32,14 +32,13 @@
         "build:clean": "shx rm -rf .publish",
         "build:copy-package-json": "shx cp package.json .publish/package.json",
         "build:ts": "tsc --build",
-        "changelog": "bash bin/fill-changelog-file-and-notify-github.sh",
         "format": "arui-presets-lint format",
         "format:check": "arui-presets-lint format:check",
         "lint": "yarn lint:scripts && yarn format:check",
         "lint:fix": "yarn lint:scripts --fix && yarn format",
         "lint:scripts": "arui-presets-lint scripts",
         "pub": "npm publish .publish --userconfig \"../.npmrc\" --tag \"$TAG\"",
-        "release": "yarn build && npm version \"$VERSION\" --no-git-tag-version && yarn build:copy-package-json && yarn pub",
+        "release": "yarn build && yarn build:copy-package-json && yarn pub",
         "test": "arui-scripts test --silent --collect-coverage"
     },
     "devDependencies": {
