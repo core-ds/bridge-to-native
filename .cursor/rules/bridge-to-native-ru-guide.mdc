@@ -1,0 +1,19 @@
+---
+description: Русскоязычные рабочие ориентиры для bridge-to-native
+alwaysApply: true
+---
+
+# Bridge To Native RU Guide
+
+- Думай о репозитории как о библиотеке с двумя публичными surface: `@alfalab/bridge-to-native/client` и `@alfalab/bridge-to-native/server`.
+- Отвечай и рассуждай по проекту на русском, если пользователь не попросил иное.
+- Перед командами, связанными с Node.js (`node`, `npm`, `yarn`, тесты, сборка, линт), сначала переключайся на версию из проекта через `nvm use`.
+- Для команд проекта используй `yarn`; `npm` не используй, кроме случаев, когда это прямо требуется вне обычного workflow библиотеки.
+- Не размывай публичный API: наружу должны вести только `BridgeToNative`, `isWebviewEnv`, `prepareNativeAppDetailsForClient`.
+- При изменении протокольных полей сначала обновляй `src/query-and-headers-keys.ts`, затем клиент/сервер и тесты.
+- В `src/server` сохраняй framework-agnostic совместимость с `IncomingMessage | Request`; не опирайся на API конкретного фреймворка.
+- Любые правки навигации проверяй сквозь связку `src/server/prepare-native-app-details-for-client.ts`, `src/client/services-and-utils/native-navigation-and-title-service.ts`, cookie `bridgeToNativeData` и `sessionStorage`.
+- Помни инвариант `reload()`: сервер не должен затирать сохранённые параметры, а клиент восстанавливает состояние из cookie и `sessionStorage`.
+- Учитывай платформенные различия iOS/Android, особенно вокруг `pageId`, back-навигации и открытия внешних экранов.
+- Считай основными спецификациями поведения `README.md`, `__tests__/server/prepare-native-app-details-for-client.test.ts`, `__tests__/client/bridge-to-native.test.ts` и тесты навигации в `__tests__/client/services-and-utils/`.
+- Не расширяй поведение публичного API молча: если меняется контракт, синхронно обновляй тесты и документацию.

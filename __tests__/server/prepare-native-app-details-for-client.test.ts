@@ -156,6 +156,61 @@ describe('prepareNativeAppDetailsForClient', () => {
         );
     });
 
+    it('should set appVersion from cookie if query parameter and header are not provided', () => {
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers({
+                Cookie: `bridgeToNativeData=${encodeURIComponent(
+                    JSON.stringify({ appVersion: '2.3.4' }),
+                )}`,
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`appVersion${ENCODED_PARTS['":"']}2.3.4`),
+        );
+    });
+
+    it('should prefer appVersion from query parameter over cookie', () => {
+        const mockedRequest = {
+            url: 'http://example.com?device_app_version=1.2.3',
+            headers: new Headers({
+                Cookie: `bridgeToNativeData=${encodeURIComponent(
+                    JSON.stringify({ appVersion: '2.3.4' }),
+                )}`,
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`appVersion${ENCODED_PARTS['":"']}1.2.3`),
+        );
+    });
+
+    it('should prefer appVersion from header over cookie when query parameter is not provided', () => {
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers({
+                Cookie: `bridgeToNativeData=${encodeURIComponent(
+                    JSON.stringify({ appVersion: '2.3.4' }),
+                )}`,
+                'app-version': '1.2.3',
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`appVersion${ENCODED_PARTS['":"']}1.2.3`),
+        );
+    });
+
     it('should not set appVersion from header if its value is invalid', () => {
         const mockedRequest = {
             url: 'http://example.com',

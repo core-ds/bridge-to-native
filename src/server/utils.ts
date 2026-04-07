@@ -1,4 +1,5 @@
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../query-and-headers-keys';
+import { type NativeParams } from '../types';
 
 import { bridgeToNativeDataCookieExistencePattern } from './regexp-patterns';
 import { type UniversalRequest } from './types';
@@ -75,14 +76,14 @@ export function parseHeaderTimestamp(headerValue: string | number | null): numbe
 /**
  * Возвращает значение для нужной куки
  *
- * @param cookieName Имя куки
+ * @param cookieHeader Имя куки
  */
-export const getBridgeToNativeDataCookie = (cookieName: string | null) => {
-    if (!cookieName) {
+export const getBridgeToNativeDataCookie = (cookieHeader: string | null) => {
+    if (!cookieHeader) {
         return undefined;
     }
 
-    const cookies = cookieName.split(';');
+    const cookies = cookieHeader.split(';');
 
     for (const cookie of cookies) {
         const [key, value] = cookie.trim().split('=');
@@ -94,3 +95,20 @@ export const getBridgeToNativeDataCookie = (cookieName: string | null) => {
 
     return undefined;
 };
+
+/**
+ * Возвращает десериализованные данные из `bridgeToNativeData` cookie.
+ */
+export function readNativeParamsFromCookie(cookieHeader: string | null) {
+    const cookieData = getBridgeToNativeDataCookie(cookieHeader);
+
+    if (!cookieData) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(decodeURIComponent(cookieData)) as Partial<NativeParams>;
+    } catch {
+        return null;
+    }
+}
