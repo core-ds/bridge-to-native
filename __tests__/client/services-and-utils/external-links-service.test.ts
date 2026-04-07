@@ -3,12 +3,17 @@ import { type NativeParamsService } from '../../../src/client/services-and-utils
 
 const mockedCloseWebviewUtil = jest.fn();
 
-jest.mock('../../../src/client/services-and-utils/close-webview-util', () => ({
-    __esModule: true,
-    get closeWebviewUtil() {
-        return mockedCloseWebviewUtil;
-    },
-}));
+jest.mock('../../../src/client/services-and-utils/utils', () => {
+    const actual = jest.requireActual('../../../src/client/services-and-utils/utils');
+
+    return {
+        __esModule: true,
+        appendFromCurrentQueryParamForIos: actual.appendFromCurrentQueryParamForIos,
+        get closeWebviewUtil() {
+            return mockedCloseWebviewUtil;
+        },
+    };
+});
 
 const mockedNativeParamsServiceInstance = {
     appId: 'alfabank',

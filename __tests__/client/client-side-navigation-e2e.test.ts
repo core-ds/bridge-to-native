@@ -3,12 +3,17 @@ import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../src/query-and-headers-ke
 
 const mockedCloseWebviewUtil = jest.fn();
 
-jest.mock('../../src/client/services-and-utils/close-webview-util', () => ({
-    __esModule: true,
-    get closeWebviewUtil() {
-        return mockedCloseWebviewUtil;
-    },
-}));
+jest.mock('../../src/client/services-and-utils/utils', () => {
+    const actual = jest.requireActual('../../src/client/services-and-utils/utils');
+
+    return {
+        __esModule: true,
+        appendFromCurrentQueryParamForIos: actual.appendFromCurrentQueryParamForIos,
+        get closeWebviewUtil() {
+            return mockedCloseWebviewUtil;
+        },
+    };
+});
 
 describe('B2N client-side navigation e2e testing', () => {
     const addEventListenerSpy = jest.spyOn(window, 'addEventListener');

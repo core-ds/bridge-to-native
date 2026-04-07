@@ -2,8 +2,8 @@ import { QUERY_B2N_TITLE } from '../../query-and-headers-keys';
 import { DEEP_LINK_PATTERN } from '../constants';
 import { type PdfType } from '../types';
 
-import { closeWebviewUtil } from './close-webview-util';
 import { type NativeParamsService } from './native-params-service';
+import { appendFromCurrentQueryParamForIos, closeWebviewUtil } from './utils';
 
 const QUERY_OPEN_IN_BROWSER_KEY = 'openInBrowser';
 const QUERY_OPEN_IN_BROWSER_VALUE = 'true';
@@ -17,6 +17,11 @@ export class ExternalLinksService {
 
     handleNativeDeeplink(deeplink: string, closeWebviewBeforeCallNativeDeeplinkHandler = false) {
         const clearedDeeplinkPath = deeplink.replace(DEEP_LINK_PATTERN, '');
+        const nativeUrl = `${this.nativeParamsService.appId}://${clearedDeeplinkPath}`;
+        const replaceUrl =
+            this.nativeParamsService.environment === 'ios'
+                ? appendFromCurrentQueryParamForIos(nativeUrl)
+                : nativeUrl;
 
         if (
             closeWebviewBeforeCallNativeDeeplinkHandler &&
@@ -26,18 +31,12 @@ export class ExternalLinksService {
 
             // Проверено, ОС получает диплинк и передаёт его NA, не смотря на то,
             // что это происходит в следующей макрозадаче после команды на закрытие WV.
-            setTimeout(
-                () =>
-                    window.location.replace(
-                        `${this.nativeParamsService.appId}://${clearedDeeplinkPath}`,
-                    ),
-                0,
-            );
+            setTimeout(() => window.location.replace(replaceUrl), 0);
 
             return;
         }
 
-        window.location.replace(`${this.nativeParamsService.appId}://${clearedDeeplinkPath}`);
+        window.location.replace(replaceUrl);
     }
 
     getHrefToOpenInBrowser(link: string) {
