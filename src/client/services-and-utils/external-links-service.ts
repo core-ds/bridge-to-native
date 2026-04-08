@@ -17,11 +17,11 @@ export class ExternalLinksService {
 
     handleNativeDeeplink(deeplink: string, closeWebviewBeforeCallNativeDeeplinkHandler = false) {
         const clearedDeeplinkPath = deeplink.replace(DEEP_LINK_PATTERN, '');
-        const nativeUrl = `${this.nativeParamsService.appId}://${clearedDeeplinkPath}`;
-        const replaceUrl =
+        const originalNativeUrl = `${this.nativeParamsService.appId}://${clearedDeeplinkPath}`;
+        const preparedNativeUrl =
             this.nativeParamsService.environment === 'ios'
-                ? appendFromCurrentQueryParamForIos(nativeUrl)
-                : nativeUrl;
+                ? appendFromCurrentQueryParamForIos(originalNativeUrl)
+                : originalNativeUrl;
 
         if (
             closeWebviewBeforeCallNativeDeeplinkHandler &&
@@ -31,12 +31,12 @@ export class ExternalLinksService {
 
             // Проверено, ОС получает диплинк и передаёт его NA, не смотря на то,
             // что это происходит в следующей макрозадаче после команды на закрытие WV.
-            setTimeout(() => window.location.replace(replaceUrl), 0);
+            setTimeout(() => window.location.replace(preparedNativeUrl), 0);
 
             return;
         }
 
-        window.location.replace(replaceUrl);
+        window.location.replace(preparedNativeUrl);
     }
 
     getHrefToOpenInBrowser(link: string) {
