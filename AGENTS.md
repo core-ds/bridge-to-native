@@ -1,8 +1,3 @@
----
-description: Русскоязычные рабочие ориентиры для bridge-to-native
-alwaysApply: true
----
-
 # Bridge To Native RU Guide
 
 - Думай о репозитории как о библиотеке с двумя публичными surface: `@alfalab/bridge-to-native/client` и `@alfalab/bridge-to-native/server`.
