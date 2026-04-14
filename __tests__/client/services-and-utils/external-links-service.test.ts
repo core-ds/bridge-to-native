@@ -3,12 +3,17 @@ import { type NativeParamsService } from '../../../src/client/services-and-utils
 
 const mockedCloseWebviewUtil = jest.fn();
 
-jest.mock('../../../src/client/services-and-utils/close-webview-util', () => ({
-    __esModule: true,
-    get closeWebviewUtil() {
-        return mockedCloseWebviewUtil;
-    },
-}));
+jest.mock('../../../src/client/services-and-utils/utils', () => {
+    const actual = jest.requireActual('../../../src/client/services-and-utils/utils');
+
+    return {
+        __esModule: true,
+        appendFromCurrentQueryParamForIos: actual.appendFromCurrentQueryParamForIos,
+        get closeWebviewUtil() {
+            return mockedCloseWebviewUtil;
+        },
+    };
+});
 
 const mockedNativeParamsServiceInstance = {
     appId: 'alfabank',
@@ -60,6 +65,53 @@ describe('ExternalLinksService', () => {
 
             inst.handleNativeDeeplink(deeplink, true);
             expect(mockedCloseWebviewUtil).toHaveBeenCalled();
+        });
+
+        describe('iOS environment', () => {
+            const iOSNativeParamsServiceInstance = {
+                ...mockedNativeParamsServiceInstance,
+                environment: 'ios',
+            } as unknown as NativeParamsService;
+
+            it.each([
+                [
+                    'webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app',
+                    'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app&fromCurrent=true',
+                ],
+                [
+                    'alfabank:///dashboard/deeplink_template',
+                    'alfabank://deeplink_template?fromCurrent=true',
+                ],
+                ['alfabank:///deeplink_template', 'alfabank://deeplink_template?fromCurrent=true'],
+                ['alfabank://deeplink_template', 'alfabank://deeplink_template?fromCurrent=true'],
+                ['/deeplink_template', 'alfabank://deeplink_template?fromCurrent=true'],
+            ])('should append `fromCurrent=true` for `%s`', (deeplink, expectedValue) => {
+                const inst = new ExternalLinksService(iOSNativeParamsServiceInstance);
+
+                inst.handleNativeDeeplink(deeplink);
+                expect(locationReplaceSpy).toHaveBeenCalledWith(expectedValue);
+            });
+
+            it('should pass prepared URL when closing webview before deeplink', () => {
+                jest.useFakeTimers();
+                const inst = new ExternalLinksService(iOSNativeParamsServiceInstance);
+                const deeplink = '/deeplink_template';
+
+                // @ts-expect-error –– Мокаем приватный метод
+                jest.spyOn(inst.nativeParamsService, 'canUseNativeFeature').mockImplementationOnce(
+                    () => true,
+                );
+
+                inst.handleNativeDeeplink(deeplink, true);
+                expect(mockedCloseWebviewUtil).toHaveBeenCalled();
+                expect(locationReplaceSpy).not.toHaveBeenCalled();
+
+                jest.runAllTimers();
+                expect(locationReplaceSpy).toHaveBeenCalledWith(
+                    'alfabank://deeplink_template?fromCurrent=true',
+                );
+                jest.useRealTimers();
+            });
         });
     });
 

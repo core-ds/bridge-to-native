@@ -14,8 +14,8 @@ import {
     type LogError,
 } from '../types';
 
-import { closeWebviewUtil } from './close-webview-util';
 import { type NativeParamsService } from './native-params-service';
+import { closeWebviewUtil } from './utils';
 
 const enum NativeHistoryStackSpecialValues {
     ServerSideNavigationStub,

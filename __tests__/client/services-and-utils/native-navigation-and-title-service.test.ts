@@ -7,7 +7,7 @@ import {
 
 const mockedCloseWebviewUtil = jest.fn();
 
-jest.mock('../../../src/client/services-and-utils/close-webview-util', () => ({
+jest.mock('../../../src/client/services-and-utils/utils', () => ({
     __esModule: true,
     get closeWebviewUtil() {
         return mockedCloseWebviewUtil;
