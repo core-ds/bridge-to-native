@@ -1,38 +1,41 @@
 name: Post push check
 
-on:
-  push
+on: push
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
+    check:
+        runs-on: ubuntu-latest
 
-    steps:
-      # Переключение на выбранную при запуске action ветку и скачивание файлов в окружение.
-      - name: Checkout
-        uses: actions/checkout@v3
+        steps:
+            # Переключение на выбранную при запуске action ветку и скачивание файлов в окружение.
+            - name: Checkout
+              uses: actions/checkout@v3
 
-      # Установка зависимостей.
-      - name: Install dependencies
-        run: yarn
+            # Установка зависимостей.
+            - name: Install dependencies
+              run: yarn
 
-      # Прогон тестов
-      - name: Run tests
-        run: yarn test
+            # Прогон тестов
+            - name: Run tests
+              run: yarn test
 
-      # Выпуск beta версии библиотеки, если в commit message есть вхождение строки "deploy_beta"
-      - name: Publish beta version
-        if: "contains(github.event.head_commit.message, 'deploy_beta')"
-        run: |
-          CURRENT_VERSION=$(grep -o '"version": "[^"]*' package.json | awk -F'"' '{print $4}')
-          export TAG="beta"
-          export VERSION="$CURRENT_VERSION-beta-$(git rev-parse --short HEAD)"
+            # Выпуск beta версии библиотеки, если в commit message есть вхождение строки "deploy_beta"
+            - name: Publish beta version
+              if: "contains(github.event.head_commit.message, 'deploy_beta')"
+              run: |
+                  CURRENT_VERSION=$(jq -r '.version' package.json)
+                  SHORT_SHA=$(git rev-parse --short HEAD)
+                  NEW_VERSION="${CURRENT_VERSION}-beta.${SHORT_SHA}"
+                  export TAG="beta"
+                  export VERSION="$NEW_VERSION"
 
-          echo "//registry.npmjs.org/:_authToken=$TOKEN" > .npmrc
+                  echo "//registry.npmjs.org/:_authToken=$TOKEN" > .npmrc
 
-          yarn release
+                  tmp=$(mktemp)
+                  jq --arg v "$NEW_VERSION" '.version = $v' package.json > "$tmp" && mv "$tmp" package.json
 
-          echo "### Выпущена новая версия библиотеки: $VERSION" >> $GITHUB_STEP_SUMMARY
-        env:
-          TOKEN: ${{ secrets.NPM_TOKEN }}
+                  yarn release
 
+                  echo "### Выпущена новая версия библиотеки: $VERSION" >> $GITHUB_STEP_SUMMARY
+              env:
+                  TOKEN: ${{ secrets.NPM_TOKEN }}
