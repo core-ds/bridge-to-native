@@ -1,5 +1,4 @@
-/* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
-
+/* eslint max-lines: ["error", {"max": 360, "skipComments": true}] */ // Много комментариев.
 import {
     COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD,
     QUERY_B2N_NEXT_PAGEID,
@@ -15,6 +14,7 @@ import {
 } from '../types';
 
 import { closeWebviewUtil } from './close-webview-util';
+import { type NativeExecuteService } from './native-execute-service';
 import { type NativeParamsService } from './native-params-service';
 
 const enum NativeHistoryStackSpecialValues {
@@ -40,6 +40,7 @@ export class NativeNavigationAndTitleService {
 
     constructor(
         private nativeParamsService: NativeParamsService,
+        private nativeExecuteService: NativeExecuteService,
         private browserHistoryApiWrappers?: BrowserHistoryApiWrappers,
         private logError?: LogError,
     ) {
@@ -350,7 +351,11 @@ export class NativeNavigationAndTitleService {
             const paramsToSend = JSON.stringify({ pageId: narrowedPageId, pageTitle });
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
-                this.nativeParamsService.AndroidBridge?.setPageSettings(paramsToSend);
+                this.nativeExecuteService.execute(
+                    'syncHistoryWithNative',
+                    () => this.nativeParamsService.AndroidBridge?.setPageSettings(paramsToSend),
+                    { paramsToSend },
+                );
                 this.lastSetPageSettingsParams = paramsToSend;
             }
         } else {
@@ -360,7 +365,11 @@ export class NativeNavigationAndTitleService {
             const paramsToSend = `ios:setPageSettings/${pageTitleStr + pageIdStr}`;
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
-                window.location.replace(paramsToSend);
+                this.nativeExecuteService?.execute(
+                    'syncHistoryWithNative',
+                    () => window.location.replace(paramsToSend),
+                    { paramsToSend },
+                );
                 this.lastSetPageSettingsParams = paramsToSend;
             }
         }
