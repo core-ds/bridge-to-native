@@ -14,25 +14,26 @@ import { getHeaderValue, hasBridgeToNativeDataCookie } from './utils';
  * @param request Объект запроса (Request или IncomingMessage).
  */
 export function isWebviewEnv(request: UniversalRequest) {
+    const appVersion = getHeaderValue(request, HEADER_KEY_NATIVE_APPVERSION);
+    const userAgent = getHeaderValue(request, HEADER_KEY_USER_AGENT);
+
+    const isWebviewByHeaders =
+        // `app-version` в заголовках — основной индикатор запроса из вебвью.
+        (appVersion && versionPattern.test(appVersion)) ||
+        // Проверка «на всякий случай» для iOS — нет уверенности,
+        // что `app-version` стабильно и на всех версиях есть во всех запросах из вебвью.
+        (userAgent && webviewUaIOSPattern.test(userAgent));
+
+    if (isWebviewByHeaders) return true;
+
+    const isBrowserEnv = userAgent && !webviewUaIOSPattern.test(userAgent) && !appVersion;
+
+    if (isBrowserEnv) return false;
+
     // Выставленная ранее кука — однозначный индикатор вебвью окружения.
     const cookieHeader = getHeaderValue(request, HEADER_KEY_COOKIE);
 
     if (hasBridgeToNativeDataCookie(cookieHeader)) {
-        return true;
-    }
-
-    const appVersion = getHeaderValue(request, HEADER_KEY_NATIVE_APPVERSION);
-
-    // `app-version` в заголовках — основной индикатор запроса из вебвью.
-    if (appVersion && versionPattern.test(appVersion)) {
-        return true;
-    }
-
-    const userAgent = getHeaderValue(request, HEADER_KEY_USER_AGENT);
-
-    // Проверка «на всякий случай» для iOS — нет уверенности,
-    // что `app-version` стабильно и на всех версиях есть во всех запросах из вебвью.
-    if (userAgent && webviewUaIOSPattern.test(userAgent)) {
         return true;
     }
 
