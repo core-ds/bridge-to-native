@@ -29,6 +29,10 @@ const NativeHistoryStackStub = 0;
  * см. в документе {@link ./NAVIGATION_SCENARIOS.md}.
  */
 export class NativeNavigationAndTitleService {
+    // Здесь сохраняются параметры, которые в последний раз были отправлены
+    // в NA. Помогает предотвратить повторную отправку одинаковых параметров.
+    private lastSetPageSettingsParams = '';
+
     // Здесь храниться состояние связи WA с NA. Сервис всегда ориентируется на этот стек,
     // чтобы вычислить, какие `pageId` и `pageTitle` отправить в NA.
     // Все изменения в стек должно отражаться в SessionStorage (метод `saveNativeHistoryStack`).
@@ -40,18 +44,14 @@ export class NativeNavigationAndTitleService {
     // вместо нового метода B2N `replaceHistoryState`
     private numOfBackSteps = 1;
 
-    // Здесь сохраняются параметры, которые в последний раз были отправлены
-    // в NA. Помогает предотвратить повторную отправку одинаковых параметров.
-    private lastSetPageSettingsParams = '';
-
     // Предотвращают повторный вызов навигации, пока текущая не завершена.
     // Без блокировки WV-браузер продолжит показывать исходную страницу,
     // и повторный вызов может инициировать нежелательную навигацию.
     // `isGoBackLocked` снимается в `handleClientSideNavigationBack` (popstate) для soft-навигации;
     // при hard-навигации блокировка снимется автоматически при новой инициализации.
-    // `isNavigateServerSideLocked` не снимается — после server-side навигации всегда новая инициализация.
     private isGoBackLocked = false;
 
+    // `isNavigateServerSideLocked` не снимается — после server-side навигации всегда новая инициализация.
     private isNavigateServerSideLocked = false;
 
     constructor(
@@ -147,18 +147,6 @@ export class NativeNavigationAndTitleService {
         window.location.assign(this.prepareExternalLinkBeforeOpen(url));
     }
 
-    setInitialView(nativeTitle = '') {
-        this.nativeHistoryStack = [nativeTitle];
-        this.saveNativeHistoryStack();
-        this.syncHistoryWithNative();
-    }
-
-    setTitle(nativeTitle: string) {
-        this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = nativeTitle;
-        this.saveNativeHistoryStack();
-        this.syncHistoryWithNative();
-    }
-
     replaceHistoryState(url?: HistoryPushStateParams[2], state: HistoryPushStateParams[0] = null) {
         if (this.browserHistoryApiWrappers?.replace) {
             this.browserHistoryApiWrappers.replace(url, state);
@@ -169,30 +157,16 @@ export class NativeNavigationAndTitleService {
         this.setHistoryStatePageId();
     }
 
-    // eslint-disable-next-line class-methods-use-this -- удобней использовать метод в контексте экземпляра.
-    private createStateWithPageId(
-        state: HistoryPushStateParams[0],
-        pageId: number,
-    ): Record<string, unknown> {
-        const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-            v !== null && v !== undefined && typeof v === 'object' && !Array.isArray(v);
-
-        return {
-            ...(isPlainObject(state) ? state : {}),
-            [HISTORY_STATE_KEY_B2N_PAGE_ID]: pageId,
-        };
+    setInitialView(nativeTitle = '') {
+        this.nativeHistoryStack = [nativeTitle];
+        this.saveNativeHistoryStack();
+        this.syncHistoryWithNative();
     }
 
-    private setHistoryStatePageId(useNextPageId = false) {
-        const pageId = useNextPageId
-            ? this.nativeHistoryStack.length + 1
-            : this.nativeHistoryStack.length;
-        const newState = this.createStateWithPageId(window.history.state, pageId);
-
-        // `b2n-pageId` всегда записывается на верхний уровень через нативный `replaceState`,
-        // а не через wrapper, чтобы wrapper (например, React Router / history) не мог обернуть
-        // его внутрь своего формата и скрыть от B2N при чтении `history.state`.
-        window.history.replaceState(newState, '');
+    setTitle(nativeTitle: string) {
+        this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = nativeTitle;
+        this.saveNativeHistoryStack();
+        this.syncHistoryWithNative();
     }
 
     /**
@@ -251,9 +225,6 @@ export class NativeNavigationAndTitleService {
         return sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK) !== null;
     }
 
-    /**
-     * Инициализирует `nativeHistoryStack`.
-     */
     private initializeNativeHistoryStack() {
         const { nextPageId, title } = this.nativeParamsService;
         const hasSS = this.hasSavedHistoryStack();
@@ -322,34 +293,6 @@ export class NativeNavigationAndTitleService {
     }
 
     /**
-     * Читает и парсит `nativeHistoryStack` из SessionStorage.
-     * При ошибке чтения или парсинга логирует через `logError` и пробрасывает исключение.
-     */
-    private readSavedHistoryStack() {
-        const serialized = sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK);
-
-        try {
-            if (!serialized) {
-                throw new Error(
-                    `${SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK} sessionStorage expected not to be null`,
-                );
-            }
-
-            return JSON.parse(serialized) as NativeHistoryStack;
-        } catch (e) {
-            if (this.logError) {
-                this.logError(
-                    `Клиентский код B2N не смог получить ${SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK} из sessionStorage
-                    Могут возникнуть проблемы с кнопкой «Назад» в NA.`,
-                    e,
-                );
-            }
-
-            throw e;
-        }
-    }
-
-    /**
      * Подготавливает ссылку для корректного перехода server-side навигацией.
      *
      * @param url URL для перехода внутри WA server-side навигацией.
@@ -380,8 +323,33 @@ export class NativeNavigationAndTitleService {
     }
 
     /**
-     * Сохраняет `nativeHistoryStack` в SessionStorage.
+     * Читает и парсит `nativeHistoryStack` из SessionStorage.
+     * При ошибке чтения или парсинга логирует через `logError` и пробрасывает исключение.
      */
+    private readSavedHistoryStack() {
+        const serialized = sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK);
+
+        try {
+            if (!serialized) {
+                throw new Error(
+                    `${SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK} sessionStorage expected not to be null`,
+                );
+            }
+
+            return JSON.parse(serialized) as NativeHistoryStack;
+        } catch (e) {
+            if (this.logError) {
+                this.logError(
+                    `Клиентский код B2N не смог получить ${SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK} из sessionStorage
+                    Могут возникнуть проблемы с кнопкой «Назад» в NA.`,
+                    e,
+                );
+            }
+
+            throw e;
+        }
+    }
+
     private saveNativeHistoryStack() {
         const serializedNativeHistoryStack = JSON.stringify(this.nativeHistoryStack);
 
@@ -414,5 +382,31 @@ export class NativeNavigationAndTitleService {
                 this.lastSetPageSettingsParams = paramsToSend;
             }
         }
+    }
+
+    private setHistoryStatePageId(useNextPageId = false) {
+        const pageId = useNextPageId
+            ? this.nativeHistoryStack.length + 1
+            : this.nativeHistoryStack.length;
+        const newState = this.createStateWithPageId(window.history.state, pageId);
+
+        // `b2n-pageId` всегда записывается на верхний уровень через нативный `replaceState`,
+        // а не через wrapper, чтобы wrapper (например, React Router / history) не мог обернуть
+        // его внутрь своего формата и скрыть от B2N при чтении `history.state`.
+        window.history.replaceState(newState, '');
+    }
+
+    // eslint-disable-next-line class-methods-use-this -- удобней использовать метод в контексте экземпляра.
+    private createStateWithPageId(
+        state: HistoryPushStateParams[0],
+        pageId: number,
+    ): Record<string, unknown> {
+        const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+            v !== null && v !== undefined && typeof v === 'object' && !Array.isArray(v);
+
+        return {
+            ...(isPlainObject(state) ? state : {}),
+            [HISTORY_STATE_KEY_B2N_PAGE_ID]: pageId,
+        };
     }
 }
