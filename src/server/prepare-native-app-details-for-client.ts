@@ -1,6 +1,5 @@
 import {
     COOKIE_KEY_BRIDGE_TO_NATIVE_DATA,
-    COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD,
     HEADER_KEY_COOKIE,
     HEADER_KEY_NATIVE_APPVERSION,
     HEADER_KEY_WV_LAUNCH_TIME,
@@ -40,27 +39,9 @@ export function prepareNativeAppDetailsForClient(
 ) {
     // Поскольку вебвью модули имеют особенность сохранять сессионную куку подолгу,
     // даже после перезагрузки устройства или обновления приложения/ОС, ее значение
-    // актуализируется при каждом запросе на сервер. Исключением является вызов `reload()`.
-    // В этом случае функция возвращает объект с параметрами, полученными из
-    // ранее сохраненной куки, но перезаписываться кука не будет, потому что:
-    // 1) Данных NA в запросе с большой вероятностью не будет;
-    // 2) клиентская сторона сохранит всё, что нужно в SessionStorage
+    // актуализируется при каждом запросе на сервер.
     const cookieHeader = getHeaderValue(request, HEADER_KEY_COOKIE);
     const nativeParamsFromCookie = readNativeParamsFromCookie(cookieHeader);
-    const hasReloadFlag = cookieHeader?.includes(`${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true`);
-
-    if (hasReloadFlag) {
-        setResponseHeader(
-            'Set-Cookie',
-            `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=false; Max-Age=0; Path=/`,
-        );
-
-        if (nativeParamsFromCookie) {
-            return nativeParamsFromCookie;
-        }
-
-        return buildNativeParams(request);
-    }
 
     const nativeParams = buildNativeParams(request, nativeParamsFromCookie);
     const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
