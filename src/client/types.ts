@@ -1,11 +1,13 @@
 export type BrowserHistoryApiWrappers = {
     push?: (url: HistoryPushStateParams[2], state: HistoryPushStateParams[0]) => void;
     go?: (delta: number) => void;
+    replace?: (url: HistoryReplaceStateParams[2], state: HistoryReplaceStateParams[0]) => void;
 };
 
 export type Environment = 'android' | 'ios';
 
 export type HistoryPushStateParams = Parameters<typeof window.history.pushState>;
+export type HistoryReplaceStateParams = Parameters<typeof window.history.replaceState>;
 
 export type LocationAssignParam = Parameters<typeof window.location.assign>[0];
 

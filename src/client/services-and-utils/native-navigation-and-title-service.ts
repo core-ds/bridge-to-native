@@ -1,7 +1,7 @@
-/* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
+/* eslint max-lines: ["error", {"max": 350, "skipComments": true}] */
 
 import {
-    COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD,
+    HISTORY_STATE_KEY_B2N_PAGE_ID,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
     QUERY_NATIVE_IOS_APPVERSION,
@@ -17,26 +17,42 @@ import {
 import { closeWebviewUtil } from './close-webview-util';
 import { type NativeParamsService } from './native-params-service';
 
-const enum NativeHistoryStackSpecialValues {
-    ServerSideNavigationStub,
-    TemporaryReloadStub,
-}
+type NativeHistoryStack = Array<string | typeof NativeHistoryStackStub>;
+
+const NativeHistoryStackStub = 0;
 
 /**
  * Сервис, отвечающий за взаимодействие WA с WV компонентами NA —
  * «заголовком» и кнопкой «назад».
+ *
+ * Подробное описание сценариев навигации и логики восстановления состояния при hard навигации
+ * см. в документе {@link ./NAVIGATION_SCENARIOS.md}.
  */
 export class NativeNavigationAndTitleService {
     // Здесь храниться состояние связи WA с NA. Сервис всегда ориентируется на этот стек,
     // чтобы вычислить, какие `pageId` и `pageTitle` отправить в NA.
-    private nativeHistoryStack: Array<string | NativeHistoryStackSpecialValues>;
+    // Все изменения в стек должно отражаться в SessionStorage (метод `saveNativeHistoryStack`).
+    private nativeHistoryStack: NativeHistoryStack;
 
-    // Поле, помогающее правильно обработать переход «назад» на несколько шагов.
+    // Поле для фолбэк сценария, чтобы не ломать обратную совместимость в версии `1.4.0`.
+    // Фолбэк сцерий используется для потребителей B2N, которые используют
+    // прямые вызовы `history.replaceState` (или обертки над ним, типа `history.replace` из ReactRouter)
+    // вместо нового метода B2N `replaceHistoryState`
     private numOfBackSteps = 1;
 
     // Здесь сохраняются параметры, которые в последний раз были отправлены
     // в NA. Помогает предотвратить повторную отправку одинаковых параметров.
     private lastSetPageSettingsParams = '';
+
+    // Предотвращают повторный вызов навигации, пока текущая не завершена.
+    // Без блокировки WV-браузер продолжит показывать исходную страницу,
+    // и повторный вызов может инициировать нежелательную навигацию.
+    // `isGoBackLocked` снимается в `handleClientSideNavigationBack` (popstate) для soft-навигации;
+    // при hard-навигации блокировка снимется автоматически при новой инициализации.
+    // `isNavigateServerSideLocked` не снимается — после server-side навигации всегда новая инициализация.
+    private isGoBackLocked = false;
+
+    private isNavigateServerSideLocked = false;
 
     constructor(
         private nativeParamsService: NativeParamsService,
@@ -55,10 +71,15 @@ export class NativeNavigationAndTitleService {
     }
 
     goBack() {
-        this.goBackAFewStepsClientSide(-1, true);
+        if (this.isGoBackLocked) {
+            return;
+        }
+
+        this.isGoBackLocked = true;
+        this.goBackAFewSteps(-1, true);
     }
 
-    goBackAFewStepsClientSide(stepsNumber: number, autoCloseWebview = false) {
+    goBackAFewSteps(stepsNumber: number, autoCloseWebview = false) {
         if (!stepsNumber) {
             return;
         }
@@ -95,49 +116,83 @@ export class NativeNavigationAndTitleService {
         nativeTitle = '',
     ) {
         if (this.browserHistoryApiWrappers?.push) {
-            this.browserHistoryApiWrappers?.push(url, state);
+            this.browserHistoryApiWrappers.push(url, state);
         } else {
             window.history.pushState(state, '', url);
         }
 
+        this.setHistoryStatePageId(true);
+
         this.nativeHistoryStack.push(nativeTitle);
+        this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
     }
 
     navigateServerSide(link: LocationAssignParam, nativeTitle = '') {
+        if (this.isNavigateServerSideLocked) {
+            return;
+        }
+
+        this.isNavigateServerSideLocked = true;
+
         const url = link instanceof URL ? link : new URL(link);
+
+        this.nativeHistoryStack.push(nativeTitle || '');
 
         if (nativeTitle) {
             url.searchParams.set(QUERY_B2N_TITLE, nativeTitle);
         }
 
-        // TODO: Предыдущая реализация на iOS открывала новое WV. Возможно, что-то плохо работало,
-        // обязательно протестировать.
         this.saveNativeHistoryStack();
-
         window.location.assign(this.prepareExternalLinkBeforeOpen(url));
-    }
-
-    reload(skipReload = false) {
-        this.nativeHistoryStack.push(NativeHistoryStackSpecialValues.TemporaryReloadStub); // небольшой костыль, чтобы переиспользовать server-side сценарий
-        this.saveNativeHistoryStack();
-
-        // информация для серверной стороны B2N, что происходит `reload` и парсить запрос на предмет NA параметров не нужно (в нем их скорее всего не будет)
-        document.cookie = `${COOKIE_KEY_BRIDGE_TO_NATIVE_RELOAD}=true; Path=/`;
-
-        if (!skipReload) {
-            window.location.reload();
-        }
     }
 
     setInitialView(nativeTitle = '') {
         this.nativeHistoryStack = [nativeTitle];
+        this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
     }
 
     setTitle(nativeTitle: string) {
         this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = nativeTitle;
+        this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
+    }
+
+    replaceHistoryState(url?: HistoryPushStateParams[2], state: HistoryPushStateParams[0] = null) {
+        if (this.browserHistoryApiWrappers?.replace) {
+            this.browserHistoryApiWrappers.replace(url, state);
+        } else {
+            window.history.replaceState(state, '', url);
+        }
+
+        this.setHistoryStatePageId();
+    }
+
+    // eslint-disable-next-line class-methods-use-this -- удобней использовать метод в контексте экземпляра.
+    private createStateWithPageId(
+        state: HistoryPushStateParams[0],
+        pageId: number,
+    ): Record<string, unknown> {
+        const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+            v !== null && v !== undefined && typeof v === 'object' && !Array.isArray(v);
+
+        return {
+            ...(isPlainObject(state) ? state : {}),
+            [HISTORY_STATE_KEY_B2N_PAGE_ID]: pageId,
+        };
+    }
+
+    private setHistoryStatePageId(useNextPageId = false) {
+        const pageId = useNextPageId
+            ? this.nativeHistoryStack.length + 1
+            : this.nativeHistoryStack.length;
+        const newState = this.createStateWithPageId(window.history.state, pageId);
+
+        // `b2n-pageId` всегда записывается на верхний уровень через нативный `replaceState`,
+        // а не через wrapper, чтобы wrapper (например, React Router / history) не мог обернуть
+        // его внутрь своего формата и скрыть от B2N при чтении `history.state`.
+        window.history.replaceState(newState, '');
     }
 
     /**
@@ -166,8 +221,19 @@ export class NativeNavigationAndTitleService {
      * Обработчик для `window.onpopstate` события. Который сработает
      * после нажатия на кнопку «Назад» в NA, вызова `history.back()` и `history.go(-x)`.
      */
-    private handleClientSideNavigationBack() {
-        this.nativeHistoryStack = this.nativeHistoryStack.slice(0, -this.numOfBackSteps);
+    private handleClientSideNavigationBack(event?: PopStateEvent) {
+        this.isGoBackLocked = false;
+
+        const statePageId = (event?.state as Record<string, unknown> | null)?.[
+            HISTORY_STATE_KEY_B2N_PAGE_ID
+        ];
+
+        if (typeof statePageId === 'number') {
+            this.nativeHistoryStack = this.nativeHistoryStack.slice(0, statePageId);
+        } else {
+            this.nativeHistoryStack = this.nativeHistoryStack.slice(0, -this.numOfBackSteps);
+        }
+
         this.numOfBackSteps = 1;
 
         if (this.nativeHistoryStack.length < 1) {
@@ -176,51 +242,111 @@ export class NativeNavigationAndTitleService {
             return;
         }
 
+        this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
     }
 
-    private static hasSavedHistoryStack() {
+    // eslint-disable-next-line class-methods-use-this -- удобней использовать метод в контексте экземпляра.
+    private hasSavedHistoryStack() {
         return sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK) !== null;
     }
 
     /**
-     * Инициализирует `nativeHistoryStack`, учитывая варианты:
-     * - Инициализация при открытии WV (Сценарий 1);
-     * - Инициализация при server-side навигации в рамках одной WV-сессии (Сценарий 2);
-     * - Инициализация при server-side переходе «назад» по истории (Сценарий 3).
+     * Инициализирует `nativeHistoryStack`.
      */
     private initializeNativeHistoryStack() {
         const { nextPageId, title } = this.nativeParamsService;
+        const hasSS = this.hasSavedHistoryStack();
+        const statePageId = (window.history.state as Record<string, unknown> | null)?.[
+            HISTORY_STATE_KEY_B2N_PAGE_ID
+        ];
 
-        if (
-            nextPageId &&
-            NativeNavigationAndTitleService.shouldInitializeFromNextPageId(nextPageId)
-        ) {
-            // Сценарий 2 – `nextPageId` ставит метод `this.navigateServerSide`,
-            // т.е. это инициализация сразу после перехода server-side навигацией.
-            // Если в sessionStorage уже есть стек, используем `nextPageId` только для прямого
-            // перехода "вперёд", когда он на 1 больше сохранённой глубины истории.
-            this.nativeHistoryStack = new Array(nextPageId).fill(
-                // Текстовые заголовки другого WA здесь не интересны, используем явную заглушку.
-                NativeHistoryStackSpecialValues.ServerSideNavigationStub,
-            );
-            this.nativeHistoryStack[this.nativeHistoryStack.length - 1] = title;
-        } else if (NativeNavigationAndTitleService.hasSavedHistoryStack()) {
-            // Сценарий 3 - в sessionStorage есть сохранённый nativeHistoryStack,
-            // значит это инициализация сразу после перехода назад server-side навигацией,
-            // или инициализация после использования метода `reload`.
-            try {
-                this.nativeHistoryStack = this.readAndUpdateNativeHistoryStackSessionStorage();
-            } catch {
-                this.nativeHistoryStack = [''];
+        try {
+            if (typeof statePageId === 'number') {
+                this.nativeHistoryStack = this.initializeForBackward(statePageId, title);
+            } else if (nextPageId && !hasSS) {
+                this.nativeHistoryStack = this.initializeForNewOrigin(nextPageId, title);
+            } else if (nextPageId && hasSS) {
+                this.nativeHistoryStack = this.initializeForForward(nextPageId, title);
+            } else {
+                this.nativeHistoryStack = [title];
             }
-        } else {
-            // Сценарий 1 - запись в sessionStorage ставит метод `this.navigateServerSide`,
-            // её нет, значит это инициализация сразу после открытия нового WV.
+        } catch {
             this.nativeHistoryStack = [title];
         }
 
+        this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
+        this.setHistoryStatePageId();
+    }
+
+    private initializeForBackward(pageId: number, title: string) {
+        if (!this.hasSavedHistoryStack()) {
+            return [title];
+        }
+
+        const savedStack = this.readSavedHistoryStack();
+        const stack = savedStack.slice(0, pageId);
+
+        stack[stack.length - 1] = title;
+
+        return stack;
+    }
+
+    // eslint-disable-next-line class-methods-use-this -- удобней использовать метод в контексте экземпляра.
+    private initializeForNewOrigin(nextPageId: number, title: string) {
+        const stack: NativeHistoryStack = new Array(nextPageId).fill(NativeHistoryStackStub);
+
+        stack[stack.length - 1] = title;
+
+        return stack;
+    }
+
+    private initializeForForward(nextPageId: number, title: string) {
+        const savedStack = this.readSavedHistoryStack();
+
+        if (savedStack.length === nextPageId) {
+            savedStack[savedStack.length - 1] = title;
+
+            return savedStack;
+        }
+
+        const stack: NativeHistoryStack = new Array(nextPageId).fill(NativeHistoryStackStub);
+
+        for (let i = 0; i < savedStack.length && i < nextPageId; i++) {
+            stack[i] = savedStack[i];
+        }
+        stack[stack.length - 1] = title;
+
+        return stack;
+    }
+
+    /**
+     * Читает и парсит `nativeHistoryStack` из SessionStorage.
+     * При ошибке чтения или парсинга логирует через `logError` и пробрасывает исключение.
+     */
+    private readSavedHistoryStack() {
+        const serialized = sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK);
+
+        try {
+            if (!serialized) {
+                throw new Error(
+                    `${SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK} sessionStorage expected not to be null`,
+                );
+            }
+
+            return JSON.parse(serialized) as NativeHistoryStack;
+        } catch (e) {
+            if (this.logError) {
+                this.logError(
+                    `Клиентский код B2N не смог получить ${SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK} из sessionStorage
+                    Могут возникнуть проблемы с кнопкой «Назад» в NA.`,
+                    e,
+                );
+            }
+
+            throw e;
+        }
     }
 
     /**
@@ -248,89 +374,13 @@ export class NativeNavigationAndTitleService {
         // (заголовок `app-version` может отсутствовать при server-side переходах).
         modifiedUrl.searchParams.set(QUERY_NATIVE_IOS_APPVERSION, appVersion);
 
-        modifiedUrl.searchParams.set(QUERY_B2N_NEXT_PAGEID, (currentPageId + 1).toString());
+        modifiedUrl.searchParams.set(QUERY_B2N_NEXT_PAGEID, currentPageId.toString());
 
         return modifiedUrl;
     }
 
-    private static shouldInitializeFromNextPageId(nextPageId: number) {
-        if (!NativeNavigationAndTitleService.hasSavedHistoryStack()) {
-            return true;
-        }
-
-        try {
-            const serializedNativeHistoryStack = sessionStorage.getItem(
-                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
-            );
-
-            if (!serializedNativeHistoryStack) {
-                return true;
-            }
-
-            return (
-                nextPageId ===
-                (
-                    JSON.parse(serializedNativeHistoryStack) as Array<
-                        string | NativeHistoryStackSpecialValues
-                    >
-                ).length +
-                    1
-            );
-        } catch {
-            return true;
-        }
-    }
-
     /**
-     * Читает сохраннённый в sessionStorage `nativeHistoryStack`,
-     * снова сохраняет его в sessionStorage, уменьшая список на одну запись,
-     * на случай, если будет дальнейший переход назад server-side навигацией.
-     *
-     * @returns Актуальное состояние `nativeHistoryStack` из sessionStorage.
-     */
-    private readAndUpdateNativeHistoryStackSessionStorage() {
-        try {
-            const serializedNativeHistoryStack = sessionStorage.getItem(
-                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
-            );
-
-            if (!serializedNativeHistoryStack) {
-                throw new Error();
-            }
-
-            const nativeHistoryStack = JSON.parse(serializedNativeHistoryStack) as Array<
-                string | NativeHistoryStackSpecialValues
-            >; // происходит внутри оператора `catch`, поэтому кастинг типа приемлем
-            const nativeHistoryStackToSerialize = nativeHistoryStack.slice(0, -1);
-
-            sessionStorage.setItem(
-                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
-                JSON.stringify(nativeHistoryStackToSerialize),
-            );
-
-            if (
-                nativeHistoryStack[nativeHistoryStack.length - 1] ===
-                NativeHistoryStackSpecialValues.TemporaryReloadStub
-            ) {
-                return nativeHistoryStack.slice(0, -1);
-            }
-
-            return nativeHistoryStack;
-        } catch (e) {
-            if (this.logError) {
-                this.logError(
-                    'Клиентский код B2N не смог восстановить `nativeHistoryStack` из sessionStorage. ' +
-                        'Могут возникнуть проблемы с кнопкой «Назад» в NA.',
-                    e,
-                );
-            }
-
-            throw new Error();
-        }
-    }
-
-    /**
-     * Сохранение состояния связи текущего WA с NA при server-side навигации в sessionStorage.
+     * Сохраняет `nativeHistoryStack` в SessionStorage.
      */
     private saveNativeHistoryStack() {
         const serializedNativeHistoryStack = JSON.stringify(this.nativeHistoryStack);

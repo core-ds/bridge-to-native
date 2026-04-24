@@ -6,6 +6,7 @@ import { NativeParamsService } from './services-and-utils/native-params-service'
 import {
     type BrowserHistoryApiWrappers,
     type HistoryPushStateParams,
+    type HistoryReplaceStateParams,
     type LocationAssignParam,
     type LogError,
     type NativeFeatureKey,
@@ -144,21 +145,32 @@ export class BridgeToNative {
      * чтобы в дальнейшем зарегистрировать этот переход в NA.
      *
      * ВАЖНО!
-     * Метод можно использовать только в рамках истории по SPA WA! Движение назад
-     * server-side переходом на несколько шагов не поддерживается.
+     * До версии `1.4.0` метод назывался `goBackAFewStepsClientSide` и его можно
+     * было использовать только в рамках SPA истории.
      *
-     * Снять это ограничение возможно, но нужны доработки.
+     * После переименования этот метод можно использовать без ограничей, НО С УСЛОВИЕМ,
+     * что в потребителях B2N нет прямых вызовов `history.replaceState` (или оберток над ним,
+     * типа `history.replace` из ReactRouter). А вместо прямых вызовов используется
+     * метод B2N `replaceHistoryState`. Который под капотом вызывает `history.replaceState`
+     * или вашу собственную «обертку» над ним (см. `browserHistoryApiWrappers` в конструкторе).
+     *
+     * Если это условие не соблюдается, как и раньше, метод можно использовать
+     * только в рамках истории по SPA WA.
      *
      * @param stepsNumber Количество шагов назад.
      *  Возможно передача как положительного, так и отрицательного числа. `0` будет проигнорирован.
      * @param autoCloseWebview Флаг — закрывать ли WV автоматически,
      *  если переданное кол-во шагов будет больше, чем записей в истории.
      */
+    goBackAFewSteps(stepsNumber: number, autoCloseWebview = false) {
+        this.nativeNavigationAndTitleService.goBackAFewSteps(stepsNumber, autoCloseWebview);
+    }
+
+    /**
+     * @deprecated Используйте `goBackAFewSteps`.
+     */
     goBackAFewStepsClientSide(stepsNumber: number, autoCloseWebview = false) {
-        this.nativeNavigationAndTitleService.goBackAFewStepsClientSide(
-            stepsNumber,
-            autoCloseWebview,
-        );
+        this.goBackAFewSteps(stepsNumber, autoCloseWebview);
     }
 
     /**
@@ -207,6 +219,7 @@ export class BridgeToNative {
      *
      * @param url URL для перехода внутри WA client-side навигацией.
      * @param state <https://developer.mozilla.org/en-US/docs/Web/API/History/state> для новой записи в истории.
+     *  Должен быть объектом или `null`. Примитивы (строка, число и т.п.) будут потеряны.
      * @param nativeTitle Текст заголовка, для «нативной» части WV, пустая строка — отсутствие заголовка.
      */
     navigateClientSide(
@@ -223,15 +236,9 @@ export class BridgeToNative {
      * экзепляру B2N следующей страницы текущего WA (в случае multi-page application).
      *
      * ВАЖНО!
-     *
-     * Не поддерживаются такие сценарии:
-     *
-     * 1. Микс client-side навигации и server-side навигации в рамках одного WA.
-     *  т.е. одно WA должно использовать либо только `navigateClientSide`, либо только `navigateServerSide`.
-     * 2. Старт в WA 1 → переход к WA 2 → переход к WA 1,
-     *  т.е. при использовании server-side навигации, история переходов разных WA не должна смешиваться.
-     *
-     * Снять эти ограничения возможно, но нужны доработки.
+     * С версии `1.4.0` появилась возможность использовать `goBackAFewSteps`
+     * через границу server-side (hard) навигации (включая переходы на другие origin).
+     * Но с условием, см. описание `goBackAFewSteps`.
      *
      * @param url URL для перехода внутри WA server-side навигацией.
      * @param nativeTitle Текст заголовка, для «нативной» части WV, пустая строка — отсутствие заголовка.
@@ -292,13 +299,30 @@ export class BridgeToNative {
     }
 
     /**
-     * Для перезагрузки страницы необходимо использовать этот метод.
-     * Иначе синхронизация состояния с NA будет потеряна.
-     * По умолчанию метод сам делает location.reload,
-     * но с помощью аргумента можно отключить этот вызов
+     * @deprecated Используйте `window.location.reload()` напрямую.
+     * B2N больше не требует специального метода для перезагрузки.
      */
+    // eslint-disable-next-line class-methods-use-this -- метод оставлен для обратной совместимости.
     reload(skipReload?: boolean) {
-        this.nativeNavigationAndTitleService.reload(skipReload);
+        if (!skipReload) {
+            window.location.reload();
+        }
+    }
+
+    /**
+     * Позволяет изменить `history.state` и/или URL текущей записи без потери служебного свойства B2N.
+     * Используйте этот метод вместо прямого вызова `history.replaceState`.
+     * Прямой вызов `history.replaceState` приведёт к потере `b2n-pageId` и нарушит работу навигации.
+     *
+     * @param url URL для замены.
+     * @param state <https://developer.mozilla.org/en-US/docs/Web/API/History/state>.
+     *  Должен быть объектом или `null`. Примитивы (строка, число и т.п.) будут потеряны.
+     */
+    replaceHistoryState(
+        url?: HistoryReplaceStateParams[2],
+        state: HistoryReplaceStateParams[0] = null,
+    ) {
+        this.nativeNavigationAndTitleService.replaceHistoryState(url, state);
     }
 
     /**
