@@ -1,6 +1,7 @@
 import { NativeNavigationAndTitleService } from '../../../src/client/services-and-utils/native-navigation-and-title-service';
 import { type NativeParamsService } from '../../../src/client/services-and-utils/native-params-service';
 import {
+    HISTORY_STATE_KEY_B2N_PAGE_ID,
     QUERY_B2N_NEXT_PAGEID,
     SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
 } from '../../../src/query-and-headers-keys';
@@ -30,12 +31,11 @@ describe('NativeNavigationAndTitleService', () => {
     const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
     const historyGoSpy = jest.spyOn(window.history, 'go');
     const historyPushStateSpy = jest.spyOn(window.history, 'pushState');
+    const historyReplaceStateSpy = jest.spyOn(window.history, 'replaceState');
     const locationAssignSpy = jest.spyOn(window.location, 'assign');
     const locationReplaceSpy = jest.spyOn(window.location, 'replace');
 
-    // Мок метода, вызываемого в конструкторе, который будет тестироваться отдельно.
     let initializeNativeHistoryStackSpy: jest.SpyInstance;
-    // Мок метода, вызываемого в разных методах, который будет тестироваться отдельно.
     let syncHistoryWithNativeSpy: jest.SpyInstance;
 
     beforeEach(() => {
@@ -47,7 +47,10 @@ describe('NativeNavigationAndTitleService', () => {
                 // @ts-expect-error –– Мокаем приватный метод
                 'initializeNativeHistoryStack',
             ) as jest.SpyInstance
-        ).mockImplementation(function initializeNativeHistoryStack() {
+        ).mockImplementation(function initializeNativeHistoryStack(
+            this: NativeNavigationAndTitleService,
+        ) {
+            // @ts-expect-error –– Мокаем приватное свойство
             this.nativeHistoryStack = ['Title 1'];
         });
 
@@ -61,6 +64,7 @@ describe('NativeNavigationAndTitleService', () => {
     afterEach(() => {
         initializeNativeHistoryStackSpy.mockRestore();
         syncHistoryWithNativeSpy.mockRestore();
+        window.history.replaceState(null, '');
     });
 
     describe('constructor', () => {
@@ -71,8 +75,10 @@ describe('NativeNavigationAndTitleService', () => {
                     // @ts-expect-error –– Мокаем приватный метод
                     'handleClientSideNavigationBack',
                 ) as jest.SpyInstance
-            ).mockImplementationOnce(function handleClientSideNavigationBack() {
-                return this; // чтобы можно было прореверить, не будет ли утерян контекст.
+            ).mockImplementationOnce(function handleClientSideNavigationBack(
+                this: NativeNavigationAndTitleService,
+            ) {
+                return this;
             });
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
@@ -101,11 +107,8 @@ describe('NativeNavigationAndTitleService', () => {
     });
 
     describe('method `goBack`', () => {
-        it('should call `goBackAFewStepsClientSide` with correct parameters', () => {
-            const spy = jest.spyOn(
-                NativeNavigationAndTitleService.prototype,
-                'goBackAFewStepsClientSide',
-            );
+        it('should call `goBackAFewSteps` with correct parameters', () => {
+            const spy = jest.spyOn(NativeNavigationAndTitleService.prototype, 'goBackAFewSteps');
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
@@ -114,9 +117,41 @@ describe('NativeNavigationAndTitleService', () => {
 
             spy.mockRestore();
         });
+
+        it('should block repeated calls', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2'];
+
+            inst.goBack();
+            expect(historyGoSpy).toHaveBeenCalledTimes(1);
+
+            inst.goBack();
+            expect(historyGoSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should unlock after `handleClientSideNavigationBack` (popstate)', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3'];
+
+            inst.goBack();
+            expect(historyGoSpy).toHaveBeenCalledTimes(1);
+
+            // @ts-expect-error –– Вызываем приватный метод (popstate)
+            inst.handleClientSideNavigationBack();
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2'];
+
+            inst.goBack();
+            expect(historyGoSpy).toHaveBeenCalledTimes(2);
+        });
     });
 
-    describe('method `goBackAFewStepsClientSide`', () => {
+    describe('method `goBackAFewSteps`', () => {
         it.each([
             [1, -1],
             [-1, -1],
@@ -130,7 +165,7 @@ describe('NativeNavigationAndTitleService', () => {
             // @ts-expect-error –– Мокаем приватное свойство
             inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5'];
 
-            inst.goBackAFewStepsClientSide(stepsNumber);
+            inst.goBackAFewSteps(stepsNumber);
             expect(historyGoSpy).toHaveBeenCalledWith(expected);
         });
 
@@ -140,7 +175,7 @@ describe('NativeNavigationAndTitleService', () => {
             // @ts-expect-error –– Мокаем приватное свойство
             inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5'];
 
-            inst.goBackAFewStepsClientSide(0);
+            inst.goBackAFewSteps(0);
             expect(historyGoSpy).not.toHaveBeenCalled();
         });
 
@@ -156,7 +191,7 @@ describe('NativeNavigationAndTitleService', () => {
             // @ts-expect-error –– Мокаем приватное свойство
             inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5'];
 
-            inst.goBackAFewStepsClientSide(stepsNumber);
+            inst.goBackAFewSteps(stepsNumber);
             expect(historyGoSpy).not.toHaveBeenCalled();
             expect(wrappers.go).toHaveBeenCalledWith(stepsNumber);
         });
@@ -167,66 +202,94 @@ describe('NativeNavigationAndTitleService', () => {
             // @ts-expect-error –– Мокаем приватное свойство
             inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5'];
 
-            inst.goBackAFewStepsClientSide(2);
+            inst.goBackAFewSteps(2);
             expect(historyGoSpy).toHaveBeenCalled();
             historyGoSpy.mockClear();
 
-            inst.goBackAFewStepsClientSide(10, true);
+            inst.goBackAFewSteps(10, true);
             expect(historyGoSpy).not.toHaveBeenCalled();
             expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
 
-        it('should modify `numOfBackSteps` correctly', () => {
-            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+        it.each([
+            [1, 1],
+            [-1, 1],
+            [3, 3],
+            [-3, 3],
+            [5, 4],
+            [-5, 4],
+        ])(
+            'should set numOfBackSteps to %p when stepsNumber is %p',
+            (stepsNumber, expectedNumOfBackSteps) => {
+                const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
-            // @ts-expect-error –– Мокаем приватное свойство
-            inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5'];
+                // @ts-expect-error –– Мокаем приватное свойство
+                inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5'];
 
-            inst.goBackAFewStepsClientSide(2);
-            // @ts-expect-error –– Проверяем приватное свойство
-            expect(inst.numOfBackSteps).toBe(2);
-
-            // @ts-expect-error –– Мокаем приватное свойство
-            inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5'];
-
-            inst.goBackAFewStepsClientSide(10);
-            // @ts-expect-error –– Проверяем приватное свойство
-            expect(inst.numOfBackSteps).toBe(4);
-        });
+                inst.goBackAFewSteps(stepsNumber);
+                // @ts-expect-error –– Проверяем приватное свойство
+                expect(inst.numOfBackSteps).toBe(expectedNumOfBackSteps);
+            },
+        );
     });
 
     describe('method `navigateClientSide`', () => {
-        it('should call `history.pushState` with correct parameters', () => {
+        it('should call `history.pushState` with user state then native `replaceState` with b2n-pageId', () => {
             const url1 = '/another-page';
             const url2 = '/another-page2';
-            const state = {};
+            const state = { foo: 'bar' };
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1'];
+
             inst.navigateClientSide(url1);
             expect(historyPushStateSpy).toHaveBeenCalledWith(null, '', url1);
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(
+                { [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 },
+                '',
+            );
 
-            inst.navigateClientSide(url2, state);
+            inst.navigateClientSide(url2, state, 'New Title');
             expect(historyPushStateSpy).toHaveBeenCalledWith(state, '', url2);
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(
+                { foo: 'bar', [HISTORY_STATE_KEY_B2N_PAGE_ID]: 3 },
+                '',
+            );
         });
 
-        it('should use `browserHistoryApiWrappers` if it is setted', () => {
+        it('should use `browserHistoryApiWrappers` with user state, then native replaceState with b2n-pageId', () => {
             const wrappers = { push: jest.fn() };
 
             const url1 = '/another-page';
             const url2 = '/another-page2';
-            const state = {};
+            const state = { foo: 'bar' };
 
             const inst = new NativeNavigationAndTitleService(
                 mockedNativeParamsServiceInstance,
                 wrappers,
             );
 
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1'];
+
             inst.navigateClientSide(url1);
             expect(wrappers.push).toHaveBeenCalledWith(url1, null);
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(
+                { [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 },
+                '',
+            );
+
+            historyReplaceStateSpy.mockClear();
 
             inst.navigateClientSide(url2, state);
-            expect(wrappers.push).toHaveBeenCalledWith(url2, state);
+            expect(wrappers.push).toHaveBeenCalledWith(url2, { foo: 'bar' });
+
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 3 }),
+                '',
+            );
 
             expect(historyPushStateSpy).not.toHaveBeenCalled();
         });
@@ -261,6 +324,74 @@ describe('NativeNavigationAndTitleService', () => {
 
             syncHistoryWithNativeSpy.mockRestore();
         });
+
+        it('should call `saveNativeHistoryStack`', () => {
+            const saveSpy = jest.spyOn(
+                NativeNavigationAndTitleService.prototype,
+                // @ts-expect-error -- Мокаем приватный метод
+                'saveNativeHistoryStack',
+            ) as jest.SpyInstance;
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            inst.navigateClientSide('/another-page', undefined, 'Title');
+            expect(saveSpy).toHaveBeenCalled();
+
+            saveSpy.mockRestore();
+        });
+    });
+
+    describe('method `replaceHistoryState`', () => {
+        it('should call native replaceState with user state then replaceState with b2n-pageId', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            inst.replaceHistoryState('/new-url', { foo: 'bar' });
+            // First call: native replaceState with user state
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith({ foo: 'bar' }, '', '/new-url');
+            // Second call: native replaceState with b2n-pageId merged into current state
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(
+                { foo: 'bar', [HISTORY_STATE_KEY_B2N_PAGE_ID]: 1 },
+                '',
+            );
+        });
+
+        it('should use `browserHistoryApiWrappers.replace` with user state, then native replaceState with b2n-pageId', () => {
+            const wrappers = { replace: jest.fn() };
+
+            const inst = new NativeNavigationAndTitleService(
+                mockedNativeParamsServiceInstance,
+                wrappers,
+            );
+
+            inst.replaceHistoryState('/new-url', { foo: 'bar' });
+            expect(wrappers.replace).toHaveBeenCalledWith('/new-url', { foo: 'bar' });
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 1 }),
+                '',
+            );
+        });
+
+        it('should work with null state', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            inst.replaceHistoryState('/new-url', null);
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(null, '', '/new-url');
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(
+                { [HISTORY_STATE_KEY_B2N_PAGE_ID]: 1 },
+                '',
+            );
+        });
+
+        it('should work with no arguments', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            inst.replaceHistoryState();
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(null, '', undefined);
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(
+                { [HISTORY_STATE_KEY_B2N_PAGE_ID]: 1 },
+                '',
+            );
+        });
     });
 
     describe('method `navigateServerSide`', () => {
@@ -274,20 +405,24 @@ describe('NativeNavigationAndTitleService', () => {
             );
         });
 
+        beforeEach(() => {
+            locationAssignSpy.mockImplementation(() => {});
+        });
+
         afterAll(() => {
             saveNativeHistoryStackSpy.mockRestore();
         });
 
-        const link = 'https://example.com';
-        const defaultPostFix = 'theme=light&device_app_version=1.0.0&b2n-next-page-id=2'; // добавляет `prepareExternalLinkBeforeOpen` на основе мока `mockedNativeParamsServiceInstance`
+        const crossOriginLink = 'https://example.com';
+        const defaultPostFix = 'theme=light&device_app_version=1.0.0&b2n-next-page-id=2';
 
         it('should call `location.assign` with correct URL', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
-            inst.navigateServerSide(link);
+            inst.navigateServerSide(crossOriginLink);
             expect(locationAssignSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    href: `${link}/?${defaultPostFix}`,
+                    href: `${crossOriginLink}/?${defaultPostFix}`,
                 }),
             );
         });
@@ -296,17 +431,17 @@ describe('NativeNavigationAndTitleService', () => {
             const testTitle = 'Test Title';
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
-            inst.navigateServerSide(link, testTitle);
+            inst.navigateServerSide(crossOriginLink, testTitle);
             expect(locationAssignSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    href: `${link}/?b2n-title=Test+Title&${defaultPostFix}`,
+                    href: `${crossOriginLink}/?b2n-title=Test+Title&${defaultPostFix}`,
                 }),
             );
         });
 
         it('should call `saveNativeHistoryStack` before triggering navigation', () => {
-            let syncHistoryWithNativeCallTime: number;
-            let locationAssignCallTime: number;
+            let syncHistoryWithNativeCallTime = 0;
+            let locationAssignCallTime = 0;
 
             saveNativeHistoryStackSpy.mockImplementationOnce(() => {
                 syncHistoryWithNativeCallTime = performance.now();
@@ -318,38 +453,51 @@ describe('NativeNavigationAndTitleService', () => {
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
-            inst.navigateServerSide(link);
+            inst.navigateServerSide(crossOriginLink);
             expect(syncHistoryWithNativeCallTime).toBeLessThan(locationAssignCallTime);
         });
-    });
 
-    describe('method `reload`', () => {
-        it('should push `TemporaryReloadStub` to nativeHistoryStack', () => {
+        it('should push nativeTitle or empty string to stack', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
-            // @ts-expect-error –– Используем приватное свойство
-            const initialLength = inst.nativeHistoryStack.length;
 
-            inst.reload();
-
+            inst.navigateServerSide(crossOriginLink);
             // @ts-expect-error –– Проверяем приватное свойство
-            expect(inst.nativeHistoryStack).toHaveLength(initialLength + 1);
-            // @ts-expect-error –– Проверяем приватное свойство
-            expect(inst.nativeHistoryStack[inst.nativeHistoryStack.length - 1]).toBe(1); // 1 — значение `TemporaryReloadStub` из enum
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', '']);
         });
 
-        it('should call `saveNativeHistoryStack`', () => {
-            const saveNativeHistoryStackSpy = jest.spyOn(
-                NativeNavigationAndTitleService.prototype,
-                // @ts-expect-error -- Мокаем приватный метод
-                'saveNativeHistoryStack',
-            ) as jest.SpyInstance;
+        it('should push nativeTitle when provided', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+            const sameOriginUrl = `${window.location.origin}/some-path`;
+
+            inst.navigateServerSide(sameOriginUrl, 'Same Origin Title');
+            // @ts-expect-error –– Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Same Origin Title']);
+        });
+
+        it('should save updated stack to sessionStorage before navigation', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            inst.navigateServerSide(crossOriginLink, 'Cross Title');
+
+            expect(saveNativeHistoryStackSpy).toHaveBeenCalled();
+
+            const saved = JSON.parse(
+                sessionStorage.getItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK) ?? '',
+            );
+
+            expect(saved).toEqual(['Title 1', 'Cross Title']);
+        });
+
+        it('should block repeated calls', () => {
+            locationAssignSpy.mockImplementation(() => {});
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
-            inst.reload();
-            expect(saveNativeHistoryStackSpy).toHaveBeenCalled();
+            inst.navigateServerSide(crossOriginLink);
+            expect(locationAssignSpy).toHaveBeenCalledTimes(1);
 
-            saveNativeHistoryStackSpy.mockRestore();
+            inst.navigateServerSide(crossOriginLink);
+            expect(locationAssignSpy).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -384,6 +532,21 @@ describe('NativeNavigationAndTitleService', () => {
 
             syncHistoryWithNativeSpy.mockRestore();
         });
+
+        it('should call `saveNativeHistoryStack`', () => {
+            const saveSpy = jest.spyOn(
+                NativeNavigationAndTitleService.prototype,
+                // @ts-expect-error -- Мокаем приватный метод
+                'saveNativeHistoryStack',
+            ) as jest.SpyInstance;
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            inst.setInitialView('New Title');
+            expect(saveSpy).toHaveBeenCalled();
+
+            saveSpy.mockRestore();
+        });
     });
 
     describe('method `setTitle`', () => {
@@ -406,10 +569,25 @@ describe('NativeNavigationAndTitleService', () => {
         it('should call `syncHistoryWithNative`', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
-            inst.setInitialView();
+            inst.setTitle('Title');
             expect(syncHistoryWithNativeSpy).toHaveBeenCalled();
 
             syncHistoryWithNativeSpy.mockRestore();
+        });
+
+        it('should call `saveNativeHistoryStack`', () => {
+            const saveSpy = jest.spyOn(
+                NativeNavigationAndTitleService.prototype,
+                // @ts-expect-error -- Мокаем приватный метод
+                'saveNativeHistoryStack',
+            ) as jest.SpyInstance;
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            inst.setTitle('Title');
+            expect(saveSpy).toHaveBeenCalled();
+
+            saveSpy.mockRestore();
         });
     });
 
@@ -453,20 +631,94 @@ describe('NativeNavigationAndTitleService', () => {
     });
 
     describe('method `handleClientSideNavigationBack`', () => {
-        it('should truncate `nativeHistoryStack` and reset `numOfBackSteps`', () => {
+        it('should truncate `nativeHistoryStack` using b2n-pageId from event.state', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error –– Мокаем приватное свойство
             inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3'];
-            // @ts-expect-error –– Мокаем приватное свойство
-            inst.numOfBackSteps = 2;
+
+            const event = {
+                state: { [HISTORY_STATE_KEY_B2N_PAGE_ID]: 1 },
+            } as PopStateEvent;
 
             // @ts-expect-error –– Тестируем приватное свойство
-            inst.handleClientSideNavigationBack();
+            inst.handleClientSideNavigationBack(event);
             // @ts-expect-error –– Проверяем приватное свойство
             expect(inst.nativeHistoryStack).toEqual(['Title 1']);
+        });
+
+        it('should truncate `nativeHistoryStack` using b2n-pageId = 1 (first page)', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2'];
+
+            const event = {
+                state: { [HISTORY_STATE_KEY_B2N_PAGE_ID]: 1 },
+            } as PopStateEvent;
+
+            // @ts-expect-error –– Тестируем приватное свойство
+            inst.handleClientSideNavigationBack(event);
+            // @ts-expect-error –– Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual(['Title 1']);
+        });
+
+        it('should fallback to numOfBackSteps when event has no b2n-pageId', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3'];
+
+            // @ts-expect-error –– Тестируем приватный метод
+            inst.handleClientSideNavigationBack();
+            // @ts-expect-error –– Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Title 2']);
+        });
+
+        it('should fallback to numOfBackSteps when event.state is null', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3'];
+
+            const event = { state: null } as PopStateEvent;
+
+            // @ts-expect-error –– Тестируем приватный метод
+            inst.handleClientSideNavigationBack(event);
+            // @ts-expect-error –– Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Title 2']);
+        });
+
+        it('should fallback to numOfBackSteps (set by goBackAFewSteps) when event has no b2n-pageId', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5'];
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.numOfBackSteps = 3;
+
+            const event = { state: null } as PopStateEvent;
+
+            // @ts-expect-error –– Тестируем приватный метод
+            inst.handleClientSideNavigationBack(event);
+            // @ts-expect-error –– Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Title 2']);
             // @ts-expect-error –– Проверяем приватное свойство
             expect(inst.numOfBackSteps).toBe(1);
+        });
+
+        it('should fallback to slice(0, -1) when event.state is null', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3'];
+
+            const event = { state: null } as PopStateEvent;
+
+            // @ts-expect-error –– Тестируем приватное свойство
+            inst.handleClientSideNavigationBack(event);
+            // @ts-expect-error –– Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Title 2']);
         });
 
         it('should call `syncHistoryWithNative` after truncating stack', () => {
@@ -475,8 +727,12 @@ describe('NativeNavigationAndTitleService', () => {
             // @ts-expect-error –– Мокаем приватное свойство
             inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3'];
 
+            const event = {
+                state: { [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 },
+            } as PopStateEvent;
+
             // @ts-expect-error –– Тестируем приватное свойство
-            inst.handleClientSideNavigationBack();
+            inst.handleClientSideNavigationBack(event);
 
             expect(mockedCloseWebviewUtil).not.toHaveBeenCalled();
             // @ts-expect-error –– Тестируем приватное свойство
@@ -488,14 +744,54 @@ describe('NativeNavigationAndTitleService', () => {
 
             // @ts-expect-error –– Мокаем приватное свойство
             inst.nativeHistoryStack = ['Title 1'];
-            // @ts-expect-error –– Мокаем приватное свойство
-            inst.numOfBackSteps = 1;
 
             // @ts-expect-error –– Тестируем приватное свойство
             inst.handleClientSideNavigationBack();
             expect(mockedCloseWebviewUtil).toHaveBeenCalled();
             // @ts-expect-error –– Тестируем приватное свойство
             expect(inst.syncHistoryWithNative).not.toHaveBeenCalled();
+        });
+
+        it('should call `saveNativeHistoryStack` when stack is not empty', () => {
+            const saveSpy = jest.spyOn(
+                NativeNavigationAndTitleService.prototype,
+                // @ts-expect-error -- Мокаем приватный метод
+                'saveNativeHistoryStack',
+            ) as jest.SpyInstance;
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3'];
+
+            const event = {
+                state: { [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 },
+            } as PopStateEvent;
+
+            // @ts-expect-error –– Тестируем приватное свойство
+            inst.handleClientSideNavigationBack(event);
+            expect(saveSpy).toHaveBeenCalled();
+
+            saveSpy.mockRestore();
+        });
+
+        it('should not call `saveNativeHistoryStack` when stack becomes empty', () => {
+            const saveSpy = jest.spyOn(
+                NativeNavigationAndTitleService.prototype,
+                // @ts-expect-error -- Мокаем приватный метод
+                'saveNativeHistoryStack',
+            ) as jest.SpyInstance;
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1'];
+
+            // @ts-expect-error –– Тестируем приватное свойство
+            inst.handleClientSideNavigationBack();
+            expect(saveSpy).not.toHaveBeenCalled();
+
+            saveSpy.mockRestore();
         });
     });
 
@@ -513,24 +809,34 @@ describe('NativeNavigationAndTitleService', () => {
                 serializedBridgeToNativeHistoryStack,
             );
 
-            // @ts-expect-error -- Проверям приватный метод
-            expect(NativeNavigationAndTitleService.hasSavedHistoryStack()).toBeTruthy();
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            expect(inst.hasSavedHistoryStack()).toBeTruthy();
         });
 
         it('should return false if `bridgeToNativeHistoryStack` is not detected', () => {
-            // @ts-expect-error -- Проверям приватный метод
-            expect(NativeNavigationAndTitleService.hasSavedHistoryStack()).toBeFalsy();
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            expect(inst.hasSavedHistoryStack()).toBeFalsy();
         });
     });
 
     describe('method `initializeNativeHistoryStack`', () => {
         let saveNativeHistoryStackSpy: jest.SpyInstance;
+        let setHistoryStatePageIdSpy: jest.SpyInstance;
 
         beforeAll(() => {
             saveNativeHistoryStackSpy = jest.spyOn(
                 NativeNavigationAndTitleService.prototype,
                 // @ts-expect-error -- Мокаем приватный метод
                 'saveNativeHistoryStack',
+            );
+            setHistoryStatePageIdSpy = jest.spyOn(
+                NativeNavigationAndTitleService.prototype,
+                // @ts-expect-error -- Мокаем приватный метод
+                'setHistoryStatePageId',
             );
         });
 
@@ -540,32 +846,23 @@ describe('NativeNavigationAndTitleService', () => {
 
         afterEach(() => {
             sessionStorage.clear();
+            window.history.replaceState(null, '');
         });
 
         afterAll(() => {
             saveNativeHistoryStackSpy.mockRestore();
+            setHistoryStatePageIdSpy.mockRestore();
         });
 
-        it('should initialize stack with nextPageId scenario', () => {
-            const mockedParamsService = {
-                ...mockedNativeParamsServiceInstance,
-                nextPageId: 3,
-                title: 'Title 3',
-            } as NativeParamsService;
-
-            const inst = new NativeNavigationAndTitleService(mockedParamsService);
+        it('should initialize stack for fresh WV start (no pageId, no nextPageId, no SS)', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error – Проверяем приватное свойство
-            expect(inst.nativeHistoryStack).toEqual([0, 0, 'Title 3']); // 0 — значение `ServerSideNavigationStub` из enum
+            expect(inst.nativeHistoryStack).toEqual(['Title 1']);
             expect(syncHistoryWithNativeSpy).toHaveBeenCalled();
         });
 
-        it('should initialize stack with nextPageId only for direct forward navigation', () => {
-            sessionStorage.setItem(
-                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
-                JSON.stringify(['Title 1', 'Title 2']),
-            );
-
+        it('should initialize stack for new origin (nextPageId, no SS)', () => {
             const mockedParamsService = {
                 ...mockedNativeParamsServiceInstance,
                 nextPageId: 3,
@@ -578,43 +875,117 @@ describe('NativeNavigationAndTitleService', () => {
             expect(inst.nativeHistoryStack).toEqual([0, 0, 'Title 3']);
         });
 
-        it('should restore stack from sessionStorage for stale nextPageId after back navigation', () => {
+        it('should initialize stack for same-origin forward (nextPageId, SS length matches)', () => {
             sessionStorage.setItem(
                 SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
-                JSON.stringify(['Title 1', 'Title 2']),
+                JSON.stringify(['Title 1', 'Title 2', 'New Title 3']),
             );
 
             const mockedParamsService = {
                 ...mockedNativeParamsServiceInstance,
-                nextPageId: 2,
-                title: 'Title 3',
+                nextPageId: 3,
+                title: 'New Title 3',
             } as NativeParamsService;
 
             const inst = new NativeNavigationAndTitleService(mockedParamsService);
 
             // @ts-expect-error – Проверяем приватное свойство
-            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Title 2']);
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Title 2', 'New Title 3']);
         });
 
-        it('should restore stack with sessionStorage scenario', () => {
-            const readAndUpdateNativeHistoryStackSessionStorageSpy = jest.spyOn(
-                NativeNavigationAndTitleService.prototype,
-                // @ts-expect-error –– Мокаем приватный метод
-                'readAndUpdateNativeHistoryStackSessionStorage',
-            ) as jest.SpyInstance;
+        it('should initialize stack for forward with larger nextPageId than SS', () => {
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(['Title 1', 'Title 2', 'Title 3']),
+            );
 
-            const sessionStorageValue = JSON.stringify(['Title']);
+            const mockedParamsService = {
+                ...mockedNativeParamsServiceInstance,
+                nextPageId: 5,
+                title: 'Title 5',
+            } as NativeParamsService;
 
-            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, sessionStorageValue);
+            const inst = new NativeNavigationAndTitleService(mockedParamsService);
+
+            // @ts-expect-error – Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual([
+                'Title 1',
+                'Title 2',
+                'Title 3',
+                0,
+                'Title 5',
+            ]);
+        });
+
+        it('should initialize stack using b2n-pageId from history.state (back hard)', () => {
+            window.history.replaceState({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 }, '');
+
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(['Title 1', 'Title 2', 'Title 3', 'Title 4']),
+            );
+
+            const mockedParamsService = {
+                ...mockedNativeParamsServiceInstance,
+                nextPageId: 4,
+                title: 'Restored Title',
+            } as NativeParamsService;
+
+            const inst = new NativeNavigationAndTitleService(mockedParamsService);
+
+            // @ts-expect-error – Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Restored Title']);
+        });
+
+        it('should initialize stack using b2n-pageId from history.state (back to first page)', () => {
+            window.history.replaceState({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 1 }, '');
+
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(['Title 1', 'Title 2', 'Title 3']),
+            );
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error – Проверяем приватное свойство
-            expect(inst.nativeHistoryStack).toEqual(['Title']);
-            expect(readAndUpdateNativeHistoryStackSessionStorageSpy).toHaveBeenCalled();
-            expect(syncHistoryWithNativeSpy).toHaveBeenCalled();
+            expect(inst.nativeHistoryStack).toEqual(['Title 1']);
+        });
 
-            readAndUpdateNativeHistoryStackSessionStorageSpy.mockRestore();
+        it('should initialize stack using b2n-pageId from history.state (reload, same pageId)', () => {
+            window.history.replaceState({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 3 }, '');
+
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(['Title 1', 'Title 2', 'Title 3']),
+            );
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error – Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Title 2', 'Title 1']);
+        });
+
+        it('should fallback to [title] when b2n-pageId present but no SS', () => {
+            window.history.replaceState({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 }, '');
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error – Проверяем приватное свойство
+            expect(inst.nativeHistoryStack).toEqual(['Title 1']);
+        });
+
+        it('should call saveNativeHistoryStack after initialization', () => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            expect(saveNativeHistoryStackSpy).toHaveBeenCalled();
+        });
+
+        it('should call setHistoryStatePageId after initialization', () => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            expect(setHistoryStatePageIdSpy).toHaveBeenCalled();
         });
 
         it('should handle invalid sessionStorage value gracefully', () => {
@@ -623,15 +994,25 @@ describe('NativeNavigationAndTitleService', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error – Проверяем приватное свойство
-            expect(inst.nativeHistoryStack).toEqual(['']);
+            expect(inst.nativeHistoryStack).toEqual(['Title 1']);
         });
 
-        it('should initialize stack with default scenario', () => {
-            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+        it('should handle mismatched nextPageId and SS by falling back to nextPageId', () => {
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(['Title 1', 'Title 2']),
+            );
+
+            const mockedParamsService = {
+                ...mockedNativeParamsServiceInstance,
+                nextPageId: 5,
+                title: 'Title 5',
+            } as NativeParamsService;
+
+            const inst = new NativeNavigationAndTitleService(mockedParamsService);
 
             // @ts-expect-error – Проверяем приватное свойство
-            expect(inst.nativeHistoryStack).toEqual(['Title 1']);
-            expect(syncHistoryWithNativeSpy).toHaveBeenCalled();
+            expect(inst.nativeHistoryStack).toEqual(['Title 1', 'Title 2', 0, 0, 'Title 5']);
         });
     });
 
@@ -644,7 +1025,7 @@ describe('NativeNavigationAndTitleService', () => {
             const result = inst.prepareExternalLinkBeforeOpen(url);
 
             expect(result.href).toBe(
-                'https://example.com/?theme=light&device_app_version=1.0.0&b2n-next-page-id=2',
+                'https://example.com/?theme=light&device_app_version=1.0.0&b2n-next-page-id=1',
             );
         });
 
@@ -656,11 +1037,11 @@ describe('NativeNavigationAndTitleService', () => {
             const result = inst.prepareExternalLinkBeforeOpen(url);
 
             expect(result.href).toBe(
-                'https://example.com/?existing=param&theme=light&device_app_version=1.0.0&b2n-next-page-id=2',
+                'https://example.com/?existing=param&theme=light&device_app_version=1.0.0&b2n-next-page-id=1',
             );
         });
 
-        it('should increment nextPageId correctly', () => {
+        it('should use current stack length as nextPageId', () => {
             const url = 'https://example.com';
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
@@ -670,21 +1051,21 @@ describe('NativeNavigationAndTitleService', () => {
             // @ts-expect-error – Проверяем приватный метод
             const result = inst.prepareExternalLinkBeforeOpen(url);
 
-            expect(result.searchParams.get(QUERY_B2N_NEXT_PAGEID)).toBe('3');
+            expect(result.searchParams.get(QUERY_B2N_NEXT_PAGEID)).toBe('2');
         });
     });
 
-    describe('method `readAndUpdateNativeHistoryStackSessionStorage`', () => {
+    describe('method `readSavedHistoryStack`', () => {
         afterEach(() => {
             sessionStorage.clear();
         });
 
-        it('should throw while there is no data in sessionStorage', () => {
+        it('should throw when there is no data in sessionStorage', () => {
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             try {
                 // @ts-expect-error -- Проверяем приватный метод
-                inst.readAndUpdateNativeHistoryStackSessionStorage();
+                inst.readSavedHistoryStack();
                 expect(false).toBeTruthy();
             } catch {
                 expect(true).toBeTruthy();
@@ -692,48 +1073,32 @@ describe('NativeNavigationAndTitleService', () => {
         });
 
         it('should successfully parse data in sessionStorage', () => {
-            const serializedValue = JSON.stringify(['Title 1', 'Title 2']);
-
-            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, serializedValue);
-
-            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
-
-            // @ts-expect-error -- Проверяем приватный метод
-            expect(inst.readAndUpdateNativeHistoryStackSessionStorage()).toEqual([
-                'Title 1',
-                'Title 2',
-            ]);
-        });
-
-        it('should handle reload scenario', () => {
-            const serializedValue = JSON.stringify(['Title 1', 'Title 2', 1]); // 1 — значение `TemporaryReloadStub` из enum
-
-            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, serializedValue);
+            sessionStorage.setItem(
+                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
+                JSON.stringify(['Title 1', 'Title 2']),
+            );
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error -- Проверяем приватный метод
-            expect(inst.readAndUpdateNativeHistoryStackSessionStorage()).toEqual([
-                'Title 1',
-                'Title 2',
-            ]);
+            expect(inst.readSavedHistoryStack()).toEqual(['Title 1', 'Title 2']);
         });
 
-        it('should throw while there is invalid data is sessionStorage', () => {
+        it('should throw when there is invalid data in sessionStorage', () => {
             sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, 'invalid-json');
 
             const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
 
             try {
                 // @ts-expect-error -- Проверяем приватный метод
-                inst.readAndUpdateNativeHistoryStackSessionStorage();
+                inst.readSavedHistoryStack();
                 expect(false).toBeTruthy();
             } catch {
                 expect(true).toBeTruthy();
             }
         });
 
-        it('should log error on throw', () => {
+        it('should log error when sessionStorage is empty', () => {
             const logError = jest.fn();
 
             const inst = new NativeNavigationAndTitleService(
@@ -744,28 +1109,29 @@ describe('NativeNavigationAndTitleService', () => {
 
             try {
                 // @ts-expect-error -- Проверяем приватный метод
-                inst.readAndUpdateNativeHistoryStackSessionStorage();
+                inst.readSavedHistoryStack();
             } catch {
                 expect(logError).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
             }
         });
 
-        it('should update sessionStorage correctly', () => {
-            sessionStorage.setItem(
-                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
-                JSON.stringify(['Title 1', 'Title 2']),
+        it('should log error when sessionStorage has invalid JSON', () => {
+            const logError = jest.fn();
+
+            sessionStorage.setItem(SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK, 'invalid-json');
+
+            const inst = new NativeNavigationAndTitleService(
+                mockedNativeParamsServiceInstance,
+                undefined,
+                logError,
             );
 
-            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
-
-            // @ts-expect-error -- Проверяем приватный метод
-            inst.readAndUpdateNativeHistoryStackSessionStorage();
-
-            const newSessionStorageValue = sessionStorage.getItem(
-                SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
-            );
-
-            expect(newSessionStorageValue).toEqual(JSON.stringify(['Title 1']));
+            try {
+                // @ts-expect-error -- Проверяем приватный метод
+                inst.readSavedHistoryStack();
+            } catch {
+                expect(logError).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
+            }
         });
     });
 
@@ -955,6 +1321,129 @@ describe('NativeNavigationAndTitleService', () => {
                     'ios:setPageSettings/?pageTitle=&pageId=2',
                 );
             });
+        });
+    });
+
+    describe('method `createStateWithPageId`', () => {
+        it('should merge pageId into object state', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            const result = inst.createStateWithPageId({ foo: 'bar' }, 3);
+
+            expect(result).toEqual({ foo: 'bar', [HISTORY_STATE_KEY_B2N_PAGE_ID]: 3 });
+        });
+
+        it('should replace existing pageId', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            const result = inst.createStateWithPageId(
+                { [HISTORY_STATE_KEY_B2N_PAGE_ID]: 1, foo: 'bar' },
+                5,
+            );
+
+            expect(result).toEqual({ foo: 'bar', [HISTORY_STATE_KEY_B2N_PAGE_ID]: 5 });
+        });
+
+        it('should handle null state', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            const result = inst.createStateWithPageId(null, 2);
+
+            expect(result).toEqual({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 });
+        });
+
+        it('should handle undefined state', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            const result = inst.createStateWithPageId(undefined, 2);
+
+            expect(result).toEqual({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 });
+        });
+
+        it('should lose primitive state (string)', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            const result = inst.createStateWithPageId('primitive' as unknown as string, 2);
+
+            expect(result).toEqual({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 });
+        });
+
+        it('should lose primitive state (number)', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            const result = inst.createStateWithPageId(42 as unknown as number, 2);
+
+            expect(result).toEqual({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 });
+        });
+
+        it('should lose array state', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Проверяем приватный метод
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            const result = inst.createStateWithPageId([1, 2, 3] as unknown as number[], 2);
+
+            expect(result).toEqual({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 });
+        });
+    });
+
+    describe('method `setHistoryStatePageId`', () => {
+        it('should call native replaceState with pageId merged into current history.state', () => {
+            window.history.replaceState({ existing: 'value' }, '');
+
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2', 'Title 3'];
+
+            // @ts-expect-error –– Вызываем приватный метод
+            inst.setHistoryStatePageId();
+
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(
+                { existing: 'value', [HISTORY_STATE_KEY_B2N_PAGE_ID]: 3 },
+                '',
+            );
+        });
+
+        it('should always use native replaceState even when browserHistoryApiWrappers is set', () => {
+            const wrappers = { replace: jest.fn() };
+
+            const inst = new NativeNavigationAndTitleService(
+                mockedNativeParamsServiceInstance,
+                wrappers,
+            );
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', 'Title 2'];
+
+            // @ts-expect-error –– Вызываем приватный метод
+            inst.setHistoryStatePageId();
+
+            expect(wrappers.replace).not.toHaveBeenCalled();
+            expect(historyReplaceStateSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ [HISTORY_STATE_KEY_B2N_PAGE_ID]: 2 }),
+                '',
+            );
+        });
+    });
+
+    describe('goBackAFewSteps with server-side created entries', () => {
+        it('should go back across server-side created entries', () => {
+            const inst = new NativeNavigationAndTitleService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватное свойство
+            inst.nativeHistoryStack = ['Title 1', '', '', 'Title 4'];
+
+            inst.goBackAFewSteps(3);
+            expect(historyGoSpy).toHaveBeenCalledWith(-3);
         });
     });
 });
