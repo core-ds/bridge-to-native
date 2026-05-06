@@ -15,25 +15,48 @@ describe('B2N client-side navigation e2e testing', () => {
     const historyGoSpy = jest.spyOn(window.history, 'go');
     const locationReplaceSpy = jest.spyOn(window.location, 'replace');
 
-    jest.spyOn(window.history, 'pushState');
-
     let emulateAmBackButtonTap: () => void;
-    let emulatePopStateHandler: () => void;
+
+    let historyStates: unknown[] = [];
+    let historyIndex = -1;
+    let capturedHandler: ((event?: PopStateEvent) => void) | null = null;
 
     beforeAll(() => {
         addEventListenerSpy.mockImplementation((_, handler) => {
-            // eslint-disable-next-line @typescript-eslint/ban-types -- это моки, каст к Function 👌
-            const asyncHandler = () => process.nextTick(handler as Function);
-
-            emulateAmBackButtonTap = asyncHandler;
-            emulatePopStateHandler = asyncHandler;
+            capturedHandler = handler as (event?: PopStateEvent) => void;
+            emulateAmBackButtonTap = () => {
+                historyIndex -= 1;
+                process.nextTick(() => capturedHandler?.());
+            };
         });
 
-        historyGoSpy.mockImplementation(() => emulatePopStateHandler());
+        jest.spyOn(window.history, 'replaceState').mockImplementation((state) => {
+            if (historyIndex >= 0 && historyIndex < historyStates.length) {
+                historyStates[historyIndex] = state;
+            } else {
+                historyStates = [state];
+                historyIndex = 0;
+            }
+        });
+
+        jest.spyOn(window.history, 'pushState').mockImplementation((state) => {
+            historyStates = historyStates.slice(0, historyIndex + 1);
+            historyStates.push(state);
+            historyIndex = historyStates.length - 1;
+        });
+
+        historyGoSpy.mockImplementation((delta: number) => {
+            historyIndex += delta;
+            const targetState = historyStates[historyIndex];
+
+            process.nextTick(() => capturedHandler?.({ state: targetState } as PopStateEvent));
+        });
     });
 
     beforeEach(() => {
         jest.clearAllMocks();
+        historyStates = [];
+        historyIndex = -1;
     });
 
     describe('Android environment', () => {
@@ -116,7 +139,7 @@ describe('B2N client-side navigation e2e testing', () => {
             expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
 
-        it('should act and use AM interface correctly when using `goBackAFewStepsClientSide`', async () => {
+        it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
             const inst = new BridgeToNative();
 
             inst.navigateClientSide('/page2', null, 'Title 2');
@@ -125,7 +148,7 @@ describe('B2N client-side navigation e2e testing', () => {
             inst.navigateClientSide('/page5', null, 'Title 5');
             expect(mockedSetPageSettings).toHaveBeenCalledTimes(5);
 
-            inst.goBackAFewStepsClientSide(3);
+            inst.goBackAFewSteps(3);
             await new Promise(process.nextTick);
 
             expect(mockedSetPageSettings).toHaveBeenCalledTimes(6);
@@ -248,7 +271,7 @@ describe('B2N client-side navigation e2e testing', () => {
             expect(mockedCloseWebviewUtil).toHaveBeenCalled();
         });
 
-        it('should act and use AM interface correctly when using `goBackAFewStepsClientSide`', async () => {
+        it('should act and use AM interface correctly when using `goBackAFewSteps`', async () => {
             const inst = new BridgeToNative();
 
             inst.navigateClientSide('/page2', null, 'Title 2');
@@ -257,7 +280,7 @@ describe('B2N client-side navigation e2e testing', () => {
             inst.navigateClientSide('/page5', null, 'Title 5');
             expect(locationReplaceSpy).toHaveBeenCalledTimes(5);
 
-            inst.goBackAFewStepsClientSide(3);
+            inst.goBackAFewSteps(3);
             await new Promise(process.nextTick);
 
             expect(locationReplaceSpy).toHaveBeenCalledTimes(6);
