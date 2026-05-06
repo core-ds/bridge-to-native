@@ -1,3 +1,14 @@
+# 1.4.0 ([0f9ec2f](https://github.com/core-ds/bridge-to-native/commit/0f9ec2f)) (06-05-2026)
+## Features
+
+* `replaceHistoryState` — новый метод обёртка над `history.replaceState`.
+* Сняты ограничение для методов `navigateServerSide` и `goBackAFewSteps`.
+
+### Условия при которых снимаются ограничения для `navigateServerSide` и `goBackAFewSteps` 
+
+* Все WA, навигация между которыми происходит с помощью `navigateServerSide` и `goBackAFewSteps`, должны использовать B2N версии `1.4.0` и выше.
+* Необходимо заменить в потребителях B2N прямой вызов `history.replaceState` (или обертки над ним типа `history.push` из ReactRouter) на метод `replaceHistoryState` из B2N.
+
 # 1.3.2 ([9f562ad](https://github.com/core-ds/bridge-to-native/commit/9f562ad)) (07-04-2026)
 ## Bugfixes
 
