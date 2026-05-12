@@ -5,6 +5,7 @@ import { type PdfType } from '../types';
 import { type NativeParamsService } from './native-params-service';
 import { appendFromCurrentQueryParamForIos, closeWebviewUtil } from './utils';
 
+const CANCEL_NEW_CALLS_TO_NA_TIME = 150;
 const QUERY_OPEN_IN_BROWSER_KEY = 'openInBrowser';
 const QUERY_OPEN_IN_BROWSER_VALUE = 'true';
 
@@ -13,9 +14,14 @@ const QUERY_OPEN_IN_BROWSER_VALUE = 'true';
  * и связанных с этим действий.
  */
 export class ExternalLinksService {
+    private navigationByNativeAppInProgress = false;
+
     constructor(private nativeParamsService: NativeParamsService) {}
 
     handleNativeDeeplink(deeplink: string, closeWebviewBeforeCallNativeDeeplinkHandler = false) {
+        if (this.navigationByNativeAppInProgress) {
+            return;
+        }
         const clearedDeeplinkPath = deeplink.replace(DEEP_LINK_PATTERN, '');
         const originalNativeUrl = `${this.nativeParamsService.appId}://${clearedDeeplinkPath}`;
         const preparedNativeUrl =
@@ -36,7 +42,7 @@ export class ExternalLinksService {
             return;
         }
 
-        window.location.replace(preparedNativeUrl);
+        this.navigateByNativeApp(preparedNativeUrl);
     }
 
     getHrefToOpenInBrowser(link: string) {
@@ -54,6 +60,10 @@ export class ExternalLinksService {
     }
 
     openInBrowser(link: string) {
+        if (this.navigationByNativeAppInProgress) {
+            return;
+        }
+
         if (!this.nativeParamsService.canUseNativeFeature('linksInBrowser')) {
             this.openInNewWebview(link);
 
@@ -64,7 +74,7 @@ export class ExternalLinksService {
 
         url.searchParams.append(QUERY_OPEN_IN_BROWSER_KEY, QUERY_OPEN_IN_BROWSER_VALUE);
 
-        window.location.replace(url.href);
+        this.navigateByNativeApp(url.href);
     }
 
     openInNewWebview(link: string, nativeTitle = '', closeCurrentWebview = false) {
@@ -81,6 +91,10 @@ export class ExternalLinksService {
     }
 
     openPdf(url: string, type: PdfType = 'pdfFile', title?: string) {
+        if (this.navigationByNativeAppInProgress) {
+            return;
+        }
+
         let replaceUrl = url;
 
         if (this.nativeParamsService.environment === 'ios') {
@@ -103,10 +117,15 @@ export class ExternalLinksService {
                 ? appendFromCurrentQueryParamForIos(replaceUrl)
                 : replaceUrl;
 
-        const windowObjectReference = window.open(replaceUrl);
+        this.navigateByNativeApp(replaceUrl);
+    }
 
-        if (windowObjectReference === null) {
-            window.location.replace(replaceUrl);
-        }
+    private navigateByNativeApp(url: string) {
+        this.navigationByNativeAppInProgress = true;
+        window.location.replace(url);
+
+        setTimeout(() => {
+            this.navigationByNativeAppInProgress = false;
+        }, CANCEL_NEW_CALLS_TO_NA_TIME);
     }
 }
