@@ -98,6 +98,11 @@ export class ExternalLinksService {
             replaceUrl = `${this.nativeParamsService.appId}:///dashboard/pdf_viewer?${paramsStr}`;
         }
 
+        replaceUrl =
+            this.nativeParamsService.environment === 'ios'
+                ? appendFromCurrentQueryParamForIos(replaceUrl)
+                : replaceUrl;
+
         const windowObjectReference = window.open(replaceUrl);
 
         if (windowObjectReference === null) {
