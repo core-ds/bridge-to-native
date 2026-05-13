@@ -1,3 +1,9 @@
+# 1.4.1 ([a76dd70](https://github.com/core-ds/bridge-to-native/commit/a76dd70)) (13-05-2026)
+## Bugfixes
+
+* Исправлена возможность случайного открытия 2+ одинаковых нативных экрана.
+* Сильно ускорено открытие нативных экранов на iOS.
+
 # 1.4.0 ([0f9ec2f](https://github.com/core-ds/bridge-to-native/commit/0f9ec2f)) (06-05-2026)
 ## Features
 
