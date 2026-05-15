@@ -2,10 +2,11 @@ import { QUERY_B2N_TITLE } from '../../query-and-headers-keys';
 import { DEEP_LINK_PATTERN } from '../constants';
 import { type PdfType } from '../types';
 
-import { closeWebviewUtil } from './close-webview-util';
 import { type NativeExecuteService } from './native-execute-service';
 import { type NativeParamsService } from './native-params-service';
+import { appendFromCurrentQueryParamForIos, closeWebviewUtil } from './utils';
 
+const CANCEL_NEW_CALLS_TO_NA_TIME = 150;
 const QUERY_OPEN_IN_BROWSER_KEY = 'openInBrowser';
 const QUERY_OPEN_IN_BROWSER_VALUE = 'true';
 
@@ -14,13 +15,23 @@ const QUERY_OPEN_IN_BROWSER_VALUE = 'true';
  * и связанных с этим действий.
  */
 export class ExternalLinksService {
+    private navigationByNativeAppInProgress = false;
+
     constructor(
         private nativeParamsService: NativeParamsService,
         private nativeExecuteService: NativeExecuteService,
     ) {}
 
     handleNativeDeeplink(deeplink: string, closeWebviewBeforeCallNativeDeeplinkHandler = false) {
+        if (this.navigationByNativeAppInProgress) {
+            return;
+        }
         const clearedDeeplinkPath = deeplink.replace(DEEP_LINK_PATTERN, '');
+        const originalNativeUrl = `${this.nativeParamsService.appId}://${clearedDeeplinkPath}`;
+        const preparedNativeUrl =
+            this.nativeParamsService.environment === 'ios'
+                ? appendFromCurrentQueryParamForIos(originalNativeUrl)
+                : originalNativeUrl;
 
         if (
             closeWebviewBeforeCallNativeDeeplinkHandler &&
@@ -33,13 +44,9 @@ export class ExternalLinksService {
             this.nativeExecuteService.execute(
                 'nativeDeeplink',
                 () => {
-                    setTimeout(() => {
-                        window.location.replace(
-                            `${this.nativeParamsService.appId}://${clearedDeeplinkPath}`,
-                        );
-                    }, 0);
+                    setTimeout(() => window.location.replace(preparedNativeUrl), 0);
                 },
-                { deeplink: `${this.nativeParamsService.appId}://${clearedDeeplinkPath}` },
+                { deeplink: preparedNativeUrl },
             );
 
             return;
@@ -47,11 +54,8 @@ export class ExternalLinksService {
 
         this.nativeExecuteService.execute(
             'nativeDeeplink',
-            () =>
-                window.location.replace(
-                    `${this.nativeParamsService.appId}://${clearedDeeplinkPath}`,
-                ),
-            { deeplink: `${this.nativeParamsService.appId}://${clearedDeeplinkPath}` },
+            () => this.navigateByNativeApp(preparedNativeUrl),
+            { deeplink: preparedNativeUrl },
         );
     }
 
@@ -70,6 +74,10 @@ export class ExternalLinksService {
     }
 
     openInBrowser(link: string) {
+        if (this.navigationByNativeAppInProgress) {
+            return;
+        }
+
         if (!this.nativeParamsService.canUseNativeFeature('linksInBrowser')) {
             this.openInNewWebview(link);
 
@@ -82,7 +90,7 @@ export class ExternalLinksService {
 
         this.nativeExecuteService.execute(
             'openInBrowser',
-            () => window.location.replace(url.href),
+            () => this.navigateByNativeApp(url.href),
             { url: url.href },
         );
     }
@@ -101,6 +109,10 @@ export class ExternalLinksService {
     }
 
     openPdf(url: string, type: PdfType = 'pdfFile', title?: string) {
+        if (this.navigationByNativeAppInProgress) {
+            return;
+        }
+
         let replaceUrl = url;
 
         if (this.nativeParamsService.environment === 'ios') {
@@ -118,16 +130,24 @@ export class ExternalLinksService {
             replaceUrl = `${this.nativeParamsService.appId}:///dashboard/pdf_viewer?${paramsStr}`;
         }
 
+        replaceUrl =
+            this.nativeParamsService.environment === 'ios'
+                ? appendFromCurrentQueryParamForIos(replaceUrl)
+                : replaceUrl;
+
         this.nativeExecuteService.execute(
             'openPdf ',
-            () => {
-                const windowObjectReference = window.open(replaceUrl);
-
-                if (windowObjectReference === null) {
-                    window.location.replace(replaceUrl);
-                }
-            },
+            () => this.navigateByNativeApp(replaceUrl),
             { replaceUrl },
         );
+    }
+
+    private navigateByNativeApp(url: string) {
+        this.navigationByNativeAppInProgress = true;
+        window.location.replace(url);
+
+        setTimeout(() => {
+            this.navigationByNativeAppInProgress = false;
+        }, CANCEL_NEW_CALLS_TO_NA_TIME);
     }
 }

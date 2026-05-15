@@ -13,7 +13,7 @@ const MockedExternalLinksServiceConstructor = jest.fn(() => mockedExternalLinksS
 const mockedNativeNavigationAndTitleServiceInstance = {
     closeWebview: jest.fn(),
     goBack: jest.fn(),
-    goBackAFewStepsClientSide: jest.fn(),
+    goBackAFewSteps: jest.fn(),
     navigateClientSide: jest.fn(),
     navigateServerSide: jest.fn(),
     setInitialView: jest.fn(),
@@ -215,23 +215,35 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('method `goBackAFewStepsClientSide`', () => {
-            it('should call `nativeNavigationAndTitleService.goBackAFewStepsClientSide`', () => {
+        describe('method `goBackAFewSteps`', () => {
+            it('should call `nativeNavigationAndTitleService.goBackAFewSteps`', () => {
                 const steps = 3;
 
-                bridge.goBackAFewStepsClientSide(steps);
+                bridge.goBackAFewSteps(steps);
                 expect(
-                    mockedNativeNavigationAndTitleServiceInstance.goBackAFewStepsClientSide,
+                    mockedNativeNavigationAndTitleServiceInstance.goBackAFewSteps,
                 ).toHaveBeenCalledWith(steps, false);
             });
 
-            it('should call nativeNavigationAndTitleService.goBackAFewStepsClientSide with autoCloseWebview flag', () => {
+            it('should call nativeNavigationAndTitleService.goBackAFewSteps with autoCloseWebview flag', () => {
                 const steps = 5;
 
-                bridge.goBackAFewStepsClientSide(steps, true);
+                bridge.goBackAFewSteps(steps, true);
                 expect(
-                    mockedNativeNavigationAndTitleServiceInstance.goBackAFewStepsClientSide,
+                    mockedNativeNavigationAndTitleServiceInstance.goBackAFewSteps,
                 ).toHaveBeenCalledWith(steps, true);
+            });
+        });
+
+        describe('method `goBackAFewStepsClientSide` (deprecated)', () => {
+            it('should delegate to `goBackAFewSteps`', () => {
+                const goBackAFewStepsSpy = jest.spyOn(bridge, 'goBackAFewSteps');
+                const steps = 3;
+
+                bridge.goBackAFewStepsClientSide(steps, true);
+                expect(goBackAFewStepsSpy).toHaveBeenCalledWith(steps, true);
+
+                goBackAFewStepsSpy.mockRestore();
             });
         });
 

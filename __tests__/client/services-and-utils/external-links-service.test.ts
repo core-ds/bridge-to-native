@@ -3,12 +3,17 @@ import { type NativeParamsService } from '../../../src/client/services-and-utils
 
 const mockedCloseWebviewUtil = jest.fn();
 
-jest.mock('../../../src/client/services-and-utils/close-webview-util', () => ({
-    __esModule: true,
-    get closeWebviewUtil() {
-        return mockedCloseWebviewUtil;
-    },
-}));
+jest.mock('../../../src/client/services-and-utils/utils', () => {
+    const actual = jest.requireActual('../../../src/client/services-and-utils/utils');
+
+    return {
+        __esModule: true,
+        appendFromCurrentQueryParamForIos: actual.appendFromCurrentQueryParamForIos,
+        get closeWebviewUtil() {
+            return mockedCloseWebviewUtil;
+        },
+    };
+});
 
 const mockedNativeParamsServiceInstance = {
     appId: 'alfabank',
@@ -23,7 +28,6 @@ const mockedNativeParamsServiceInstance = {
 
 describe('ExternalLinksService', () => {
     const locationReplaceSpy = jest.spyOn(window.location, 'replace');
-    const windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(jest.fn());
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -60,6 +64,53 @@ describe('ExternalLinksService', () => {
 
             inst.handleNativeDeeplink(deeplink, true);
             expect(mockedCloseWebviewUtil).toHaveBeenCalled();
+        });
+
+        describe('iOS environment', () => {
+            const iOSNativeParamsServiceInstance = {
+                ...mockedNativeParamsServiceInstance,
+                environment: 'ios',
+            } as unknown as NativeParamsService;
+
+            it.each([
+                [
+                    'webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app',
+                    'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app&fromCurrent=true',
+                ],
+                [
+                    'alfabank:///dashboard/deeplink_template',
+                    'alfabank://deeplink_template?fromCurrent=true',
+                ],
+                ['alfabank:///deeplink_template', 'alfabank://deeplink_template?fromCurrent=true'],
+                ['alfabank://deeplink_template', 'alfabank://deeplink_template?fromCurrent=true'],
+                ['/deeplink_template', 'alfabank://deeplink_template?fromCurrent=true'],
+            ])('should append `fromCurrent=true` for `%s`', (deeplink, expectedValue) => {
+                const inst = new ExternalLinksService(iOSNativeParamsServiceInstance);
+
+                inst.handleNativeDeeplink(deeplink);
+                expect(locationReplaceSpy).toHaveBeenCalledWith(expectedValue);
+            });
+
+            it('should pass prepared URL when closing webview before deeplink', () => {
+                jest.useFakeTimers();
+                const inst = new ExternalLinksService(iOSNativeParamsServiceInstance);
+                const deeplink = '/deeplink_template';
+
+                // @ts-expect-error –– Мокаем приватный метод
+                jest.spyOn(inst.nativeParamsService, 'canUseNativeFeature').mockImplementationOnce(
+                    () => true,
+                );
+
+                inst.handleNativeDeeplink(deeplink, true);
+                expect(mockedCloseWebviewUtil).toHaveBeenCalled();
+                expect(locationReplaceSpy).not.toHaveBeenCalled();
+
+                jest.runAllTimers();
+                expect(locationReplaceSpy).toHaveBeenCalledWith(
+                    'alfabank://deeplink_template?fromCurrent=true',
+                );
+                jest.useRealTimers();
+            });
         });
     });
 
@@ -169,27 +220,24 @@ describe('ExternalLinksService', () => {
     });
 
     describe('method `openPdf`', () => {
-        it('should call `location.replace` if `window.open` returns null', () => {
-            const testUrl = 'https://example.com/file.pdf';
-            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
-
-            windowOpenSpy.mockImplementationOnce(() => null);
-
-            inst.openPdf(testUrl);
-            expect(windowOpenSpy).toHaveBeenCalledWith(testUrl);
-            expect(locationReplaceSpy).toHaveBeenCalledWith(testUrl);
-        });
-
         describe('Android environment', () => {
+            it('should call `location.replace`', () => {
+                const testUrl = 'https://example.com/file.pdf';
+                const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+                inst.openPdf(testUrl);
+                expect(locationReplaceSpy).toHaveBeenCalledWith(testUrl);
+            });
+
             it('should work fine in general', () => {
                 const testUrl = 'https://example.com/file.pdf';
                 const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
                 inst.openPdf(testUrl);
-                expect(windowOpenSpy).toHaveBeenCalledWith(testUrl);
+                expect(locationReplaceSpy).toHaveBeenCalledWith(testUrl);
 
                 inst.openPdf(testUrl, 'binary');
-                expect(windowOpenSpy).toHaveBeenCalledWith(testUrl);
+                expect(locationReplaceSpy).toHaveBeenCalledWith(testUrl);
             });
         });
 
@@ -209,8 +257,8 @@ describe('ExternalLinksService', () => {
                     } as NativeParamsService);
 
                     inst.openPdf('https://example.com/file.pdf');
-                    expect(windowOpenSpy).toHaveBeenCalledWith(
-                        `${appId}:///dashboard/pdf_viewer?type=pdfFile&url=https%3A%2F%2Fexample.com%2Ffile.pdf`,
+                    expect(locationReplaceSpy).toHaveBeenCalledWith(
+                        `${appId}:///dashboard/pdf_viewer?type=pdfFile&url=https%3A%2F%2Fexample.com%2Ffile.pdf&fromCurrent=true`,
                     );
                 },
             );
@@ -219,8 +267,8 @@ describe('ExternalLinksService', () => {
                 const inst = new ExternalLinksService(iOSMockedNativeParamsServiceInstance);
 
                 inst.openPdf('https://example.com/file.pdf', 'binary');
-                expect(windowOpenSpy).toHaveBeenCalledWith(
-                    'kittycash:///dashboard/pdf_viewer?type=binary&url=https%3A%2F%2Fexample.com%2Ffile.pdf',
+                expect(locationReplaceSpy).toHaveBeenCalledWith(
+                    'kittycash:///dashboard/pdf_viewer?type=binary&url=https%3A%2F%2Fexample.com%2Ffile.pdf&fromCurrent=true',
                 );
             });
 
@@ -228,10 +276,114 @@ describe('ExternalLinksService', () => {
                 const inst = new ExternalLinksService(iOSMockedNativeParamsServiceInstance);
 
                 inst.openPdf('https://example.com/file.pdf', 'pdfFile', 'Test Title');
-                expect(windowOpenSpy).toHaveBeenCalledWith(
-                    'kittycash:///dashboard/pdf_viewer?type=pdfFile&url=https%3A%2F%2Fexample.com%2Ffile.pdf&title=Test_Title',
+                expect(locationReplaceSpy).toHaveBeenCalledWith(
+                    'kittycash:///dashboard/pdf_viewer?type=pdfFile&url=https%3A%2F%2Fexample.com%2Ffile.pdf&title=Test_Title&fromCurrent=true',
                 );
             });
+        });
+    });
+
+    describe('debounce behavior', () => {
+        it('should ignore rapid calls to `handleNativeDeeplink`', () => {
+            jest.useFakeTimers();
+            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+            inst.handleNativeDeeplink('/deeplink');
+            inst.handleNativeDeeplink('/another_deeplink');
+
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(1);
+            expect(locationReplaceSpy).toHaveBeenCalledWith('alfabank://deeplink');
+
+            jest.runAllTimers();
+            jest.useRealTimers();
+        });
+
+        it('should ignore rapid calls to `openInBrowser`', () => {
+            jest.useFakeTimers();
+            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватный метод
+            jest.spyOn(inst.nativeParamsService, 'canUseNativeFeature').mockImplementation(
+                () => true,
+            );
+
+            inst.openInBrowser('https://ya.ru');
+            inst.openInBrowser('https://google.com');
+
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(1);
+            expect(locationReplaceSpy).toHaveBeenCalledWith('https://ya.ru/?openInBrowser=true');
+
+            jest.runAllTimers();
+            jest.useRealTimers();
+        });
+
+        it('should ignore rapid calls to `openPdf`', () => {
+            jest.useFakeTimers();
+            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+            inst.openPdf('https://example.com/file1.pdf');
+            inst.openPdf('https://example.com/file2.pdf');
+
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(1);
+            expect(locationReplaceSpy).toHaveBeenCalledWith('https://example.com/file1.pdf');
+
+            jest.runAllTimers();
+            jest.useRealTimers();
+        });
+
+        it('should allow new calls after 150ms timeout', () => {
+            jest.useFakeTimers();
+            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+            inst.handleNativeDeeplink('/deeplink1');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(1);
+
+            jest.advanceTimersByTime(150);
+
+            inst.handleNativeDeeplink('/deeplink2');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(2);
+            expect(locationReplaceSpy).toHaveBeenLastCalledWith('alfabank://deeplink2');
+
+            jest.useRealTimers();
+        });
+
+        it('should allow new calls when called after timeout for `openInBrowser`', () => {
+            jest.useFakeTimers();
+            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error –– Мокаем приватный метод
+            jest.spyOn(inst.nativeParamsService, 'canUseNativeFeature').mockImplementation(
+                () => true,
+            );
+
+            inst.openInBrowser('https://ya.ru');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(1);
+
+            jest.advanceTimersByTime(150);
+
+            inst.openInBrowser('https://google.com');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(2);
+            expect(locationReplaceSpy).toHaveBeenLastCalledWith(
+                'https://google.com/?openInBrowser=true',
+            );
+
+            jest.useRealTimers();
+        });
+
+        it('should allow new calls when called after timeout for `openPdf`', () => {
+            jest.useFakeTimers();
+            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+            inst.openPdf('https://example.com/file1.pdf');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(1);
+
+            jest.advanceTimersByTime(150);
+
+            inst.openPdf('https://example.com/file2.pdf');
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(2);
+            expect(locationReplaceSpy).toHaveBeenLastCalledWith('https://example.com/file2.pdf');
+
+            jest.useRealTimers();
         });
     });
 });
