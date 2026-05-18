@@ -1,4 +1,4 @@
-/* eslint max-lines: ["error", {"max": 360, "skipComments": true}] */ // Много комментариев.
+/* eslint max-lines: ["error", {"max": 360, "skipComments": true}] */
 import {
     HISTORY_STATE_KEY_B2N_PAGE_ID,
     QUERY_B2N_NEXT_PAGEID,
