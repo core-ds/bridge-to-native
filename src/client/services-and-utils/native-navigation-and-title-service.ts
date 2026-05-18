@@ -1,5 +1,4 @@
-/* eslint max-lines: ["error", {"max": 350, "skipComments": true}] */
-
+/* eslint max-lines: ["error", {"max": 360, "skipComments": true}] */
 import {
     HISTORY_STATE_KEY_B2N_PAGE_ID,
     QUERY_B2N_NEXT_PAGEID,
@@ -14,6 +13,7 @@ import {
     type LogError,
 } from '../types';
 
+import { type NativeExecuteService } from './native-execute-service';
 import { type NativeParamsService } from './native-params-service';
 import { closeWebviewUtil } from './utils';
 
@@ -56,6 +56,7 @@ export class NativeNavigationAndTitleService {
 
     constructor(
         private nativeParamsService: NativeParamsService,
+        private nativeExecuteService: NativeExecuteService,
         private browserHistoryApiWrappers?: BrowserHistoryApiWrappers,
         private logError?: LogError,
     ) {
@@ -368,7 +369,11 @@ export class NativeNavigationAndTitleService {
             const paramsToSend = JSON.stringify({ pageId: narrowedPageId, pageTitle });
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
-                this.nativeParamsService.AndroidBridge?.setPageSettings(paramsToSend);
+                this.nativeExecuteService.execute(
+                    'syncHistoryWithNative',
+                    () => this.nativeParamsService.AndroidBridge?.setPageSettings(paramsToSend),
+                    { paramsToSend },
+                );
                 this.lastSetPageSettingsParams = paramsToSend;
             }
         } else {
@@ -378,7 +383,11 @@ export class NativeNavigationAndTitleService {
             const paramsToSend = `ios:setPageSettings/${pageTitleStr + pageIdStr}`;
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
-                window.location.replace(paramsToSend);
+                this.nativeExecuteService?.execute(
+                    'syncHistoryWithNative',
+                    () => window.location.replace(paramsToSend),
+                    { paramsToSend },
+                );
                 this.lastSetPageSettingsParams = paramsToSend;
             }
         }

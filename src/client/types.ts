@@ -30,3 +30,8 @@ export type NativeFeaturesFromVersion = Readonly<{
 export type PdfType = 'pdfFile' | 'base64' | 'binary';
 
 export type Theme = 'light' | 'dark';
+
+export type NoopOptions = {
+    enabled: boolean;
+    environment?: Environment;
+};

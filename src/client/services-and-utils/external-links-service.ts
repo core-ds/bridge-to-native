@@ -2,6 +2,7 @@ import { QUERY_B2N_TITLE } from '../../query-and-headers-keys';
 import { DEEP_LINK_PATTERN } from '../constants';
 import { type PdfType } from '../types';
 
+import { type NativeExecuteService } from './native-execute-service';
 import { type NativeParamsService } from './native-params-service';
 import { appendFromCurrentQueryParamForIos, closeWebviewUtil } from './utils';
 
@@ -16,7 +17,10 @@ const QUERY_OPEN_IN_BROWSER_VALUE = 'true';
 export class ExternalLinksService {
     private navigationByNativeAppInProgress = false;
 
-    constructor(private nativeParamsService: NativeParamsService) {}
+    constructor(
+        private nativeParamsService: NativeParamsService,
+        private nativeExecuteService: NativeExecuteService,
+    ) {}
 
     handleNativeDeeplink(deeplink: string, closeWebviewBeforeCallNativeDeeplinkHandler = false) {
         if (this.navigationByNativeAppInProgress) {
@@ -33,16 +37,26 @@ export class ExternalLinksService {
             closeWebviewBeforeCallNativeDeeplinkHandler &&
             this.nativeParamsService.canUseNativeFeature('savedBackStack')
         ) {
-            closeWebviewUtil();
+            this.nativeExecuteService.execute('closeWebview', () => closeWebviewUtil());
 
             // Проверено, ОС получает диплинк и передаёт его NA, не смотря на то,
             // что это происходит в следующей макрозадаче после команды на закрытие WV.
-            setTimeout(() => window.location.replace(preparedNativeUrl), 0);
+            this.nativeExecuteService.execute(
+                'nativeDeeplink',
+                () => {
+                    setTimeout(() => window.location.replace(preparedNativeUrl), 0);
+                },
+                { deeplink: preparedNativeUrl },
+            );
 
             return;
         }
 
-        this.navigateByNativeApp(preparedNativeUrl);
+        this.nativeExecuteService.execute(
+            'nativeDeeplink',
+            () => this.navigateByNativeApp(preparedNativeUrl),
+            { deeplink: preparedNativeUrl },
+        );
     }
 
     getHrefToOpenInBrowser(link: string) {
@@ -74,7 +88,11 @@ export class ExternalLinksService {
 
         url.searchParams.append(QUERY_OPEN_IN_BROWSER_KEY, QUERY_OPEN_IN_BROWSER_VALUE);
 
-        this.navigateByNativeApp(url.href);
+        this.nativeExecuteService.execute(
+            'openInBrowser',
+            () => this.navigateByNativeApp(url.href),
+            { url: url.href },
+        );
     }
 
     openInNewWebview(link: string, nativeTitle = '', closeCurrentWebview = false) {
@@ -117,7 +135,11 @@ export class ExternalLinksService {
                 ? appendFromCurrentQueryParamForIos(replaceUrl)
                 : replaceUrl;
 
-        this.navigateByNativeApp(replaceUrl);
+        this.nativeExecuteService.execute(
+            'openPdf ',
+            () => this.navigateByNativeApp(replaceUrl),
+            { replaceUrl },
+        );
     }
 
     private navigateByNativeApp(url: string) {
