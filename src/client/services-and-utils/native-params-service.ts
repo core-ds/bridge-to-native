@@ -39,6 +39,8 @@ export class NativeParamsService {
     ) {
         const nativeParams = this.readNativeParamsCookie();
 
+        this.environment = this.resolveEnvironment();
+
         this.appVersion = NativeParamsService.isValidVersionFormat(nativeParams?.appVersion)
             ? nativeParams.appVersion
             : '0.0.0';
@@ -54,8 +56,6 @@ export class NativeParamsService {
         this.title = nativeParams?.title || '';
 
         this.webviewLaunchTime = nativeParams?.webviewLaunchTime || null;
-
-        this.environment = this.resolveEnvironment();
     }
 
     canUseNativeFeature(feature: NativeFeatureKey) {

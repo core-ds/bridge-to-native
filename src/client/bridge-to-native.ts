@@ -43,7 +43,7 @@ export class BridgeToNative {
     );
 
     private nativeExecuteService = new NativeExecuteService(
-        this.options?.noop,
+        this.options?.noop?.enabled,
         this.nativeParamsService.environment,
     );
 

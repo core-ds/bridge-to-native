@@ -2,12 +2,12 @@ import { type Environment, type NoopOptions } from '../types';
 
 export class NativeExecuteService {
     constructor(
-        private noop?: NoopOptions,
+        private isNoop?: NoopOptions['enabled'],
         private environment?: Environment,
     ) {}
 
     execute(action: string, fn: () => void, payload?: unknown) {
-        if (this.noop?.enabled) {
+        if (this.isNoop) {
             console.info(`[B2N noop][${this.environment}] ${action}`, payload);
 
             return;

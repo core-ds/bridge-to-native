@@ -362,7 +362,7 @@ describe('NativeParamsService', () => {
 
         it('should log error while there is no bridgeToNativeData cookie', () => {
             const logError = jest.fn();
-            const inst = new NativeParamsService(logError);
+            const inst = new NativeParamsService({ enabled: false }, logError);
 
             // @ts-expect-error -- Проверка private метода
             inst.readNativeParamsCookie();
