@@ -114,6 +114,37 @@ describe('ExternalLinksService', () => {
         });
     });
 
+    describe('method `openNativeAppDashboard`', () => {
+        it('should open native app home for Android', () => {
+            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+            inst.openNativeAppDashboard();
+            expect(locationReplaceSpy).toHaveBeenCalledWith('alfabank:///');
+        });
+
+        it('should append `fromCurrent=true` for iOS', () => {
+            const inst = new ExternalLinksService({
+                ...mockedNativeParamsServiceInstance,
+                environment: 'ios',
+            } as NativeParamsService);
+
+            inst.openNativeAppDashboard();
+            expect(locationReplaceSpy).toHaveBeenCalledWith('alfabank:///?fromCurrent=true');
+        });
+
+        it('should use `closeWebviewBeforeOpen` argument', () => {
+            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+            // @ts-expect-error -- Мокаем приватный метод
+            jest.spyOn(inst.nativeParamsService, 'canUseNativeFeature').mockImplementationOnce(
+                () => true,
+            );
+
+            inst.openNativeAppDashboard(true);
+            expect(mockedCloseWebviewUtil).toHaveBeenCalled();
+        });
+    });
+
     describe('method `getHrefToOpenInBrowser`', () => {
         it('should modify URL to force opening it in browser for NA versions that support it', () => {
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
@@ -331,6 +362,20 @@ describe('ExternalLinksService', () => {
             jest.useRealTimers();
         });
 
+        it('should ignore rapid calls to `openNativeAppDashboard`', () => {
+            jest.useFakeTimers();
+            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+            inst.openNativeAppDashboard();
+            inst.openNativeAppDashboard();
+
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(1);
+            expect(locationReplaceSpy).toHaveBeenCalledWith('alfabank:///');
+
+            jest.runAllTimers();
+            jest.useRealTimers();
+        });
+
         it('should allow new calls after 150ms timeout', () => {
             jest.useFakeTimers();
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
@@ -382,6 +427,22 @@ describe('ExternalLinksService', () => {
             inst.openPdf('https://example.com/file2.pdf');
             expect(locationReplaceSpy).toHaveBeenCalledTimes(2);
             expect(locationReplaceSpy).toHaveBeenLastCalledWith('https://example.com/file2.pdf');
+
+            jest.useRealTimers();
+        });
+
+        it('should allow new calls when called after timeout for `openNativeAppDashboard`', () => {
+            jest.useFakeTimers();
+            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
+
+            inst.openNativeAppDashboard();
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(1);
+
+            jest.advanceTimersByTime(150);
+
+            inst.openNativeAppDashboard();
+            expect(locationReplaceSpy).toHaveBeenCalledTimes(2);
+            expect(locationReplaceSpy).toHaveBeenLastCalledWith('alfabank:///');
 
             jest.useRealTimers();
         });

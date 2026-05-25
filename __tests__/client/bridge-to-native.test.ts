@@ -3,6 +3,7 @@ import { BridgeToNative } from '../../src/client';
 const mockedExternalLinksServiceInstance = {
     getHrefToOpenInBrowser: jest.fn(),
     handleNativeDeeplink: jest.fn(),
+    openNativeAppDashboard: jest.fn(),
     openInBrowser: jest.fn(),
     openInNewWebview: jest.fn(),
     openPdf: jest.fn(),
@@ -264,6 +265,22 @@ describe('BridgeToNative', () => {
                 expect(
                     mockedExternalLinksServiceInstance.handleNativeDeeplink,
                 ).toHaveBeenCalledWith(deeplink, true);
+            });
+        });
+
+        describe('method `openNativeAppDashboard`', () => {
+            it('should call `externalLinksService.openNativeAppDashboard`', () => {
+                bridge.openNativeAppDashboard();
+                expect(
+                    mockedExternalLinksServiceInstance.openNativeAppDashboard,
+                ).toHaveBeenCalledWith(false);
+            });
+
+            it('should call `externalLinksService.openNativeAppDashboard` with `closeWebviewBeforeOpen` flag', () => {
+                bridge.openNativeAppDashboard(true);
+                expect(
+                    mockedExternalLinksServiceInstance.openNativeAppDashboard,
+                ).toHaveBeenCalledWith(true);
             });
         });
 

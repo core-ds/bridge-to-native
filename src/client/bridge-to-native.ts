@@ -195,6 +195,23 @@ export class BridgeToNative {
     }
 
     /**
+     * Открывает dashboard экран NA.
+     *
+     * Полезно для сценария возврата из WV на dashboard экран приложения,
+     * когда обычный deeplink требует специальной обработки.
+     *
+     * ВАЖНО!
+     * В NA на Android до версии `12.30.0` текущее WV закрывается при открытии нового экрана,
+     * поэтому в закрытое WV невозможно вернуться back-навигацией.
+     *
+     * @param closeWebviewBeforeOpen Флаг принудительного закрытия текущего WV перед открытием dashboard экрана.
+     *  Применимо для всех версий на iOS и в новых версиях на Android (>=12.30.0), в более старых WV закрывается всегда автоматически.
+     */
+    openNativeAppDashboard(closeWebviewBeforeOpen = false) {
+        this.externalLinksService.openNativeAppDashboard(closeWebviewBeforeOpen);
+    }
+
+    /**
      * Сравнивает текущую версию приложения с переданной.
      *
      * @param versionToCompare Версия, с которой нужно сравнить текущую.

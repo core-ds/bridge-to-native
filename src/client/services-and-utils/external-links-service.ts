@@ -45,6 +45,31 @@ export class ExternalLinksService {
         this.navigateByNativeApp(preparedNativeUrl);
     }
 
+    openNativeAppDashboard(closeWebviewBeforeOpen = false) {
+        if (this.navigationByNativeAppInProgress) {
+            return;
+        }
+
+        const originalNativeUrl = `${this.nativeParamsService.appId}:///`;
+        const preparedNativeUrl =
+            this.nativeParamsService.environment === 'ios'
+                ? appendFromCurrentQueryParamForIos(originalNativeUrl)
+                : originalNativeUrl;
+
+        if (
+            closeWebviewBeforeOpen &&
+            this.nativeParamsService.canUseNativeFeature('savedBackStack')
+        ) {
+            closeWebviewUtil();
+
+            setTimeout(() => window.location.replace(preparedNativeUrl), 0);
+
+            return;
+        }
+
+        this.navigateByNativeApp(preparedNativeUrl);
+    }
+
     getHrefToOpenInBrowser(link: string) {
         if (!this.nativeParamsService.canUseNativeFeature('linksInBrowser')) {
             return `${this.nativeParamsService.appId}://webFeature?type=recommendation&url=${encodeURIComponent(
