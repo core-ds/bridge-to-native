@@ -1,6 +1,9 @@
 /* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
 
+import { type NoopOptions } from '../types';
+
 import { ExternalLinksService } from './services-and-utils/external-links-service';
+import { NativeLogService } from './services-and-utils/native-log-service';
 import { NativeNavigationAndTitleService } from './services-and-utils/native-navigation-and-title-service';
 import { NativeParamsService } from './services-and-utils/native-params-service';
 import {
@@ -25,20 +28,35 @@ export class BridgeToNative {
      *  будут использованы стандартные `History: pushState()` и `History: go()`.
      * @param options.logError Функция с помощью которой B2N может залогировать ошибку,
      *  если не передать, B2N не будет логировать ошибки.
+     * @param options.noop ....
      */
     constructor(
         private options?: {
             browserHistoryApiWrappers?: BrowserHistoryApiWrappers;
             logError?: LogError;
+            noop?: NoopOptions;
         },
     ) {}
 
-    private nativeParamsService = new NativeParamsService(this.options?.logError);
+    private nativeParamsService = new NativeParamsService(
+        this.options?.noop,
+        this.options?.logError,
+    );
 
-    private externalLinksService = new ExternalLinksService(this.nativeParamsService);
+    private nativeLogService = new NativeLogService(
+        this.nativeParamsService.environment,
+        this.nativeParamsService.appVersion,
+        this.options?.noop?.enabled,
+    );
+
+    private externalLinksService = new ExternalLinksService(
+        this.nativeParamsService,
+        this.nativeLogService,
+    );
 
     private nativeNavigationAndTitleService = new NativeNavigationAndTitleService(
         this.nativeParamsService,
+        this.nativeLogService,
         this.options?.browserHistoryApiWrappers,
         this.options?.logError,
     );
