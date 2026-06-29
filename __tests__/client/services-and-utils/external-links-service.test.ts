@@ -1,4 +1,5 @@
 import { ExternalLinksService } from '../../../src/client/services-and-utils/external-links-service';
+import { type NativeLogService } from '../../../src/client/services-and-utils/native-log-service';
 import { type NativeParamsService } from '../../../src/client/services-and-utils/native-params-service';
 
 const mockedCloseWebviewUtil = jest.fn();
@@ -26,9 +27,14 @@ const mockedNativeParamsServiceInstance = {
     isCurrentVersionHigherOrEqual: jest.fn(),
 } as unknown as NativeParamsService;
 
-const mockedNativeExecuteServiceInstance = {
+const mockedNativeLogServiceInstance = {
+    isNoop: true,
+    environment: 'android',
+    appVersion: '12.30.0',
+
+    logFeatureFallback: jest.fn(),
     execute: jest.fn((_, fn) => fn()),
-};
+} as unknown as NativeLogService;
 
 describe('ExternalLinksService', () => {
     const locationReplaceSpy = jest.spyOn(window.location, 'replace');
@@ -52,7 +58,7 @@ describe('ExternalLinksService', () => {
             (deeplink, expectedValue) => {
                 const inst = new ExternalLinksService(
                     mockedNativeParamsServiceInstance,
-                    mockedNativeExecuteServiceInstance,
+                    mockedNativeLogServiceInstance,
                 );
 
                 inst.handleNativeDeeplink(deeplink);
@@ -63,7 +69,7 @@ describe('ExternalLinksService', () => {
         it('should use `closeWebviewBeforeCallNativeDeeplinkHandler` argument', () => {
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
             const deeplink = 'webFeature?type=recommendation&url=https%3A%2F%2Ftemplate.app';
 
@@ -97,7 +103,7 @@ describe('ExternalLinksService', () => {
             ])('should append `fromCurrent=true` for `%s`', (deeplink, expectedValue) => {
                 const inst = new ExternalLinksService(
                     iOSNativeParamsServiceInstance,
-                    mockedNativeExecuteServiceInstance,
+                    mockedNativeLogServiceInstance,
                 );
 
                 inst.handleNativeDeeplink(deeplink);
@@ -108,7 +114,7 @@ describe('ExternalLinksService', () => {
                 jest.useFakeTimers();
                 const inst = new ExternalLinksService(
                     iOSNativeParamsServiceInstance,
-                    mockedNativeExecuteServiceInstance,
+                    mockedNativeLogServiceInstance,
                 );
                 const deeplink = '/deeplink_template';
 
@@ -134,7 +140,7 @@ describe('ExternalLinksService', () => {
         it('should modify URL to force opening it in browser for NA versions that support it', () => {
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             // @ts-expect-error –– Мокаем приватный метод
@@ -153,7 +159,7 @@ describe('ExternalLinksService', () => {
         it('should modify URL to deplink which force opening it in new WV for old NA versions', () => {
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             // @ts-expect-error –– Мокаем приватный метод
@@ -174,7 +180,7 @@ describe('ExternalLinksService', () => {
         it('should open link in browser for NA versions that support it', () => {
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             // @ts-expect-error –– Мокаем приватный метод
@@ -191,7 +197,7 @@ describe('ExternalLinksService', () => {
         it('should open link in new WV for old NA versions', () => {
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             // @ts-expect-error –– Мокаем приватный метод
@@ -212,7 +218,7 @@ describe('ExternalLinksService', () => {
         it('should open link in new WV with default title', () => {
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             const link = 'https://ya.ru';
@@ -226,7 +232,7 @@ describe('ExternalLinksService', () => {
         it('should open link in new WV with custom title', () => {
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             const link = 'https://ya.ru';
@@ -241,7 +247,7 @@ describe('ExternalLinksService', () => {
         it('should close current WV before opening a new one', () => {
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             // @ts-expect-error –– Мокаем приватный метод
@@ -262,7 +268,7 @@ describe('ExternalLinksService', () => {
                 const testUrl = 'https://example.com/file.pdf';
                 const inst = new ExternalLinksService(
                     mockedNativeParamsServiceInstance,
-                    mockedNativeExecuteServiceInstance,
+                    mockedNativeLogServiceInstance,
                 );
 
                 inst.openPdf(testUrl);
@@ -273,7 +279,7 @@ describe('ExternalLinksService', () => {
                 const testUrl = 'https://example.com/file.pdf';
                 const inst = new ExternalLinksService(
                     mockedNativeParamsServiceInstance,
-                    mockedNativeExecuteServiceInstance,
+                    mockedNativeLogServiceInstance,
                 );
 
                 inst.openPdf(testUrl);
@@ -299,7 +305,7 @@ describe('ExternalLinksService', () => {
                             ...iOSMockedNativeParamsServiceInstance,
                             appId,
                         } as NativeParamsService,
-                        mockedNativeExecuteServiceInstance,
+                        mockedNativeLogServiceInstance,
                     );
 
                     inst.openPdf('https://example.com/file.pdf');
@@ -312,7 +318,7 @@ describe('ExternalLinksService', () => {
             it('should use `type` parameter', () => {
                 const inst = new ExternalLinksService(
                     iOSMockedNativeParamsServiceInstance,
-                    mockedNativeExecuteServiceInstance,
+                    mockedNativeLogServiceInstance,
                 );
 
                 inst.openPdf('https://example.com/file.pdf', 'binary');
@@ -324,7 +330,7 @@ describe('ExternalLinksService', () => {
             it('should use `title` parameter', () => {
                 const inst = new ExternalLinksService(
                     iOSMockedNativeParamsServiceInstance,
-                    mockedNativeExecuteServiceInstance,
+                    mockedNativeLogServiceInstance,
                 );
 
                 inst.openPdf('https://example.com/file.pdf', 'pdfFile', 'Test Title');
@@ -340,7 +346,7 @@ describe('ExternalLinksService', () => {
             jest.useFakeTimers();
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             inst.handleNativeDeeplink('/deeplink');
@@ -357,7 +363,7 @@ describe('ExternalLinksService', () => {
             jest.useFakeTimers();
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             // @ts-expect-error –– Мокаем приватный метод
@@ -379,7 +385,7 @@ describe('ExternalLinksService', () => {
             jest.useFakeTimers();
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             inst.openPdf('https://example.com/file1.pdf');
@@ -396,7 +402,7 @@ describe('ExternalLinksService', () => {
             jest.useFakeTimers();
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             inst.handleNativeDeeplink('/deeplink1');
@@ -415,7 +421,7 @@ describe('ExternalLinksService', () => {
             jest.useFakeTimers();
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             // @ts-expect-error –– Мокаем приватный метод
@@ -441,7 +447,7 @@ describe('ExternalLinksService', () => {
             jest.useFakeTimers();
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
 
             inst.openPdf('https://example.com/file1.pdf');

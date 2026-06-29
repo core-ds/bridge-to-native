@@ -1,5 +1,5 @@
 import { BridgeToNative } from '../../src/client';
-import { type NoopOptions } from '../../src/client/types';
+import { type NoopOptions } from '../../src/types';
 
 const mockedExternalLinksServiceInstance = {
     getHrefToOpenInBrowser: jest.fn(),
@@ -39,13 +39,14 @@ const mockedNativeParamsServiceInstance = {
 
 const MockedNativeParamsServiceConstructor = jest.fn(() => mockedNativeParamsServiceInstance);
 
-const mockedNativeExecuteServiceInstance = {
+const mockedNativeLogServiceInstance = {
+    logFeatureFallback: jest.fn(),
     execute: jest.fn((_, fn) => fn()),
 };
 
-const MockedNativeExecuteServiceConstructor = jest.fn(() => mockedNativeExecuteServiceInstance);
+const MockedNativeLogServiceConstructor = jest.fn(() => mockedNativeLogServiceInstance);
 
-const mockNoop: NoopOptions = { enabled: true, environment: 'android' };
+const mockNoop: NoopOptions = { enabled: true, environment: 'android', appVersion: '1.0.0' };
 
 jest.mock('../../src/client/services-and-utils/external-links-service', () => ({
     __esModule: true,
@@ -68,10 +69,10 @@ jest.mock('../../src/client/services-and-utils/native-params-service', () => ({
     },
 }));
 
-jest.mock('../../src/client/services-and-utils/native-execute-service', () => ({
+jest.mock('../../src/client/services-and-utils/native-log-service', () => ({
     __esModule: true,
-    get NativeExecuteService() {
-        return MockedNativeExecuteServiceConstructor;
+    get NativeLogService() {
+        return MockedNativeLogServiceConstructor;
     },
 }));
 
@@ -93,17 +94,17 @@ describe('BridgeToNative', () => {
             expect(MockedNativeParamsServiceConstructor).toHaveBeenCalledWith(mockNoop, logError);
         });
 
-        it('should pass `nativeParamsService` and `nativeExecuteService` to `ExternalLinksService`', () => {
+        it('should pass `nativeParamsService` and `nativeLogService` to `ExternalLinksService`', () => {
             expect(MockedExternalLinksServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
             );
         });
 
-        it('should pass `nativeParamsService` and `nativeExecuteService` to `NativeNavigationAndTitleService`', () => {
+        it('should pass `nativeParamsService` and `nativeLogService` to `NativeNavigationAndTitleService`', () => {
             expect(MockedNativeNavigationAndTitleServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
-                mockedNativeExecuteServiceInstance,
+                mockedNativeLogServiceInstance,
                 undefined,
                 undefined,
             );
@@ -137,13 +138,17 @@ describe('BridgeToNative', () => {
             );
         });
 
-        it('should pass `isNoop` and `environment` to `nativeExecuteService`', () => {
+        it('should pass `environment`, `version` and `isNoop` to `NativeLogService`', () => {
             const logError = jest.fn();
 
             // eslint-disable-next-line no-new
             new BridgeToNative({ logError, noop: mockNoop });
 
-            expect(MockedNativeExecuteServiceConstructor).toHaveBeenCalledWith(true, 'android');
+            expect(MockedNativeLogServiceConstructor).toHaveBeenCalledWith(
+                mockNoop.environment,
+                mockNoop.appVersion,
+                mockNoop.enabled,
+            );
         });
     });
 

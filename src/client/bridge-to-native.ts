@@ -1,7 +1,9 @@
 /* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
 
+import { type NoopOptions } from '../types';
+
 import { ExternalLinksService } from './services-and-utils/external-links-service';
-import { NativeExecuteService } from './services-and-utils/native-execute-service';
+import { NativeLogService } from './services-and-utils/native-log-service';
 import { NativeNavigationAndTitleService } from './services-and-utils/native-navigation-and-title-service';
 import { NativeParamsService } from './services-and-utils/native-params-service';
 import {
@@ -11,7 +13,6 @@ import {
     type LocationAssignParam,
     type LogError,
     type NativeFeatureKey,
-    type NoopOptions,
     type PdfType,
 } from './types';
 
@@ -42,19 +43,20 @@ export class BridgeToNative {
         this.options?.logError,
     );
 
-    private nativeExecuteService = new NativeExecuteService(
-        this.options?.noop?.enabled,
+    private nativeLogService = new NativeLogService(
         this.nativeParamsService.environment,
+        this.nativeParamsService.appVersion,
+        this.options?.noop?.enabled,
     );
 
     private externalLinksService = new ExternalLinksService(
         this.nativeParamsService,
-        this.nativeExecuteService,
+        this.nativeLogService,
     );
 
     private nativeNavigationAndTitleService = new NativeNavigationAndTitleService(
         this.nativeParamsService,
-        this.nativeExecuteService,
+        this.nativeLogService,
         this.options?.browserHistoryApiWrappers,
         this.options?.logError,
     );

@@ -13,7 +13,7 @@ import {
     type LogError,
 } from '../types';
 
-import { type NativeExecuteService } from './native-execute-service';
+import { type NativeLogService } from './native-log-service';
 import { type NativeParamsService } from './native-params-service';
 import { closeWebviewUtil } from './utils';
 
@@ -56,7 +56,7 @@ export class NativeNavigationAndTitleService {
 
     constructor(
         private nativeParamsService: NativeParamsService,
-        private nativeExecuteService: NativeExecuteService,
+        private nativeLogService: NativeLogService,
         private browserHistoryApiWrappers?: BrowserHistoryApiWrappers,
         private logError?: LogError,
     ) {
@@ -369,10 +369,10 @@ export class NativeNavigationAndTitleService {
             const paramsToSend = JSON.stringify({ pageId: narrowedPageId, pageTitle });
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
-                this.nativeExecuteService.execute(
+                this.nativeLogService.execute(
                     'syncHistoryWithNative',
                     () => this.nativeParamsService.AndroidBridge?.setPageSettings(paramsToSend),
-                    { paramsToSend },
+                    { payload: paramsToSend },
                 );
                 this.lastSetPageSettingsParams = paramsToSend;
             }
@@ -383,10 +383,10 @@ export class NativeNavigationAndTitleService {
             const paramsToSend = `ios:setPageSettings/${pageTitleStr + pageIdStr}`;
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
-                this.nativeExecuteService?.execute(
+                this.nativeLogService.execute(
                     'syncHistoryWithNative',
                     () => window.location.replace(paramsToSend),
-                    { paramsToSend },
+                    { payload: paramsToSend },
                 );
                 this.lastSetPageSettingsParams = paramsToSend;
             }

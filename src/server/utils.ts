@@ -96,6 +96,9 @@ export const getBridgeToNativeDataCookie = (cookieHeader: string | null) => {
     return undefined;
 };
 
+// export const getBridgeToNativeDataCookie = (cookieHeader: string | null) =>
+//     getCookieValue(cookieHeader, COOKIE_KEY_BRIDGE_TO_NATIVE_DATA);
+
 /**
  * Возвращает десериализованные данные из `bridgeToNativeData` cookie.
  */
@@ -112,3 +115,13 @@ export function readNativeParamsFromCookie(cookieHeader: string | null) {
         return null;
     }
 }
+
+// export function readModeFromCookie(cookieHeader: string | null) {
+//     const mode = getCookieValue(cookieHeader, B2N_MODE);
+
+//     if (!mode) {
+//         return null;
+//     }
+
+//     return mode as 'noop' | 'native';
+// }

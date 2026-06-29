@@ -1,8 +1,8 @@
 import { QUERY_B2N_TITLE } from '../../query-and-headers-keys';
-import { DEEP_LINK_PATTERN } from '../constants';
-import { type PdfType } from '../types';
+import { DEEP_LINK_PATTERN, NATIVE_FEATURES_FROM_VERSION } from '../constants';
+import { type NativeFeatureContext, type PdfType } from '../types';
 
-import { type NativeExecuteService } from './native-execute-service';
+import { type NativeLogService } from './native-log-service';
 import { type NativeParamsService } from './native-params-service';
 import { appendFromCurrentQueryParamForIos, closeWebviewUtil } from './utils';
 
@@ -19,7 +19,7 @@ export class ExternalLinksService {
 
     constructor(
         private nativeParamsService: NativeParamsService,
-        private nativeExecuteService: NativeExecuteService,
+        private nativeLogService: NativeLogService,
     ) {}
 
     handleNativeDeeplink(deeplink: string, closeWebviewBeforeCallNativeDeeplinkHandler = false) {
@@ -37,30 +37,57 @@ export class ExternalLinksService {
             closeWebviewBeforeCallNativeDeeplinkHandler &&
             this.nativeParamsService.canUseNativeFeature('savedBackStack')
         ) {
-            this.nativeExecuteService.execute('closeWebview', () => closeWebviewUtil());
+            this.nativeLogService.execute('closeWebview', () => closeWebviewUtil());
 
             // Проверено, ОС получает диплинк и передаёт его NA, не смотря на то,
             // что это происходит в следующей макрозадаче после команды на закрытие WV.
-            this.nativeExecuteService.execute(
+            this.nativeLogService.execute(
                 'nativeDeeplink',
                 () => {
                     setTimeout(() => window.location.replace(preparedNativeUrl), 0);
                 },
-                { deeplink: preparedNativeUrl },
+                { payload: { deeplink: preparedNativeUrl } },
             );
 
             return;
         }
 
-        this.nativeExecuteService.execute(
+        let featureContext: NativeFeatureContext | null = null;
+
+        const { fromVersion } =
+            NATIVE_FEATURES_FROM_VERSION[this.nativeParamsService.environment].savedBackStack;
+
+        if (
+            this.nativeParamsService.environment === 'android' &&
+            !this.nativeParamsService.isCurrentVersionHigherOrEqual(fromVersion)
+        ) {
+            featureContext = {
+                feature: 'savedBackStack',
+                fallbackReason: 'Открытие нового webview в Android приведет к закрытию текущего',
+            };
+        }
+
+        this.nativeLogService.execute(
             'nativeDeeplink',
             () => this.navigateByNativeApp(preparedNativeUrl),
-            { deeplink: preparedNativeUrl },
+            {
+                payload: { deeplink: preparedNativeUrl },
+                featureContext: featureContext ?? null,
+            },
         );
     }
 
     getHrefToOpenInBrowser(link: string) {
         if (!this.nativeParamsService.canUseNativeFeature('linksInBrowser')) {
+            if ((this, this.nativeParamsService.environment === 'android')) {
+                this.nativeLogService.logFeatureFallback({
+                    feature: 'linksInBrowser',
+                    fallbackReason:
+                        'Открытие в браузере технически недоступно, будет открыто в новом webview',
+                    payload: { link },
+                });
+            }
+
             return `${this.nativeParamsService.appId}://webFeature?type=recommendation&url=${encodeURIComponent(
                 link,
             )}`;
@@ -79,6 +106,14 @@ export class ExternalLinksService {
         }
 
         if (!this.nativeParamsService.canUseNativeFeature('linksInBrowser')) {
+            if ((this, this.nativeParamsService.environment === 'android')) {
+                this.nativeLogService.logFeatureFallback({
+                    feature: 'linksInBrowser',
+                    fallbackReason:
+                        'Открытие в браузере технически недоступно, будет открыто в новом webview',
+                    payload: { link },
+                });
+            }
             this.openInNewWebview(link);
 
             return;
@@ -88,11 +123,9 @@ export class ExternalLinksService {
 
         url.searchParams.append(QUERY_OPEN_IN_BROWSER_KEY, QUERY_OPEN_IN_BROWSER_VALUE);
 
-        this.nativeExecuteService.execute(
-            'openInBrowser',
-            () => this.navigateByNativeApp(url.href),
-            { url: url.href },
-        );
+        this.nativeLogService.execute('openInBrowser', () => this.navigateByNativeApp(url.href), {
+            payload: { url: url.href },
+        });
     }
 
     openInNewWebview(link: string, nativeTitle = '', closeCurrentWebview = false) {
@@ -135,11 +168,9 @@ export class ExternalLinksService {
                 ? appendFromCurrentQueryParamForIos(replaceUrl)
                 : replaceUrl;
 
-        this.nativeExecuteService.execute(
-            'openPdf ',
-            () => this.navigateByNativeApp(replaceUrl),
-            { replaceUrl },
-        );
+        this.nativeLogService.execute('openPdf ', () => this.navigateByNativeApp(replaceUrl), {
+            payload: { replaceUrl },
+        });
     }
 
     private navigateByNativeApp(url: string) {
