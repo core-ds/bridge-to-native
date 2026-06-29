@@ -36,4 +36,47 @@ describe('NativeLogService', () => {
             foo: 'bar',
         });
     });
+
+    it("should log feature fallback when feature isn't available", () => {
+        console.info = jest.fn();
+
+        const service = new NativeLogService('android', '12.20.0', true);
+
+        service.execute('handleNativeDeeplink', jest.fn(), {
+            featureContext: {
+                feature: 'savedBackStack',
+                fallbackReason: 'savedBackStack is available',
+            },
+            payload: { deeplink: '/deeplink' },
+        });
+
+        expect(console.info).toHaveBeenCalled();
+
+        const [message, payload] = (console.info as jest.Mock).mock.calls[0];
+
+        expect(message).toContain('[B2N noop][android][v12.20.0]');
+        expect(message).toContain('Feature: savedBackStack');
+        expect(message).toContain('savedBackStack is available');
+        expect(message).toContain('Будет исправлено в версии: 12.30.0');
+
+        expect(payload).toEqual({ deeplink: '/deeplink' });
+    });
+
+    it('should not log feature fallback when feature is available', () => {
+        console.info = jest.fn();
+
+        const service = new NativeLogService('android', '12.31.0', true);
+
+        service.execute('handleNativeDeeplink', jest.fn(), {
+            payload: { deeplink: '/deeplink' },
+        });
+
+        expect(console.info).toHaveBeenCalled();
+
+        const [message, payload] = (console.info as jest.Mock).mock.calls[0];
+
+        expect(message).toContain('[B2N noop][android][v12.31.0]');
+        expect(payload).toEqual({ deeplink: '/deeplink' });
+        expect(message).not.toContain('Feature:');
+    });
 });

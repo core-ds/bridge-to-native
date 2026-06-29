@@ -68,7 +68,7 @@ export class ExternalLinksService {
         }
 
         this.nativeLogService.execute(
-            'nativeDeeplink',
+            'navigateByNativeApp',
             () => this.navigateByNativeApp(preparedNativeUrl),
             {
                 payload: { deeplink: preparedNativeUrl },
