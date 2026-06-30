@@ -41,11 +41,8 @@ jobs:
             # Проверка форматирования
             - name: Run format check
               id: format
-              run: |
-                  set +e
-                  yarn format:check
-                  EXIT_CODE=$?
-                  echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+              run: yarn format:check
+              continue-on-error: true
 
             # Комментарий в ПР или в консоль workflow
             - name: Comment lint result
