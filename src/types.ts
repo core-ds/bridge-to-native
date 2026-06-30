@@ -10,4 +10,7 @@ export type NativeParams = {
     webviewLaunchTime?: number;
 };
 
-type Test = 'test';
+
+
+
+
