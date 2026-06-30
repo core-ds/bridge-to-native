@@ -29,16 +29,22 @@ jobs:
                   set +e
                   OUTPUT=$(yarn lint 2>&1)
                   EXIT_CODE=$?
+
                   echo "$OUTPUT"
                   echo "result<<EOF" >> $GITHUB_OUTPUT
                   echo "$OUTPUT" >> $GITHUB_OUTPUT
                   echo "EOF" >> $GITHUB_OUTPUT
+                  echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
 
             # Проверка форматирования
             - name: Run format check
               id: format
-              run: yarn format:check
-              continue-on-error: true
+              run: |
+                  set +e
+                  OUTPUT=$(yarn format:check 2>&1)
+                  EXIT_CODE=$?
+
+                  echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
 
             # Комментарий в ПР или в консоль workflow
             - name: Comment lint result
@@ -98,10 +104,19 @@ jobs:
             # Блокировка ПР при наличии ошибок линтера или ошибок форматирования
             - name: Block PR if checks failed
               run: |
-                  if [ "${{ steps.lint.outputs.exit_code }}" != "0" ] || [ "${{ steps.format.outputs.exit_code }}" != "0" ]; then
-                    echo "CI failed"
-                    exit 1
+                  FAILED=0
+
+                  if [ "${{ steps.lint.outputs.exit_code }}" != "0" ]; then
+                    echo "Lint failed"
+                    FAILED=1
                   fi
+
+                  if [ "${{ steps.format.outputs.exit_code }}" != "0" ]; then
+                    echo "Format failed"
+                    FAILED=1
+                  fi
+
+                  exit $FAILED
 
             # Выпуск beta версии библиотеки, если в commit message есть вхождение строки "deploy_beta"
             - name: Publish beta version
