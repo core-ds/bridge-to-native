@@ -9,9 +9,3 @@ export type NativeParams = {
     originalWebviewParams: string;
     webviewLaunchTime?: number;
 };
-
-
-
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type Test = 'Test';
