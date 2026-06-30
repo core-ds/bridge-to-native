@@ -13,5 +13,4 @@ export type NativeParams = {
 
 
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type Test = 'Test';
