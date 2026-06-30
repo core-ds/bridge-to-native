@@ -19,6 +19,7 @@ export class ExternalLinksService {
     constructor(private nativeParamsService: NativeParamsService) {}
 
     handleNativeDeeplink(deeplink: string, closeWebviewBeforeCallNativeDeeplinkHandler = false) {
+        console.log('console warn');
         if (this.navigationByNativeAppInProgress) {
             return;
         }
