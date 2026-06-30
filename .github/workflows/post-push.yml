@@ -1,6 +1,9 @@
 name: Post push check
 
-on: push
+on:
+    push:
+    pull_request:
+        types: [opened, reopened]
 
 jobs:
     check:
@@ -18,6 +21,132 @@ jobs:
             # Прогон тестов
             - name: Run tests
               run: yarn test
+
+            # Прогон линтера
+            - name: Run linter
+              id: lint
+              run: |
+                  set +e
+                  OUTPUT=$(yarn lint 2>&1)
+                  EXIT_CODE=$?
+
+                  echo "$OUTPUT"
+
+                  echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+
+                  echo "result<<EOF" >> $GITHUB_OUTPUT
+                  echo "$OUTPUT" >> $GITHUB_OUTPUT
+                  echo "EOF" >> $GITHUB_OUTPUT
+
+            # Проверка форматирования
+            - name: Run format check
+              id: format
+              run: |
+                  set +e
+                  OUTPUT=$(yarn format:check 2>&1)
+                  EXIT_CODE=$?
+
+                  echo "$OUTPUT"
+
+                  echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+                  echo "result<<EOF" >> $GITHUB_OUTPUT
+                  echo "$OUTPUT" >> $GITHUB_OUTPUT
+                  echo "EOF" >> $GITHUB_OUTPUT
+
+            # Комментарий в ПР только если prettier поменял файлы
+            - name: Comment format result (only on failure)
+              if: steps.format.outputs.exit_code != '0'
+              uses: actions/github-script@v7
+              with:
+                  github-token: ${{ secrets.GH_TOKEN }}
+                  script: |
+                      const commentBody =
+                      `### Prettier formatting issues
+                      \`\`\`
+                      ${process.env.FORMAT_RESULT}
+                      \`\`\``;
+
+                      const { owner, repo } = context.repo;
+
+                      const branch = (process.env.GITHUB_REF || '').replace('refs/heads/', '');
+                      if (!branch) return;
+
+                      const prs = await github.rest.pulls.list({
+                      owner,
+                      repo,
+                      head: `${owner}:${branch}`,
+                      state: 'open'
+                      });
+
+                      const pr = prs.data[0];
+                      if (!pr) return;
+
+                      await github.rest.issues.createComment({
+                      owner,
+                      repo,
+                      issue_number: pr.number,
+                      body: commentBody
+                      });
+              env:
+                  FORMAT_RESULT: ${{ steps.format.outputs.result }}
+
+            # Комментарий в ПР или в консоль workflow
+            - name: Comment lint result
+              uses: actions/github-script@v7
+              with:
+                  github-token: ${{ secrets.GH_TOKEN }}
+                  script: |
+                      const commentBody = `\`\`\`\n${process.env.LINT_RESULT}\n\`\`\``
+                      console.log('commentBody', commentBody)
+                      const { owner, repo } = context.repo
+
+                      console.log('owner', owner)
+                      console.log('repo', repo)
+
+                      const branch = (process.env.GITHUB_REF || '').replace('refs/heads/', '');
+                      console.log('branch', branch)
+
+                      if (!branch) {
+                        console.log('Не удалось определить ветку, вывод линта:');
+                        console.log(commentBody);
+                        return;
+                      }
+
+                      const prs = await github.rest.pulls.list({
+                        owner,
+                        repo,
+                        head: `${owner}:${branch}`,
+                        state: 'open'
+                      })
+                      console.log('prs', prs)
+                      const pr = prs.data[0]
+
+                      if (!pr) {
+                        console.log('PR не найден, вывод линта:');
+                        console.log(commentBody)
+                        return
+                      }
+
+                      await github.rest.issues.createComment({
+                        owner,
+                        repo,
+                        issue_number: pr.number,
+                        body: commentBody
+                      });
+
+              env:
+                  LINT_RESULT: ${{ steps.lint.outputs.result }}
+                  BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
+                  BOT_TOKEN: ${{ secrets.GH_TOKEN }}
+                  REPOSITORY: ${{ github.repository }}
+
+            # Блокировка ПР при наличии ошибки форматирования
+            - name: Block PR if format check failed
+              run: |
+                  if [ "${{ steps.format.outputs.exit_code }}" != "0" ]; then
+                  echo "Format check failed"
+                  exit 1
+                  fi
 
             # Выпуск beta версии библиотеки, если в commit message есть вхождение строки "deploy_beta"
             - name: Publish beta version
