@@ -10,4 +10,9 @@ export type NativeParams = {
     webviewLaunchTime?: number;
 };
 
-type test = 'test';
+
+
+
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+type Test = 'test';
