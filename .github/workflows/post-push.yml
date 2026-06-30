@@ -43,52 +43,9 @@ jobs:
               id: format
               run: |
                   set +e
-                  OUTPUT=$(yarn format:check 2>&1)
+                  yarn format:check
                   EXIT_CODE=$?
-
-                  echo "$OUTPUT"
-
                   echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
-                  echo "result<<EOF" >> $GITHUB_OUTPUT
-                  echo "$OUTPUT" >> $GITHUB_OUTPUT
-                  echo "EOF" >> $GITHUB_OUTPUT
-
-            # Комментарий в ПР только если prettier поменял файлы
-            - name: Comment format result (only on failure)
-              if: steps.format.outputs.exit_code != '0'
-              uses: actions/github-script@v7
-              with:
-                  github-token: ${{ secrets.GH_TOKEN }}
-                  script: |
-                      const commentBody =
-                      `### Prettier formatting issues
-                      \`\`\`
-                      ${process.env.FORMAT_RESULT}
-                      \`\`\``;
-
-                      const { owner, repo } = context.repo;
-
-                      const branch = (process.env.GITHUB_REF || '').replace('refs/heads/', '');
-                      if (!branch) return;
-
-                      const prs = await github.rest.pulls.list({
-                      owner,
-                      repo,
-                      head: `${owner}:${branch}`,
-                      state: 'open'
-                      });
-
-                      const pr = prs.data[0];
-                      if (!pr) return;
-
-                      await github.rest.issues.createComment({
-                      owner,
-                      repo,
-                      issue_number: pr.number,
-                      body: commentBody
-                      });
-              env:
-                  FORMAT_RESULT: ${{ steps.format.outputs.result }}
 
             # Комментарий в ПР или в консоль workflow
             - name: Comment lint result
@@ -97,7 +54,7 @@ jobs:
                   github-token: ${{ secrets.GH_TOKEN }}
                   script: |
                       const commentBody =
-                      `### Lint issues
+                      `### Checks issues
                       \`\`\`
                       ${process.env.LINT_RESULT}
                       \`\`\``;
@@ -145,13 +102,12 @@ jobs:
                   BOT_TOKEN: ${{ secrets.GH_TOKEN }}
                   REPOSITORY: ${{ github.repository }}
 
-            # Блокировка ПР при наличии ошибки форматирования
-            - name: Block PR if format check failed
+            # Блокировка ПР при наличии ошибок линтера или ошибок форматирования
+            - name: Block PR if checks failed
+              if: steps.lint.outcome != 'success' || steps.format.outcome != 'success'
               run: |
-                  if [ "${{ steps.format.outputs.exit_code }}" != "0" ]; then
-                  echo "Format check failed"
+                  echo "CI failed"
                   exit 1
-                  fi
 
             # Выпуск beta версии библиотеки, если в commit message есть вхождение строки "deploy_beta"
             - name: Publish beta version
