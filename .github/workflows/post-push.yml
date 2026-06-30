@@ -26,11 +26,14 @@ jobs:
             - name: Run linter
               id: lint
               run: |
-                  OUTPUT=$(yarn lint 2>&1) || true
+                  set +e
+                  OUTPUT=$(yarn lint 2>&1)
+                  EXIT_CODE=$?
                   echo "$OUTPUT"
                   echo "result<<EOF" >> $GITHUB_OUTPUT
                   echo "$OUTPUT" >> $GITHUB_OUTPUT
                   echo "EOF" >> $GITHUB_OUTPUT
+                  exit $EXIT_CODE
 
             # Проверка форматирования
             - name: Run format check
