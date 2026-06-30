@@ -26,14 +26,8 @@ jobs:
             - name: Run linter
               id: lint
               run: |
-                  set +e
-                  OUTPUT=$(yarn lint 2>&1)
-                  EXIT_CODE=$?
-
+                  OUTPUT=$(yarn lint 2>&1) || true
                   echo "$OUTPUT"
-
-                  echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
-
                   echo "result<<EOF" >> $GITHUB_OUTPUT
                   echo "$OUTPUT" >> $GITHUB_OUTPUT
                   echo "EOF" >> $GITHUB_OUTPUT
