@@ -1,3 +1,8 @@
+# 1.4.2 ([ccc8e18](https://github.com/core-ds/bridge-to-native/commit/ccc8e18)) (10-08-2026)
+## Patch
+
+- Добавлена валидация URL и логгирование ошибок в методах навигации
+
 # 1.4.1 ([a76dd70](https://github.com/core-ds/bridge-to-native/commit/a76dd70)) (13-05-2026)
 ## Bugfixes
 
