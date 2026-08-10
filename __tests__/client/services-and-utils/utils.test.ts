@@ -1,6 +1,7 @@
 import {
     appendFromCurrentQueryParamForIos,
     closeWebviewUtil,
+    validateUrl,
 } from '../../../src/client/services-and-utils/utils';
 
 describe('closeWebviewUtil', () => {
@@ -46,5 +47,20 @@ describe('appendFromCurrentQueryParamForIos', () => {
         expect(
             appendFromCurrentQueryParamForIos('alfabank://webFeature?type=x&fromCurrent=false'),
         ).toBe('alfabank://webFeature?type=x&fromCurrent=true');
+    });
+});
+
+describe('validateUrl', () => {
+    it('should return URL for valid link', () => {
+        const result = validateUrl('https://example.com/path');
+
+        expect(result).toEqual(new URL('https://example.com/path'));
+    });
+    it('should return null and call logError for invalid link', () => {
+        const logError = jest.fn();
+        const result = validateUrl('bad-url111', logError);
+
+        expect(result).toBeNull();
+        expect(logError).toHaveBeenCalled();
     });
 });

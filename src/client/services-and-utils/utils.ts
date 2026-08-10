@@ -1,3 +1,5 @@
+import { type LogError } from '../types';
+
 const QUERY_CLOSE_WEBVIEW_KEY = 'closeWebView';
 const QUERY_CLOSE_WEBVIEW_VALUE = 'true';
 
@@ -25,4 +27,21 @@ export const closeWebviewUtil = () => {
 
     originalPageUrl.searchParams.set(QUERY_CLOSE_WEBVIEW_KEY, QUERY_CLOSE_WEBVIEW_VALUE);
     window.location.href = originalPageUrl.toString();
+};
+
+export const validateUrl = (link: URL | string, logError?: LogError): URL | null => {
+    let url: URL;
+
+    try {
+        url = link instanceof URL ? link : new URL(link);
+    } catch (error) {
+        logError?.('validateUrl: URL parsing error', {
+            error,
+            link,
+        });
+
+        return null;
+    }
+
+    return url;
 };
