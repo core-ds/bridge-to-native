@@ -1,9 +1,9 @@
 import { QUERY_B2N_TITLE } from '../../query-and-headers-keys';
 import { DEEP_LINK_PATTERN } from '../constants';
-import { type PdfType } from '../types';
+import { type LogError, type PdfType } from '../types';
 
 import { type NativeParamsService } from './native-params-service';
-import { appendFromCurrentQueryParamForIos, closeWebviewUtil } from './utils';
+import { appendFromCurrentQueryParamForIos, closeWebviewUtil, validateUrl } from './utils';
 
 const CANCEL_NEW_CALLS_TO_NA_TIME = 150;
 const QUERY_OPEN_IN_BROWSER_KEY = 'openInBrowser';
@@ -16,7 +16,10 @@ const QUERY_OPEN_IN_BROWSER_VALUE = 'true';
 export class ExternalLinksService {
     private navigationByNativeAppInProgress = false;
 
-    constructor(private nativeParamsService: NativeParamsService) {}
+    constructor(
+        private nativeParamsService: NativeParamsService,
+        private logError?: LogError,
+    ) {}
 
     handleNativeDeeplink(deeplink: string, closeWebviewBeforeCallNativeDeeplinkHandler = false) {
         if (this.navigationByNativeAppInProgress) {
@@ -52,7 +55,11 @@ export class ExternalLinksService {
             )}`;
         }
 
-        const url = new URL(link);
+        const url = validateUrl(link, this.logError);
+
+        if (!url) {
+            throw new Error(`invalid url: ${link}`);
+        }
 
         url.searchParams.append(QUERY_OPEN_IN_BROWSER_KEY, QUERY_OPEN_IN_BROWSER_VALUE);
 
@@ -70,7 +77,11 @@ export class ExternalLinksService {
             return;
         }
 
-        const url = new URL(link);
+        const url = validateUrl(link, this.logError);
+
+        if (!url) {
+            throw new Error(`invalid url: ${link}`);
+        }
 
         url.searchParams.append(QUERY_OPEN_IN_BROWSER_KEY, QUERY_OPEN_IN_BROWSER_VALUE);
 
@@ -78,7 +89,11 @@ export class ExternalLinksService {
     }
 
     openInNewWebview(link: string, nativeTitle = '', closeCurrentWebview = false) {
-        const url = new URL(link);
+        const url = validateUrl(link, this.logError);
+
+        if (!url) {
+            throw new Error(`invalid url: ${link}`);
+        }
 
         if (nativeTitle) {
             url.searchParams.set(QUERY_B2N_TITLE, nativeTitle);
