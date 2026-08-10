@@ -2,6 +2,7 @@ import { ExternalLinksService } from '../../../src/client/services-and-utils/ext
 import { type NativeParamsService } from '../../../src/client/services-and-utils/native-params-service';
 
 const mockedCloseWebviewUtil = jest.fn();
+const mockedValidateUrl = jest.fn();
 
 jest.mock('../../../src/client/services-and-utils/utils', () => {
     const actual = jest.requireActual('../../../src/client/services-and-utils/utils');
@@ -9,6 +10,7 @@ jest.mock('../../../src/client/services-and-utils/utils', () => {
     return {
         __esModule: true,
         appendFromCurrentQueryParamForIos: actual.appendFromCurrentQueryParamForIos,
+        validateUrl: actual.validateUrl,
         get closeWebviewUtil() {
             return mockedCloseWebviewUtil;
         },
@@ -349,6 +351,8 @@ describe('ExternalLinksService', () => {
 
         it('should allow new calls when called after timeout for `openInBrowser`', () => {
             jest.useFakeTimers();
+            mockedValidateUrl.mockImplementation((link: string) => new URL(link));
+
             const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
 
             // @ts-expect-error –– Мокаем приватный метод
