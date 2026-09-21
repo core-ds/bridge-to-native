@@ -440,13 +440,9 @@ export class NativeNavigationAndTitleService {
         this.setHistoryStatePageId();
     }
 
-    /**
-     * Подписывается на `window.onpopstate` и вызывает `callBack` с флагом,
-     * помечена ли запись истории, на которую произошёл переход, маркером
-     * `HISTORY_STATE_B2N_MARKER`
-     */
     // eslint-disable-next-line class-methods-use-this
-    private handleGoBack(callBack: (marked: boolean) => void) {
+    handleGoBack(callBack: (marked: boolean) => void) {
+        this.markStateForSystemBack();
         const onPopState = () => {
             const { state } = window.history;
 
