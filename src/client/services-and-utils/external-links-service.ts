@@ -1,13 +1,15 @@
-import { QUERY_B2N_TITLE } from '../../query-and-headers-keys';
-import { DEEP_LINK_PATTERN } from '../constants';
-import { type LogError, type PdfType } from '../types';
+import { type LogError, type NativeAppTarget, type PdfType } from '../types';
 
+import {
+    prepareNativeDeeplinkUrl,
+    prepareOpenInBrowserUrl,
+    prepareOpenInNewWebviewDeeplink,
+    preparePdfUrl,
+} from './native-links';
 import { type NativeParamsService } from './native-params-service';
-import { appendFromCurrentQueryParamForIos, closeWebviewUtil, validateUrl } from './utils';
+import { closeWebviewUtil, validateUrl } from './utils';
 
 const CANCEL_NEW_CALLS_TO_NA_TIME = 150;
-const QUERY_OPEN_IN_BROWSER_KEY = 'openInBrowser';
-const QUERY_OPEN_IN_BROWSER_VALUE = 'true';
 
 /**
  * Сервис, предоставляющий методы для открытия внешних для текущего WA экранов
@@ -25,12 +27,7 @@ export class ExternalLinksService {
         if (this.navigationByNativeAppInProgress) {
             return;
         }
-        const clearedDeeplinkPath = deeplink.replace(DEEP_LINK_PATTERN, '');
-        const originalNativeUrl = `${this.nativeParamsService.appId}://${clearedDeeplinkPath}`;
-        const preparedNativeUrl =
-            this.nativeParamsService.environment === 'ios'
-                ? appendFromCurrentQueryParamForIos(originalNativeUrl)
-                : originalNativeUrl;
+        const preparedNativeUrl = prepareNativeDeeplinkUrl(this.nativeAppTarget, deeplink);
 
         if (
             closeWebviewBeforeCallNativeDeeplinkHandler &&
@@ -55,15 +52,9 @@ export class ExternalLinksService {
             )}`;
         }
 
-        const url = validateUrl(link, this.logError);
+        this.validateUrlOrThrow(link);
 
-        if (!url) {
-            throw new Error(`invalid url: ${link}`);
-        }
-
-        url.searchParams.append(QUERY_OPEN_IN_BROWSER_KEY, QUERY_OPEN_IN_BROWSER_VALUE);
-
-        return url.href;
+        return prepareOpenInBrowserUrl(this.nativeAppTarget, link, true);
     }
 
     openInBrowser(link: string) {
@@ -71,36 +62,22 @@ export class ExternalLinksService {
             return;
         }
 
-        if (!this.nativeParamsService.canUseNativeFeature('linksInBrowser')) {
-            this.openInNewWebview(link);
+        this.validateUrlOrThrow(link);
 
-            return;
-        }
-
-        const url = validateUrl(link, this.logError);
-
-        if (!url) {
-            throw new Error(`invalid url: ${link}`);
-        }
-
-        url.searchParams.append(QUERY_OPEN_IN_BROWSER_KEY, QUERY_OPEN_IN_BROWSER_VALUE);
-
-        this.navigateByNativeApp(url.href);
+        this.navigateByNativeApp(
+            prepareOpenInBrowserUrl(
+                this.nativeAppTarget,
+                link,
+                this.nativeParamsService.canUseNativeFeature('linksInBrowser'),
+            ),
+        );
     }
 
     openInNewWebview(link: string, nativeTitle = '', closeCurrentWebview = false) {
-        const url = validateUrl(link, this.logError);
-
-        if (!url) {
-            throw new Error(`invalid url: ${link}`);
-        }
-
-        if (nativeTitle) {
-            url.searchParams.set(QUERY_B2N_TITLE, nativeTitle);
-        }
+        this.validateUrlOrThrow(link);
 
         this.handleNativeDeeplink(
-            `/webFeature?type=recommendation&url=${encodeURIComponent(url.toString())}`,
+            prepareOpenInNewWebviewDeeplink(link, nativeTitle),
             closeCurrentWebview,
         );
     }
@@ -110,29 +87,24 @@ export class ExternalLinksService {
             return;
         }
 
-        let replaceUrl = url;
+        this.navigateByNativeApp(preparePdfUrl(this.nativeAppTarget, url, type, title));
+    }
 
-        if (this.nativeParamsService.environment === 'ios') {
-            const params = new URLSearchParams();
+    private get nativeAppTarget(): NativeAppTarget {
+        return {
+            platform: this.nativeParamsService.environment,
+            appId: this.nativeParamsService.appId,
+        };
+    }
 
-            params.append('type', type);
-            params.append('url', decodeURIComponent(url));
-
-            if (title) {
-                params.append('title', title.replace(/\s/g, '_'));
-            }
-
-            const paramsStr = params.toString();
-
-            replaceUrl = `${this.nativeParamsService.appId}:///dashboard/pdf_viewer?${paramsStr}`;
+    /**
+     * Логирует невалидный URL через `logError` и бросает ошибку.
+     * Чистые функции сборки URL бросают ту же ошибку, но без логирования.
+     */
+    private validateUrlOrThrow(link: string) {
+        if (!validateUrl(link, this.logError)) {
+            throw new Error(`invalid url: ${link}`);
         }
-
-        replaceUrl =
-            this.nativeParamsService.environment === 'ios'
-                ? appendFromCurrentQueryParamForIos(replaceUrl)
-                : replaceUrl;
-
-        this.navigateByNativeApp(replaceUrl);
     }
 
     private navigateByNativeApp(url: string) {

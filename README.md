@@ -116,6 +116,40 @@ window.b2n.openInBrowser('https://ya.ru');
 // ...
 ```
 
+### Сборка нативных URL без экземпляра `BridgeToNative`
+
+Для окружений, где `BridgeToNative` не создаётся (например, миниаппы в нативном контейнере),
+клиентская часть экспортирует чистые функции сборки URL. Их же использует `BridgeToNative`, поэтому результат совпадает.
+Платформу, `appId` и версию NA потребитель определяет сам; навигацию (`location.replace`), закрытие WV
+и защиту от повторных вызовов — тоже.
+
+```ts
+import {
+    canUseNativeFeature,
+    prepareNativeDeeplinkUrl,
+    prepareOpenInBrowserUrl,
+    prepareOpenInNewWebviewDeeplink,
+    preparePdfUrl,
+    type NativeAppTarget,
+} from '@alfalab/bridge-to-native/client';
+
+const target: NativeAppTarget = { platform: 'ios', appId: 'aweassist' };
+
+prepareNativeDeeplinkUrl(target, 'alfabank:///dashboard/pfm'); // 'aweassist://pfm?fromCurrent=true'
+
+// Флаг — результат проверки версии NA или `true`, если NA заведомо умеет открывать ссылки в браузере.
+const linksInBrowser = canUseNativeFeature('ios', '13.3.0', 'linksInBrowser');
+
+prepareOpenInBrowserUrl(target, 'https://ya.ru', linksInBrowser); // 'https://ya.ru/?openInBrowser=true'
+prepareNativeDeeplinkUrl(target, prepareOpenInNewWebviewDeeplink('https://ya.ru', 'Заголовок'));
+preparePdfUrl(target, 'https://example.com/file.pdf', 'pdfFile', 'Выписка');
+```
+
+- `prepareNativeDeeplinkUrl` отрезает у диплинка один из префиксов `/`, `alfabank:///dashboard/`, `alfabank:///`,
+  `alfabank://`, `https://online.alfabank.ru/`; остальные схемы и хосты не трогает. На iOS добавляет `fromCurrent=true`.
+- `prepareOpenInBrowserUrl` и `prepareOpenInNewWebviewDeeplink` бросают `invalid url: …` для всего,
+  кроме абсолютных `http(s)` URL без логина и пароля.
+
 ---
 
 ## Навигация
