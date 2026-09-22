@@ -440,7 +440,6 @@ export class NativeNavigationAndTitleService {
         this.setHistoryStatePageId();
     }
 
-    // eslint-disable-next-line class-methods-use-this
     handleGoBack(callBack: (marked: boolean) => void) {
         this.markStateForSystemBack();
         const onPopState = () => {
