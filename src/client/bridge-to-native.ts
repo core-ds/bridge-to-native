@@ -359,6 +359,6 @@ export class BridgeToNative {
      * @param callBack Колбэк-функция, вызывается при срабатывании `popstate`.
      */
     handleGoBack(callBack: () => void) {
-        this.nativeNavigationAndTitleService.handleGoBack(callBack);
+        return this.nativeNavigationAndTitleService.handleGoBack(callBack);
     }
 }
