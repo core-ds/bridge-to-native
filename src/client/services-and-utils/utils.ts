@@ -33,11 +33,24 @@ export const validateUrl = (link: URL | string, logError?: LogError): URL | null
     let url: URL;
 
     try {
-        url = link instanceof URL ? link : new URL(link);
+        url = new URL(link);
     } catch (error) {
         logError?.('validateUrl: URL parsing error', {
             error,
             link,
+        });
+
+        return null;
+    }
+
+    const isAllowedProtocol = url.protocol === 'https:' || url.protocol === 'http:';
+    const hasCredentials = Boolean(url.username || url.password);
+
+    if (!isAllowedProtocol || !url.hostname || hasCredentials) {
+        logError?.('validateUrl: URL validation error', {
+            hostname: url.hostname,
+            link,
+            protocol: url.protocol,
         });
 
         return null;
