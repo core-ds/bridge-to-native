@@ -6,6 +6,11 @@ export type BrowserHistoryApiWrappers = {
 
 export type Environment = 'android' | 'ios';
 
+export type NativeAppTarget = {
+    platform: Environment;
+    appId: string;
+};
+
 export type HistoryPushStateParams = Parameters<typeof window.history.pushState>;
 export type HistoryReplaceStateParams = Parameters<typeof window.history.replaceState>;
 
