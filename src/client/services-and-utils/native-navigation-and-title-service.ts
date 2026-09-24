@@ -434,8 +434,17 @@ export class NativeNavigationAndTitleService {
             [HISTORY_STATE_B2N_MARKER]: true,
         };
 
-        window.history.replaceState(markedState, '');
-        window.history.pushState(null, '');
+        if (this.browserHistoryApiWrappers?.replace) {
+            this.browserHistoryApiWrappers.replace(undefined, markedState);
+        } else {
+            window.history.replaceState(markedState, '');
+        }
+
+        if (this.browserHistoryApiWrappers?.push) {
+            this.browserHistoryApiWrappers.push(undefined, null);
+        } else {
+            window.history.pushState(null, '');
+        }
 
         this.setHistoryStatePageId();
     }
