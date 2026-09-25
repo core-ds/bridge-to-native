@@ -17,6 +17,11 @@
             "require": "./client/index.js",
             "types": "./client/index.d.ts"
         },
+        "./client/primitives": {
+            "import": "./client/primitives.js",
+            "require": "./client/primitives.js",
+            "types": "./client/primitives.d.ts"
+        },
         "./server": {
             "import": "./server/index.js",
             "require": "./server/index.js",
@@ -99,7 +104,8 @@
         ],
         "coveragePathIgnorePatterns": [
             "/node_modules/",
-            "/src/(client|server)/index.ts"
+            "/src/(client|server)/index.ts",
+            "/src/client/primitives.ts"
         ],
         "reporters": [
             "default",

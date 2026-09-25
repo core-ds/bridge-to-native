@@ -53,11 +53,12 @@ WV NA окружение отличается от браузерного, ес�
         - обработку запросов с WV на других ЯП/технологиях придётся делать руками 🙂 (см. логику `src/server/prepare-native-app-details-for-client.ts`)
 - клиентская часть:
     - предоставляет методы для работы WA внутри WV NA;
-    - предоставляет чистые функции сборки нативных URL для режима без экземпляра `BridgeToNative`.
+    - предоставляет чистые функции для режима без экземпляра `BridgeToNative`
+      (отдельная точка входа `client/primitives`).
 
 Обычно на клиентской стороне достаточно экземпляра класса `BridgeToNative`.
 Это фасад, который проксирует все публичные методы Библиотеки внутренних классов.
-Исключение — [чистые функции сборки нативных URL](#мини-приложения):
+Исключение — [чистые функции из `client/primitives`](#мини-приложения):
 их же использует `BridgeToNative`.
 
 Проксируемые публичные методы не описаны по месту их реализации, описание находится
@@ -127,20 +128,25 @@ window.b2n.openInBrowser('https://ya.ru');
 С развитием NA появился ещё один режим WV — мини-приложения в нативном контейнере. `BridgeToNative`
 в этом контейнере нет.
 
-Для этого режима клиентская часть экспортирует часть логики Библиотеки — чистые функции сборки нативных URL.
-Их же использует `BridgeToNative`, поэтому результат совпадает.
+Для этого режима есть отдельная точка входа `@alfalab/bridge-to-native/client/primitives`.
+В ней лежат кирпичики, из которых собран сам `BridgeToNative`: чистые функции сборки нативных URL
+и проверки версий NA — всё, чему не нужен экземпляр, состояние и `window`. Класс их же и использует,
+поэтому результат совпадает, а код класса в эту точку входа не попадает.
+Вход не ограничен мини-приложениями: подойдёт любому WA, которому нужны только эти функции.
+Их же экспортирует и `@alfalab/bridge-to-native/client`.
 Платформу, `appId` и версию NA потребитель определяет сам; навигацию (`location.replace`), закрытие WV
 и защиту от повторных вызовов — тоже.
 
 ```ts
 import {
     canUseNativeFeature,
+    isVersionHigherOrEqual,
     prepareNativeDeeplinkUrl,
     prepareOpenInBrowserUrl,
     prepareOpenInNewWebviewDeeplink,
     preparePdfUrl,
     type NativeAppTarget,
-} from '@alfalab/bridge-to-native/client';
+} from '@alfalab/bridge-to-native/client/primitives';
 
 const target: NativeAppTarget = { platform: 'ios', appId: 'aweassist' };
 
@@ -158,6 +164,8 @@ preparePdfUrl(target, 'https://example.com/file.pdf', 'pdfFile', 'Выписка
   `alfabank://`, `https://online.alfabank.ru/`; остальные схемы и хосты не трогает. На iOS добавляет `fromCurrent=true`.
 - `prepareOpenInBrowserUrl` и `prepareOpenInNewWebviewDeeplink` бросают `invalid url: …` для всего,
   кроме абсолютных `http(s)` URL без логина и пароля.
+- `isVersionHigherOrEqual` сравнивает версии формата `x.y.z` покомпонентно, как числа; версия
+  в другом формате даёт `false`. Нужен для гейтов по версии NA за пределами известных фич.
 
 ---
 
