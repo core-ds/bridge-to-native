@@ -1,6 +1,7 @@
-/* eslint max-lines: ["error", {"max": 360, "skipComments": true}] */
+/* eslint max-lines: ["error", {"max": 400, "skipComments": true}] */
 
 import {
+    HISTORY_STATE_B2N_MARKER,
     HISTORY_STATE_KEY_B2N_PAGE_ID,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
@@ -418,5 +419,46 @@ export class NativeNavigationAndTitleService {
             ...(isPlainObject(state) ? state : {}),
             [HISTORY_STATE_KEY_B2N_PAGE_ID]: pageId,
         };
+    }
+
+    /**
+     * Помечает текущую запись истории маркером `HISTORY_STATE_B2N_MARKER` и добавляет
+     * поверх неё буферную запись (`pushState(null)`), которая примет на себя
+     * первое системное «назад»
+     */
+    private markStateForSystemBack() {
+        const currentState = window.history.state;
+
+        const markedState = {
+            ...currentState,
+            [HISTORY_STATE_B2N_MARKER]: true,
+        };
+
+        if (this.browserHistoryApiWrappers?.replace) {
+            this.browserHistoryApiWrappers.replace(undefined, markedState);
+        } else {
+            window.history.replaceState(markedState, '');
+        }
+
+        if (this.browserHistoryApiWrappers?.push) {
+            this.browserHistoryApiWrappers.push(undefined, null);
+        } else {
+            window.history.pushState(null, '');
+        }
+
+        this.setHistoryStatePageId();
+    }
+
+    handleGoBack(callBack: (marked: boolean) => void) {
+        this.markStateForSystemBack();
+        const onPopState = () => {
+            const { state } = window.history;
+
+            callBack(Boolean(state?.[HISTORY_STATE_B2N_MARKER]));
+        };
+
+        window.addEventListener('popstate', onPopState);
+
+        return () => window.removeEventListener('popstate', onPopState);
     }
 }
