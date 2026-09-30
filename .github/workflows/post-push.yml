@@ -27,7 +27,7 @@ jobs:
               id: lint
               run: |
                   set +e
-                  OUTPUT=$(yarn lint 2>&1)
+                  OUTPUT=$( (yarn lint:scripts && yarn format:check --log-level warn) 2>&1)
                   EXIT_CODE=$?
 
                   echo "$OUTPUT"
@@ -41,7 +41,7 @@ jobs:
               id: format
               run: |
                   set +e
-                  OUTPUT=$(yarn format:check 2>&1)
+                  OUTPUT=$(yarn format:check --log-level warn 2>&1)
                   EXIT_CODE=$?
 
                   echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
@@ -52,6 +52,10 @@ jobs:
               with:
                   github-token: ${{ secrets.GH_TOKEN }}
                   script: |
+                      if (!process.env.LINT_RESULT?.trim()) {
+                        return;
+                      }
+
                       const commentBody =
                       `### Checks issues
                       \`\`\`
