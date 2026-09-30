@@ -1,5 +1,5 @@
 import { BridgeToNative } from '../../src/client';
-import { type NoopOptions } from '../../src/types';
+import { type NoopOptions } from '../../src/client/types';
 
 const mockedExternalLinksServiceInstance = {
     getHrefToOpenInBrowser: jest.fn(),
@@ -98,6 +98,7 @@ describe('BridgeToNative', () => {
             expect(MockedExternalLinksServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
                 mockedNativeLogServiceInstance,
+                undefined,
             );
         });
 

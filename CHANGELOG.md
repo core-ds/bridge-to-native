@@ -1,3 +1,20 @@
+# 1.5.1 ([81e5ab3](https://github.com/core-ds/bridge-to-native/commit/81e5ab3)) (25-09-2026)
+Добавлена отдельная точка входа для чистых фунцкий, т.к. пакет собирается в CommonJS
+
+# 1.5.0 ([035618d](https://github.com/core-ds/bridge-to-native/commit/035618d)) (23-09-2026)
+## Features
+
+Экспортированы чистые функции сборки нативных URL для окружений без экземпляра `BridgeToNative` (например, миниаппов): `prepareNativeDeeplinkUrl`, `prepareOpenInBrowserUrl`, `prepareOpenInNewWebviewDeeplink`, `preparePdfUrl`, `canUseNativeFeature`. `BridgeToNative` использует эти же функции.
+
+## Bugfixes
+
+Исправлено сравнение версий NA: части версии сравниваются как числа, а не как строки (раньше `12.4.0` считалась ≥ `12.30.0`).
+
+# 1.4.2 ([ccc8e18](https://github.com/core-ds/bridge-to-native/commit/ccc8e18)) (10-08-2026)
+## Patch
+
+- Добавлена валидация URL и логгирование ошибок в методах навигации
+
 # 1.4.1 ([a76dd70](https://github.com/core-ds/bridge-to-native/commit/a76dd70)) (13-05-2026)
 ## Bugfixes
 

@@ -1,10 +1,8 @@
-export { BridgeToNative } from './bridge-to-native';
+export { canUseNativeFeature, isVersionHigherOrEqual } from './services-and-utils/native-features';
 export {
-    canUseNativeFeature,
-    isVersionHigherOrEqual,
     prepareNativeDeeplinkUrl,
     prepareOpenInBrowserUrl,
     prepareOpenInNewWebviewDeeplink,
     preparePdfUrl,
-} from './primitives';
+} from './services-and-utils/native-links';
 export type { Environment, NativeAppTarget, NativeFeatureKey, PdfType } from './types';

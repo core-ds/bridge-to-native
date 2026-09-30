@@ -1,8 +1,9 @@
 import { ExternalLinksService } from '../../../src/client/services-and-utils/external-links-service';
-import { type NativeLogService } from '../../../src/client/services-and-utils/native-log-service';
+import { NativeLogService } from '../../../src/client/services-and-utils/native-log-service';
 import { type NativeParamsService } from '../../../src/client/services-and-utils/native-params-service';
 
 const mockedCloseWebviewUtil = jest.fn();
+const mockedValidateUrl = jest.fn();
 
 jest.mock('../../../src/client/services-and-utils/utils', () => {
     const actual = jest.requireActual('../../../src/client/services-and-utils/utils');
@@ -10,6 +11,7 @@ jest.mock('../../../src/client/services-and-utils/utils', () => {
     return {
         __esModule: true,
         appendFromCurrentQueryParamForIos: actual.appendFromCurrentQueryParamForIos,
+        validateUrl: actual.validateUrl,
         get closeWebviewUtil() {
             return mockedCloseWebviewUtil;
         },
@@ -250,15 +252,19 @@ describe('ExternalLinksService', () => {
                 mockedNativeLogServiceInstance,
             );
 
-            // @ts-expect-error –– Мокаем приватный метод
-            jest.spyOn(inst.nativeParamsService, 'canUseNativeFeature').mockImplementationOnce(
-                () => true,
-            );
+            const featureSpy = jest
+                .spyOn(mockedNativeParamsServiceInstance, 'canUseNativeFeature')
+                .mockReturnValue(true);
 
             const link = 'https://ya.ru';
 
-            inst.openInNewWebview(link, '', true);
-            expect(mockedCloseWebviewUtil).toHaveBeenCalled();
+            try {
+                inst.openInNewWebview(link, '', true);
+
+                expect(mockedCloseWebviewUtil).toHaveBeenCalled();
+            } finally {
+                featureSpy.mockRestore();
+            }
         });
     });
 
@@ -419,6 +425,9 @@ describe('ExternalLinksService', () => {
 
         it('should allow new calls when called after timeout for `openInBrowser`', () => {
             jest.useFakeTimers();
+
+            mockedValidateUrl.mockImplementation((link: string) => new URL(link));
+
             const inst = new ExternalLinksService(
                 mockedNativeParamsServiceInstance,
                 mockedNativeLogServiceInstance,
@@ -460,6 +469,76 @@ describe('ExternalLinksService', () => {
             expect(locationReplaceSpy).toHaveBeenLastCalledWith('https://example.com/file2.pdf');
 
             jest.useRealTimers();
+        });
+    });
+
+    describe('noop', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+            jest.useFakeTimers();
+            jest.spyOn(console, 'info').mockImplementation(() => undefined);
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+            jest.restoreAllMocks();
+        });
+
+        it.each(['ios', 'android'] as const)(
+            'suppresses native effects on %s including delayed navigation',
+            (environment) => {
+                const params = {
+                    ...mockedNativeParamsServiceInstance,
+                    environment,
+                    canUseNativeFeature: () => true,
+                } as unknown as NativeParamsService;
+                const replace = jest.spyOn(window.location, 'replace');
+                const service = new ExternalLinksService(
+                    params,
+                    new NativeLogService(environment, '14.0.0', true),
+                );
+
+                service.handleNativeDeeplink('/deeplink');
+                service.handleNativeDeeplink('/deeplink', true);
+                service.openInBrowser('https://example.com');
+                service.openInNewWebview('https://example.com', 'Title', true);
+                service.openPdf('https://example.com/file.pdf');
+
+                expect(jest.getTimerCount()).toBe(0);
+                jest.runAllTimers();
+                expect(replace).not.toHaveBeenCalled();
+                expect(mockedCloseWebviewUtil).not.toHaveBeenCalled();
+                expect(console.info).toHaveBeenCalled();
+            },
+        );
+
+        it('logs version fallbacks and still returns href in noop', () => {
+            const params = {
+                ...mockedNativeParamsServiceInstance,
+                environment: 'android',
+                canUseNativeFeature: () => false,
+            } as unknown as NativeParamsService;
+            const service = new ExternalLinksService(
+                params,
+                new NativeLogService('android', '11.70.0', true),
+            );
+            const replace = jest.spyOn(window.location, 'replace');
+
+            expect(service.getHrefToOpenInBrowser('https://example.com')).toContain(
+                'alfabank://webFeature',
+            );
+            service.openInBrowser('https://example.com');
+            service.openInNewWebview('https://example.com');
+
+            expect(console.info).toHaveBeenCalledWith(
+                expect.stringContaining('Feature: linksInBrowser'),
+                expect.anything(),
+            );
+            expect(console.info).toHaveBeenCalledWith(
+                expect.stringContaining('Feature: savedBackStack'),
+                expect.anything(),
+            );
+            expect(replace).not.toHaveBeenCalled();
         });
     });
 });

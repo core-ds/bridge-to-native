@@ -51,6 +51,7 @@ export class BridgeToNative {
     private externalLinksService = new ExternalLinksService(
         this.nativeParamsService,
         this.nativeLogService,
+        this.options?.logError,
     );
 
     private nativeNavigationAndTitleService = new NativeNavigationAndTitleService(
