@@ -80,6 +80,7 @@ describe('BridgeToNative', () => {
         it('should pass `nativeParamsService` to `ExternalLinksService`', () => {
             expect(MockedExternalLinksServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
+                undefined,
             );
         });
 

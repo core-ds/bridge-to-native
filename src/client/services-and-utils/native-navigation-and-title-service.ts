@@ -1,4 +1,4 @@
-/* eslint max-lines: ["error", {"max": 350, "skipComments": true}] */
+/* eslint max-lines: ["error", {"max": 360, "skipComments": true}] */
 
 import {
     HISTORY_STATE_KEY_B2N_PAGE_ID,
@@ -135,7 +135,17 @@ export class NativeNavigationAndTitleService {
 
         this.isNavigateServerSideLocked = true;
 
-        const url = link instanceof URL ? link : new URL(link);
+        let url: URL;
+
+        try {
+            url = link instanceof URL ? link : new URL(link);
+        } catch (error) {
+            this.logError?.('navigateServerSide: URL creating error', {
+                link,
+                error,
+            });
+            throw error;
+        }
 
         this.nativeHistoryStack.push(nativeTitle || '');
 

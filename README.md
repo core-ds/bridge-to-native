@@ -9,6 +9,7 @@
 
 - Как использовать Библиотеку описано [здесь](#использование).
 - Про особенности навигации в вебвью окружении нативного приложение можно прочитать [здесь](#навигация).
+- Про работу в мини-приложениях (без экземпляра `BridgeToNative`) можно прочитать [здесь](#мини-приложения).
 - Схематичное client-server взаимодействие внутри библиотеки описано [здесь](./CLIENT_SERVER_INTERACTION.md).
 
 ## Сокращения, используемые во всех readme и комментариях в коде
@@ -51,10 +52,14 @@ WV NA окружение отличается от браузерного, ес�
         - стараемся поддерживать совместимость с различными Node.js фреймворками и веб-серверами;
         - обработку запросов с WV на других ЯП/технологиях придётся делать руками 🙂 (см. логику `src/server/prepare-native-app-details-for-client.ts`)
 - клиентская часть:
-    - предоставляет методы для работы WA внутри WV NA.
+    - предоставляет методы для работы WA внутри WV NA;
+    - предоставляет чистые функции для режима без экземпляра `BridgeToNative`
+      (отдельная точка входа `client/primitives`).
 
-На клиентской стороне потребителям Библиотеки нужно использовать только экземпляр класса `BridgeToNative`.
+Обычно на клиентской стороне достаточно экземпляра класса `BridgeToNative`.
 Это фасад, который проксирует все публичные методы Библиотеки внутренних классов.
+Исключение — [чистые функции из `client/primitives`](#мини-приложения):
+их же использует `BridgeToNative`.
 
 Проксируемые публичные методы не описаны по месту их реализации, описание находится
 в классе BridgeToNative (чтобы не повторяться).
@@ -115,6 +120,52 @@ window.b2n.setTitle('Заголовок для верхней панели NA');
 window.b2n.openInBrowser('https://ya.ru');
 // ...
 ```
+
+---
+
+## Мини-приложения
+
+С развитием NA появился ещё один режим WV — мини-приложения в нативном контейнере. `BridgeToNative`
+в этом контейнере нет.
+
+Для этого режима есть отдельная точка входа `@alfalab/bridge-to-native/client/primitives`.
+В ней лежат кирпичики, из которых собран сам `BridgeToNative`: чистые функции сборки нативных URL
+и проверки версий NA — всё, чему не нужен экземпляр, состояние и `window`. Класс их же и использует,
+поэтому результат совпадает, а код класса в эту точку входа не попадает.
+Вход не ограничен мини-приложениями: подойдёт любому WA, которому нужны только эти функции.
+Их же экспортирует и `@alfalab/bridge-to-native/client`.
+Платформу, `appId` и версию NA потребитель определяет сам; навигацию (`location.replace`), закрытие WV
+и защиту от повторных вызовов — тоже.
+
+```ts
+import {
+    canUseNativeFeature,
+    isVersionHigherOrEqual,
+    prepareNativeDeeplinkUrl,
+    prepareOpenInBrowserUrl,
+    prepareOpenInNewWebviewDeeplink,
+    preparePdfUrl,
+    type NativeAppTarget,
+} from '@alfalab/bridge-to-native/client/primitives';
+
+const target: NativeAppTarget = { platform: 'ios', appId: 'aweassist' };
+
+prepareNativeDeeplinkUrl(target, 'alfabank:///dashboard/pfm'); // 'aweassist://pfm?fromCurrent=true'
+
+// Флаг — результат проверки версии NA или `true`, если NA заведомо умеет открывать ссылки в браузере.
+const linksInBrowser = canUseNativeFeature('ios', '13.3.0', 'linksInBrowser');
+
+prepareOpenInBrowserUrl(target, 'https://ya.ru', linksInBrowser); // 'https://ya.ru/?openInBrowser=true'
+prepareNativeDeeplinkUrl(target, prepareOpenInNewWebviewDeeplink('https://ya.ru', 'Заголовок'));
+preparePdfUrl(target, 'https://example.com/file.pdf', 'pdfFile', 'Выписка');
+```
+
+- `prepareNativeDeeplinkUrl` отрезает у диплинка один из префиксов `/`, `alfabank:///dashboard/`, `alfabank:///`,
+  `alfabank://`, `https://online.alfabank.ru/`; остальные схемы и хосты не трогает. На iOS добавляет `fromCurrent=true`.
+- `prepareOpenInBrowserUrl` и `prepareOpenInNewWebviewDeeplink` бросают `invalid url: …` для всего,
+  кроме абсолютных `http(s)` URL без логина и пароля.
+- `isVersionHigherOrEqual` сравнивает версии формата `x.y.z` покомпонентно, как числа; версия
+  в другом формате даёт `false`. Нужен для гейтов по версии NA за пределами известных фич.
 
 ---
 

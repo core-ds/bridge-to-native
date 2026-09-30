@@ -1,3 +1,5 @@
+import { type LogError } from '../types';
+
 const QUERY_CLOSE_WEBVIEW_KEY = 'closeWebView';
 const QUERY_CLOSE_WEBVIEW_VALUE = 'true';
 
@@ -25,4 +27,34 @@ export const closeWebviewUtil = () => {
 
     originalPageUrl.searchParams.set(QUERY_CLOSE_WEBVIEW_KEY, QUERY_CLOSE_WEBVIEW_VALUE);
     window.location.href = originalPageUrl.toString();
+};
+
+export const validateUrl = (link: URL | string, logError?: LogError): URL | null => {
+    let url: URL;
+
+    try {
+        url = new URL(link);
+    } catch (error) {
+        logError?.('validateUrl: URL parsing error', {
+            error,
+            link,
+        });
+
+        return null;
+    }
+
+    const isAllowedProtocol = url.protocol === 'https:' || url.protocol === 'http:';
+    const hasCredentials = Boolean(url.username || url.password);
+
+    if (!isAllowedProtocol || !url.hostname || hasCredentials) {
+        logError?.('validateUrl: URL validation error', {
+            hostname: url.hostname,
+            link,
+            protocol: url.protocol,
+        });
+
+        return null;
+    }
+
+    return url;
 };

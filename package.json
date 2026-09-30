@@ -1,6 +1,6 @@
 {
     "name": "@alfalab/bridge-to-native",
-    "version": "1.4.1",
+    "version": "1.5.1",
     "license": "MIT",
     "description": "Утилита для удобной работы веб приложения внутри нативного приложения и коммуникации с ним.",
     "engines": {
@@ -16,6 +16,11 @@
             "import": "./client/index.js",
             "require": "./client/index.js",
             "types": "./client/index.d.ts"
+        },
+        "./client/primitives": {
+            "import": "./client/primitives.js",
+            "require": "./client/primitives.js",
+            "types": "./client/primitives.d.ts"
         },
         "./server": {
             "import": "./server/index.js",
@@ -104,7 +109,8 @@
         ],
         "coveragePathIgnorePatterns": [
             "/node_modules/",
-            "/src/(client|server)/index.ts"
+            "/src/(client|server)/index.ts",
+            "/src/client/primitives.ts"
         ],
         "reporters": [
             "default",

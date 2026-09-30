@@ -1,7 +1,13 @@
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../query-and-headers-keys';
 import { type NativeParams } from '../../types';
-import { ANDROID_APP_ID, NATIVE_FEATURES_FROM_VERSION, VERSION_TO_IOS_APP_ID } from '../constants';
+import { ANDROID_APP_ID, VERSION_TO_IOS_APP_ID } from '../constants';
 import { type Environment, type LogError, type NativeFeatureKey, type Theme } from '../types';
+
+import {
+    canUseNativeFeature,
+    isValidVersionFormat,
+    isVersionHigherOrEqual,
+} from './native-features';
 
 /**
  * Сервис, аккумулирующий детали о NA и предоставляющий методы, связанные с этим.
@@ -48,40 +54,15 @@ export class NativeParamsService {
     }
 
     canUseNativeFeature(feature: NativeFeatureKey) {
-        const { fromVersion } = NATIVE_FEATURES_FROM_VERSION[this.environment][feature];
-
-        return this.isCurrentVersionHigherOrEqual(fromVersion);
+        return canUseNativeFeature(this.environment, this.appVersion, feature);
     }
 
     isCurrentVersionHigherOrEqual(versionToCompare: string) {
-        type ExpectedTupple = [string, string, string, string];
-
-        if (!NativeParamsService.isValidVersionFormat(versionToCompare)) {
-            return false;
-        }
-
-        const matchPattern = /(\d+)\.(\d+)\.(\d+)/;
-
-        const [, ...appVersionComponents] = this.appVersion.match(matchPattern) as ExpectedTupple; // Формат версии проверен в конструкторе, можно смело убирать `null` из типа.
-
-        const [, ...versionToCompareComponents] = versionToCompare.match(
-            matchPattern,
-        ) as ExpectedTupple;
-
-        for (let i = 0; i < appVersionComponents.length; i++) {
-            if (appVersionComponents[i] !== versionToCompareComponents[i]) {
-                return appVersionComponents[i] >= versionToCompareComponents[i];
-            }
-        }
-
-        return true;
+        return isVersionHigherOrEqual(this.appVersion, versionToCompare);
     }
 
     private static isValidVersionFormat(version?: string): version is string {
-        if (!version) return false;
-        const versionPattern = /^\d+\.\d+\.\d+$/;
-
-        return versionPattern.test(version);
+        return isValidVersionFormat(version);
     }
 
     private getAppId(knownIosAppId?: string) {
