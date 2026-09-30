@@ -4,6 +4,8 @@ export type BrowserHistoryApiWrappers = {
     replace?: (url: HistoryReplaceStateParams[2], state: HistoryReplaceStateParams[0]) => void;
 };
 
+export type Environment = 'android' | 'ios';
+
 export type HistoryPushStateParams = Parameters<typeof window.history.pushState>;
 export type HistoryReplaceStateParams = Parameters<typeof window.history.replaceState>;
 
@@ -33,3 +35,9 @@ export type NativeFeaturesFromVersion = Readonly<{
 export type PdfType = 'pdfFile' | 'base64' | 'binary';
 
 export type Theme = 'light' | 'dark';
+
+export type NoopOptions = {
+    enabled: boolean;
+    environment?: Environment;
+    appVersion?: string;
+};

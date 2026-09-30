@@ -68,7 +68,7 @@ export class NativeNavigationAndTitleService {
 
     // eslint-disable-next-line class-methods-use-this -- удобней использовать метод в контексте экземпляра.
     closeWebview() {
-        closeWebviewUtil();
+        this.nativeLogService.execute('closeWebview', () => closeWebviewUtil());
     }
 
     goBack() {
@@ -90,7 +90,7 @@ export class NativeNavigationAndTitleService {
 
         if (stepsToBack > maxStepsToBack) {
             if (autoCloseWebview) {
-                closeWebviewUtil();
+                this.nativeLogService.execute('closeWebview', () => closeWebviewUtil());
 
                 return;
             }
@@ -212,7 +212,7 @@ export class NativeNavigationAndTitleService {
         this.numOfBackSteps = 1;
 
         if (this.nativeHistoryStack.length < 1) {
-            closeWebviewUtil();
+            this.nativeLogService.execute('closeWebview', () => closeWebviewUtil());
 
             return;
         }

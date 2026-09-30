@@ -1,7 +1,5 @@
 /* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
 
-import { type NoopOptions } from '../types';
-
 import { ExternalLinksService } from './services-and-utils/external-links-service';
 import { NativeLogService } from './services-and-utils/native-log-service';
 import { NativeNavigationAndTitleService } from './services-and-utils/native-navigation-and-title-service';
@@ -13,6 +11,7 @@ import {
     type LocationAssignParam,
     type LogError,
     type NativeFeatureKey,
+    type NoopOptions,
     type PdfType,
 } from './types';
 

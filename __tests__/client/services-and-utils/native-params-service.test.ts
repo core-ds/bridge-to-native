@@ -370,3 +370,27 @@ describe('NativeParamsService', () => {
         });
     });
 });
+
+describe('Noop feature version thresholds', () => {
+    it.each([
+        ['11.9.0', false],
+        ['11.70.0', false],
+        ['11.71.0', true],
+        ['12.0.0', true],
+    ])('checks Android linksInBrowser at %s', (appVersion, expected) => {
+        const params = new NativeParamsService({
+            enabled: true,
+            environment: 'android',
+            appVersion,
+        });
+
+        expect(params.canUseNativeFeature('linksInBrowser')).toBe(expected);
+    });
+
+    it('does not accept a malformed noop version', () => {
+        const params = new NativeParamsService({ enabled: true, appVersion: 'invalid' });
+
+        expect(params.appVersion).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(() => params.canUseNativeFeature('linksInBrowser')).not.toThrow();
+    });
+});

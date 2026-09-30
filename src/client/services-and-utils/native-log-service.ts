@@ -1,6 +1,10 @@
-import { type Environment, type NoopOptions } from '../../types';
 import { NATIVE_FEATURES_FROM_VERSION } from '../constants';
-import { type NativeFeatureContext, type NativeFeatureKey } from '../types';
+import {
+    type Environment,
+    type NativeFeatureContext,
+    type NativeFeatureKey,
+    type NoopOptions,
+} from '../types';
 
 /**
  * Обёртка для выполнения нативных вызовов с noop-режимом и логированием версионных фич

@@ -9,11 +9,3 @@ export type NativeParams = {
     originalWebviewParams: string;
     webviewLaunchTime?: number;
 };
-
-export type Environment = 'android' | 'ios';
-
-export type NoopOptions = {
-    enabled: boolean;
-    environment?: Environment;
-    appVersion?: string;
-};

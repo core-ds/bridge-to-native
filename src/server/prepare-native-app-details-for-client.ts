@@ -10,7 +10,7 @@ import {
     QUERY_NATIVE_IOS_APPVERSION,
     QUERY_NATIVE_THEME,
 } from '../query-and-headers-keys';
-import { type NativeParams, type NoopOptions } from '../types';
+import { type NativeParams } from '../types';
 
 import { extractNativeServiceQueries } from './extract-native-service-queries';
 import { iosAppIdPattern, versionPattern } from './regexp-patterns';
@@ -36,7 +36,6 @@ import {
 export function prepareNativeAppDetailsForClient(
     request: UniversalRequest,
     setResponseHeader: (headerKey: string, headerValue: string) => void,
-    noop?: NoopOptions,
 ) {
     // Поскольку вебвью модули имеют особенность сохранять сессионную куку подолгу,
     // даже после перезагрузки устройства или обновления приложения/ОС, ее значение
@@ -45,15 +44,12 @@ export function prepareNativeAppDetailsForClient(
     const nativeParamsFromCookie = readNativeParamsFromCookie(cookieHeader);
 
     const nativeParams = buildNativeParams(request, nativeParamsFromCookie);
+    const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
 
-    if (!noop?.enabled) {
-        const serializedNativeParams = encodeURIComponent(JSON.stringify(nativeParams));
-
-        setResponseHeader(
-            'Set-Cookie',
-            `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}; Path=/`,
-        );
-    }
+    setResponseHeader(
+        'Set-Cookie',
+        `${COOKIE_KEY_BRIDGE_TO_NATIVE_DATA}=${serializedNativeParams}; Path=/`,
+    );
 
     return nativeParams;
 }

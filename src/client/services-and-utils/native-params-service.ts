@@ -1,7 +1,13 @@
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../query-and-headers-keys';
-import { type Environment, type NativeParams, type NoopOptions } from '../../types';
+import { type NativeParams } from '../../types';
 import { ANDROID_APP_ID, NATIVE_FEATURES_FROM_VERSION, VERSION_TO_IOS_APP_ID } from '../constants';
-import { type LogError, type NativeFeatureKey, type Theme } from '../types';
+import {
+    type Environment,
+    type LogError,
+    type NativeFeatureKey,
+    type NoopOptions,
+    type Theme,
+} from '../types';
 
 /**
  * Сервис, аккумулирующий детали о NA и предоставляющий методы, связанные с этим.
@@ -73,7 +79,7 @@ export class NativeParamsService {
 
         for (let i = 0; i < appVersionComponents.length; i++) {
             if (appVersionComponents[i] !== versionToCompareComponents[i]) {
-                return appVersionComponents[i] >= versionToCompareComponents[i];
+                return Number(appVersionComponents[i]) >= Number(versionToCompareComponents[i]);
             }
         }
 
@@ -142,7 +148,7 @@ export class NativeParamsService {
     }
 
     private resolveAppVersion(versionFromCookie?: string): string {
-        if (this.noop?.enabled && this.noop.appVersion) {
+        if (this.noop?.enabled && NativeParamsService.isValidVersionFormat(this.noop.appVersion)) {
             return this.noop.appVersion;
         }
 
