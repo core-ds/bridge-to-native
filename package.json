@@ -59,6 +59,11 @@
     },
     "eslintConfig": {
         "extends": "./node_modules/arui-presets-lint/eslint",
+        "settings": {
+            "react": {
+                "version": "18.0.0"
+            }
+        },
         "parserOptions": {
             "project": [
                 "./__tests__/tsconfig.json",
