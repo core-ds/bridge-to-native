@@ -26,6 +26,11 @@ export type NativeFeatureKey =
     // Возможность возврата к предыдущему webview для Android
     | 'savedBackStack';
 
+export type NativeFeatureContext = {
+    feature: NativeFeatureKey;
+    fallbackReason?: string;
+};
+
 type NativeFeaturesParams = Readonly<Record<NativeFeatureKey, { fromVersion: string }>>;
 export type NativeFeaturesFromVersion = Readonly<{
     android: NativeFeaturesParams;
@@ -35,3 +40,9 @@ export type NativeFeaturesFromVersion = Readonly<{
 export type PdfType = 'pdfFile' | 'base64' | 'binary';
 
 export type Theme = 'light' | 'dark';
+
+export type NoopOptions = {
+    enabled: boolean;
+    environment?: Environment;
+    appVersion?: string;
+};

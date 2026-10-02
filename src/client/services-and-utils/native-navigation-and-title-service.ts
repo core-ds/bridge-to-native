@@ -1,5 +1,4 @@
-/* eslint max-lines: ["error", {"max": 360, "skipComments": true}] */
-
+/* eslint max-lines: ["error", {"max": 370, "skipComments": true}] */
 import {
     HISTORY_STATE_KEY_B2N_PAGE_ID,
     QUERY_B2N_NEXT_PAGEID,
@@ -14,6 +13,7 @@ import {
     type LogError,
 } from '../types';
 
+import { type NativeLogService } from './native-log-service';
 import { type NativeParamsService } from './native-params-service';
 import { closeWebviewUtil } from './utils';
 
@@ -56,6 +56,7 @@ export class NativeNavigationAndTitleService {
 
     constructor(
         private nativeParamsService: NativeParamsService,
+        private nativeLogService: NativeLogService,
         private browserHistoryApiWrappers?: BrowserHistoryApiWrappers,
         private logError?: LogError,
     ) {
@@ -67,7 +68,7 @@ export class NativeNavigationAndTitleService {
 
     // eslint-disable-next-line class-methods-use-this -- удобней использовать метод в контексте экземпляра.
     closeWebview() {
-        closeWebviewUtil();
+        this.nativeLogService.execute('closeWebview', () => closeWebviewUtil());
     }
 
     goBack() {
@@ -89,7 +90,7 @@ export class NativeNavigationAndTitleService {
 
         if (stepsToBack > maxStepsToBack) {
             if (autoCloseWebview) {
-                closeWebviewUtil();
+                this.nativeLogService.execute('closeWebview', () => closeWebviewUtil());
 
                 return;
             }
@@ -221,7 +222,7 @@ export class NativeNavigationAndTitleService {
         this.numOfBackSteps = 1;
 
         if (this.nativeHistoryStack.length < 1) {
-            closeWebviewUtil();
+            this.nativeLogService.execute('closeWebview', () => closeWebviewUtil());
 
             return;
         }
@@ -378,7 +379,11 @@ export class NativeNavigationAndTitleService {
             const paramsToSend = JSON.stringify({ pageId: narrowedPageId, pageTitle });
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
-                this.nativeParamsService.AndroidBridge?.setPageSettings(paramsToSend);
+                this.nativeLogService.execute(
+                    'syncHistoryWithNative',
+                    () => this.nativeParamsService.AndroidBridge?.setPageSettings(paramsToSend),
+                    { payload: paramsToSend },
+                );
                 this.lastSetPageSettingsParams = paramsToSend;
             }
         } else {
@@ -388,7 +393,11 @@ export class NativeNavigationAndTitleService {
             const paramsToSend = `ios:setPageSettings/${pageTitleStr + pageIdStr}`;
 
             if (this.lastSetPageSettingsParams !== paramsToSend) {
-                window.location.replace(paramsToSend);
+                this.nativeLogService.execute(
+                    'syncHistoryWithNative',
+                    () => window.location.replace(paramsToSend),
+                    { payload: paramsToSend },
+                );
                 this.lastSetPageSettingsParams = paramsToSend;
             }
         }

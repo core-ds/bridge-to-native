@@ -1,7 +1,13 @@
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../query-and-headers-keys';
 import { type NativeParams } from '../../types';
 import { ANDROID_APP_ID, VERSION_TO_IOS_APP_ID } from '../constants';
-import { type Environment, type LogError, type NativeFeatureKey, type Theme } from '../types';
+import {
+    type Environment,
+    type LogError,
+    type NativeFeatureKey,
+    type NoopOptions,
+    type Theme,
+} from '../types';
 
 import {
     canUseNativeFeature,
@@ -19,7 +25,7 @@ export class NativeParamsService {
 
     appVersion: string;
 
-    environment: Environment = window.Android ? 'android' : 'ios';
+    environment: Environment;
 
     nativeParamsReadErrorFlag = false;
 
@@ -33,12 +39,15 @@ export class NativeParamsService {
 
     webviewLaunchTime: number | null;
 
-    constructor(private logError?: LogError) {
+    constructor(
+        private noop?: NoopOptions,
+        private logError?: LogError,
+    ) {
         const nativeParams = this.readNativeParamsCookie();
 
-        this.appVersion = NativeParamsService.isValidVersionFormat(nativeParams?.appVersion)
-            ? nativeParams.appVersion
-            : '0.0.0';
+        this.environment = this.resolveEnvironment();
+
+        this.appVersion = this.resolveAppVersion(nativeParams?.appVersion);
 
         this.appId = this.getAppId(nativeParams?.iosAppId);
 
@@ -109,5 +118,23 @@ export class NativeParamsService {
 
             return null;
         }
+    }
+
+    private resolveEnvironment(): Environment {
+        if (this.noop?.enabled && this.noop.environment) {
+            return this.noop.environment;
+        }
+
+        return window.Android ? 'android' : 'ios';
+    }
+
+    private resolveAppVersion(versionFromCookie?: string): string {
+        if (this.noop?.enabled && NativeParamsService.isValidVersionFormat(this.noop.appVersion)) {
+            return this.noop.appVersion;
+        }
+
+        return NativeParamsService.isValidVersionFormat(versionFromCookie)
+            ? versionFromCookie
+            : '0.0.0';
     }
 }

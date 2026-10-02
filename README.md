@@ -278,3 +278,7 @@ B2N предоставляет метод `navigateServerSide` для server-sid
 
 Для выпуска beta-версии достаточно добавить в сообщение коммита строку `deploy_beta`. Выпущенная beta-версия будет автоматически опубликована с тегом beta.
 Выпущенную бета-версию можно посмотреть в разделе Actions в соответствующем workflow.
+
+### Noop и публичные функции сборки URL
+
+При `new BridgeToNative({ noop: { enabled: true } })` нативные действия логируются вместо выполнения. При этом публичные функции `prepareNativeDeeplinkUrl`, `prepareOpenInBrowserUrl`, `prepareOpenInNewWebviewDeeplink` и `preparePdfUrl` только формируют URL и не зависят от noop.

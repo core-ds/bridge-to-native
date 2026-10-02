@@ -362,11 +362,35 @@ describe('NativeParamsService', () => {
 
         it('should log error while there is no bridgeToNativeData cookie', () => {
             const logError = jest.fn();
-            const inst = new NativeParamsService(logError);
+            const inst = new NativeParamsService({ enabled: false }, logError);
 
             // @ts-expect-error -- Проверка private метода
             inst.readNativeParamsCookie();
             expect(logError).toHaveBeenCalledWith(expect.any(String), expect.any(Error));
         });
+    });
+});
+
+describe('Noop feature version thresholds', () => {
+    it.each([
+        ['11.9.0', false],
+        ['11.70.0', false],
+        ['11.71.0', true],
+        ['12.0.0', true],
+    ])('checks Android linksInBrowser at %s', (appVersion, expected) => {
+        const params = new NativeParamsService({
+            enabled: true,
+            environment: 'android',
+            appVersion,
+        });
+
+        expect(params.canUseNativeFeature('linksInBrowser')).toBe(expected);
+    });
+
+    it('does not accept a malformed noop version', () => {
+        const params = new NativeParamsService({ enabled: true, appVersion: 'invalid' });
+
+        expect(params.appVersion).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(() => params.canUseNativeFeature('linksInBrowser')).not.toThrow();
     });
 });

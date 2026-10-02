@@ -6,6 +6,7 @@ import {
     prepareOpenInNewWebviewDeeplink,
     preparePdfUrl,
 } from './native-links';
+import { type NativeLogService } from './native-log-service';
 import { type NativeParamsService } from './native-params-service';
 import { closeWebviewUtil, validateUrl } from './utils';
 
@@ -20,6 +21,7 @@ export class ExternalLinksService {
 
     constructor(
         private nativeParamsService: NativeParamsService,
+        private nativeLogService: NativeLogService,
         private logError?: LogError,
     ) {}
 
@@ -33,20 +35,28 @@ export class ExternalLinksService {
             closeWebviewBeforeCallNativeDeeplinkHandler &&
             this.nativeParamsService.canUseNativeFeature('savedBackStack')
         ) {
-            closeWebviewUtil();
+            this.nativeLogService.execute('closeWebview', () => closeWebviewUtil());
 
             // Проверено, ОС получает диплинк и передаёт его NA, не смотря на то,
             // что это происходит в следующей макрозадаче после команды на закрытие WV.
-            setTimeout(() => window.location.replace(preparedNativeUrl), 0);
+            this.nativeLogService.execute(
+                'nativeDeeplink',
+                () => {
+                    setTimeout(() => window.location.replace(preparedNativeUrl), 0);
+                },
+                { payload: { deeplink: preparedNativeUrl } },
+            );
 
             return;
         }
 
-        this.navigateByNativeApp(preparedNativeUrl);
+        this.navigateByNativeApp(preparedNativeUrl, 'nativeDeeplink');
     }
 
     getHrefToOpenInBrowser(link: string) {
         if (!this.nativeParamsService.canUseNativeFeature('linksInBrowser')) {
+            this.logBrowserFallback(link);
+
             return `${this.nativeParamsService.appId}://webFeature?type=recommendation&url=${encodeURIComponent(
                 link,
             )}`;
@@ -64,17 +74,31 @@ export class ExternalLinksService {
 
         this.validateUrlOrThrow(link);
 
+        const linksInBrowser = this.nativeParamsService.canUseNativeFeature('linksInBrowser');
+
+        if (!linksInBrowser) {
+            this.logBrowserFallback(link);
+        }
+
         this.navigateByNativeApp(
-            prepareOpenInBrowserUrl(
-                this.nativeAppTarget,
-                link,
-                this.nativeParamsService.canUseNativeFeature('linksInBrowser'),
-            ),
+            prepareOpenInBrowserUrl(this.nativeAppTarget, link, linksInBrowser),
+            'openInBrowser',
         );
     }
 
     openInNewWebview(link: string, nativeTitle = '', closeCurrentWebview = false) {
         this.validateUrlOrThrow(link);
+
+        if (
+            this.nativeParamsService.environment === 'android' &&
+            !this.nativeParamsService.canUseNativeFeature('savedBackStack')
+        ) {
+            this.nativeLogService.logFeatureFallback({
+                feature: 'savedBackStack',
+                fallbackReason: 'Открытие нового webview в Android приведет к закрытию текущего',
+                payload: { link },
+            });
+        }
 
         this.handleNativeDeeplink(
             prepareOpenInNewWebviewDeeplink(link, nativeTitle),
@@ -87,7 +111,7 @@ export class ExternalLinksService {
             return;
         }
 
-        this.navigateByNativeApp(preparePdfUrl(this.nativeAppTarget, url, type, title));
+        this.navigateByNativeApp(preparePdfUrl(this.nativeAppTarget, url, type, title), 'openPdf');
     }
 
     private get nativeAppTarget(): NativeAppTarget {
@@ -107,12 +131,27 @@ export class ExternalLinksService {
         }
     }
 
-    private navigateByNativeApp(url: string) {
-        this.navigationByNativeAppInProgress = true;
-        window.location.replace(url);
+    private logBrowserFallback(link: string) {
+        this.nativeLogService.logFeatureFallback({
+            feature: 'linksInBrowser',
+            fallbackReason:
+                'Открытие в браузере технически недоступно, будет открыто в новом webview',
+            payload: { link },
+        });
+    }
 
-        setTimeout(() => {
-            this.navigationByNativeAppInProgress = false;
-        }, CANCEL_NEW_CALLS_TO_NA_TIME);
+    private navigateByNativeApp(url: string, action: string) {
+        this.nativeLogService.execute(
+            action,
+            () => {
+                this.navigationByNativeAppInProgress = true;
+                window.location.replace(url);
+
+                setTimeout(() => {
+                    this.navigationByNativeAppInProgress = false;
+                }, CANCEL_NEW_CALLS_TO_NA_TIME);
+            },
+            { payload: { url } },
+        );
     }
 }
