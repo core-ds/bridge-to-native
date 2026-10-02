@@ -1,3 +1,8 @@
+# 1.5.2 ([b0d149b](https://github.com/core-ds/bridge-to-native/commit/b0d149b)) (02-10-2026)
+## Bugfixes
+
+* Добавлена проверка линтером на этапе CI и вывод ошибок в комментарии линтера
+
 # 1.5.1 ([81e5ab3](https://github.com/core-ds/bridge-to-native/commit/81e5ab3)) (25-09-2026)
 Добавлена отдельная точка входа для чистых фунцкий, т.к. пакет собирается в CommonJS
 
