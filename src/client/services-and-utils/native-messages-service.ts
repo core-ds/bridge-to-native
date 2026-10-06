@@ -59,8 +59,8 @@ export class NativeMessagesService {
         this.send('tabbar.hide', {});
     }
 
-    showTabbar(selectedId?: string | null) {
-        this.send('tabbar.show', selectedId === undefined ? {} : { selectedId });
+    showTabbar() {
+        this.send('tabbar.show', {});
     }
 
     // eslint-disable-next-line class-methods-use-this

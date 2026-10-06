@@ -395,10 +395,8 @@ export class BridgeToNative {
 
     /**
      * Показывает нативный таббар и, при переданном selectedId, выбирает вкладку
-     *
-     * @param selectedId id вкладки, которую выбрать при показе таббара. Если null или не передан — текущая вкладка не меняется
      */
-    showTabbar(selectedId?: string | null) {
-        this.nativeMessagesService.showTabbar(selectedId);
+    showTabbar() {
+        this.nativeMessagesService.showTabbar();
     }
 }
