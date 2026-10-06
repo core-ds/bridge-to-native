@@ -169,6 +169,48 @@ preparePdfUrl(target, 'https://example.com/file.pdf', 'pdfFile', 'Выписка
 
 ---
 
+## WebFeatures (iOS)
+
+Методы взаимодействия с модулем **WebFeatures** нативного приложения. Доступны **только на iOS**
+начиная с версии АМ **17.0.0**. На Android и в более старых версиях iOS:
+
+- методы без ответа (`vibrate`, `setSheetDragArea`, `hideTabbar`, `showTabbar`) — **ничего не делают**;
+- `getGeoConfiguration` — возвращает **отклонённый** промис.
+
+```js
+// Тактильный отклик.
+window.b2n.vibrate({ type: 'medium', intensity: 0.5 }); // intensity — опционально, 0...1
+
+// Область перетаскивания нативной шторы.
+window.b2n.setSheetDragArea('navigationBar'); // 'wholeSheet' (по умолчанию) | 'navigationBar'
+
+// Управление таббаром.
+window.b2n.hideTabbar();
+window.b2n.showTabbar('main'); // selectedId — опционально
+
+// Конфигурация геолокации (асинхронный ответ из натива).
+try {
+    const { permission, userCoordinate } = await window.b2n.getGeoConfiguration();
+
+    // permission: 'allowed' | 'denied' | 'notDetermined' | 'restricted'
+    // userCoordinate: { latitude, longitude } | null (только при permission === 'allowed')
+} catch (error) {
+    // Фича недоступна в окружении, таймаут ответа или ошибка натива.
+}
+```
+
+Типы тактильного отклика (`type`): impact — `light`, `medium`, `heavy`, `soft`, `rigid`
+(учитывают `intensity`); notification — `success`, `warning`, `error`; selection — `selection`.
+
+`vibrate`, `hideTabbar` и `showTabbar` дополнительно управляются нативными фича-тоглами
+(`webViewHapticsIOS` и `mainSuperAppIOS`). Если тогл выключен, натив игнорирует команду, и веб
+это определить не может.
+
+Именованные типы WebFeatures не экспортируются из публичных точек входа. Их можно выводить из
+сигнатур методов, например: `Awaited<ReturnType<BridgeToNative['getGeoConfiguration']>>`.
+
+---
+
 ## Навигация
 
 NA при открытии экрана c WV вместе с областью для веб-контента отображает свои UI-элементы.

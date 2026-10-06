@@ -1,12 +1,13 @@
-import { type NativeBridgeService } from './native-bridge-service';
-import { canUseWebFeature } from './native-features';
-import { type NativeParamsService } from './native-params-service';
 import {
     type WebFeatureAction,
     type WebFeaturesGeoConfiguration,
     type WebFeaturesHapticsOptions,
     type WebFeaturesSheetDragArea,
 } from '../types';
+
+import { type NativeBridgeService } from './native-bridge-service';
+import { canUseWebFeature } from './native-features';
+import { type NativeParamsService } from './native-params-service';
 
 /**
  * Доменный сервис фич WebFeatures (iOS, АМ ≥ 17.0.0).
