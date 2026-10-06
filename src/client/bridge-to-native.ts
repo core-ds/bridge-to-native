@@ -1,8 +1,10 @@
 /* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
 
 import { ExternalLinksService } from './services-and-utils/external-links-service';
+import { NativeBridgeService } from './services-and-utils/native-bridge-service';
 import { NativeNavigationAndTitleService } from './services-and-utils/native-navigation-and-title-service';
 import { NativeParamsService } from './services-and-utils/native-params-service';
+import { WebFeaturesService } from './services-and-utils/web-features-service';
 import {
     type BrowserHistoryApiWrappers,
     type HistoryPushStateParams,
@@ -11,6 +13,9 @@ import {
     type LogError,
     type NativeFeatureKey,
     type PdfType,
+    type WebFeaturesGeoConfiguration,
+    type WebFeaturesHapticsOptions,
+    type WebFeaturesSheetDragArea,
 } from './types';
 
 /**
@@ -44,6 +49,13 @@ export class BridgeToNative {
         this.nativeParamsService,
         this.options?.browserHistoryApiWrappers,
         this.options?.logError,
+    );
+
+    private nativeBridgeService = new NativeBridgeService(this.options?.logError);
+
+    private webFeaturesService = new WebFeaturesService(
+        this.nativeParamsService,
+        this.nativeBridgeService,
     );
 
     /**
@@ -131,6 +143,19 @@ export class BridgeToNative {
      */
     getHrefToOpenInBrowser(link: string) {
         return this.externalLinksService.getHrefToOpenInBrowser(link);
+    }
+
+    /**
+     * Запрашивает текущую конфигурацию геолокации WebFeatures.
+     *
+     * ВАЖНО!
+     * Доступно только в iOS начиная с версии АМ `17.0.0`.
+     * В несовместимом окружении возвращённый промис будет отклонён.
+     *
+     * @returns Промис с `permission` и `userCoordinate` (`null`, если доступ не разрешён).
+     */
+    getGeoConfiguration(): Promise<WebFeaturesGeoConfiguration> {
+        return this.webFeaturesService.getGeoConfiguration();
     }
 
     /**
@@ -349,5 +374,59 @@ export class BridgeToNative {
      */
     setTitle(nativeTitle: string) {
         this.nativeNavigationAndTitleService.setTitle(nativeTitle);
+    }
+
+    /**
+     * Воспроизводит тактильный отклик WebFeatures.
+     *
+     * ВАЖНО!
+     * Доступно только в iOS начиная с версии АМ `17.0.0`.
+     * В несовместимом окружении вызов игнорируется.
+     * Управляется нативным фича-тоглом `webViewHapticsIOS`.
+     *
+     * @param options.type Тип тактильного отклика.
+     * @param options.intensity Интенсивность `0...1` (только для impact-типов).
+     */
+    vibrate(options: WebFeaturesHapticsOptions) {
+        this.webFeaturesService.vibrate(options);
+    }
+
+    /**
+     * Задаёт область нативной шторы, за которую можно её перетаскивать.
+     *
+     * ВАЖНО!
+     * Доступно только в iOS начиная с версии АМ `17.0.0`.
+     * В несовместимом окружении вызов игнорируется.
+     *
+     * @param area Область перетаскивания шторы.
+     */
+    setSheetDragArea(area: WebFeaturesSheetDragArea) {
+        this.webFeaturesService.setSheetDragArea(area);
+    }
+
+    /**
+     * Скрывает нативный таббар.
+     *
+     * ВАЖНО!
+     * Доступно только в iOS начиная с версии АМ `17.0.0`.
+     * В несовместимом окружении вызов игнорируется.
+     * Управляется нативным фича-тоглом `mainSuperAppIOS`.
+     */
+    hideTabbar() {
+        this.webFeaturesService.hideTabbar();
+    }
+
+    /**
+     * Показывает нативный таббар и, при переданном `selectedId`, выбирает вкладку.
+     *
+     * ВАЖНО!
+     * Доступно только в iOS начиная с версии АМ `17.0.0`.
+     * В несовместимом окружении вызов игнорируется.
+     * Управляется нативным фича-тоглом `mainSuperAppIOS`.
+     *
+     * @param selectedId id вкладки, которую выбрать при показе.
+     */
+    showTabbar(selectedId?: string) {
+        this.webFeaturesService.showTabbar(selectedId);
     }
 }

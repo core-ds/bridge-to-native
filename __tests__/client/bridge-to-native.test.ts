@@ -38,6 +38,23 @@ const mockedNativeParamsServiceInstance = {
 
 const MockedNativeParamsServiceConstructor = jest.fn(() => mockedNativeParamsServiceInstance);
 
+const mockedNativeBridgeServiceInstance = {
+    send: jest.fn(),
+    call: jest.fn(),
+};
+
+const MockedNativeBridgeServiceConstructor = jest.fn(() => mockedNativeBridgeServiceInstance);
+
+const mockedWebFeaturesServiceInstance = {
+    getGeoConfiguration: jest.fn(),
+    vibrate: jest.fn(),
+    setSheetDragArea: jest.fn(),
+    hideTabbar: jest.fn(),
+    showTabbar: jest.fn(),
+};
+
+const MockedWebFeaturesServiceConstructor = jest.fn(() => mockedWebFeaturesServiceInstance);
+
 jest.mock('../../src/client/services-and-utils/external-links-service', () => ({
     __esModule: true,
     get ExternalLinksService() {
@@ -56,6 +73,20 @@ jest.mock('../../src/client/services-and-utils/native-params-service', () => ({
     __esModule: true,
     get NativeParamsService() {
         return MockedNativeParamsServiceConstructor;
+    },
+}));
+
+jest.mock('../../src/client/services-and-utils/native-bridge-service', () => ({
+    __esModule: true,
+    get NativeBridgeService() {
+        return MockedNativeBridgeServiceConstructor;
+    },
+}));
+
+jest.mock('../../src/client/services-and-utils/web-features-service', () => ({
+    __esModule: true,
+    get WebFeaturesService() {
+        return MockedWebFeaturesServiceConstructor;
     },
 }));
 
@@ -115,6 +146,22 @@ describe('BridgeToNative', () => {
                 expect.anything(),
                 undefined,
                 logError,
+            );
+        });
+
+        it('should pass `logError` to `NativeBridgeService`', () => {
+            const logError = jest.fn();
+
+            // eslint-disable-next-line no-new
+            new BridgeToNative({ logError });
+
+            expect(MockedNativeBridgeServiceConstructor).toHaveBeenCalledWith(logError);
+        });
+
+        it('should pass `nativeParamsService` and `nativeBridgeService` to `WebFeaturesService`', () => {
+            expect(MockedWebFeaturesServiceConstructor).toHaveBeenCalledWith(
+                mockedNativeParamsServiceInstance,
+                mockedNativeBridgeServiceInstance,
             );
         });
     });
@@ -418,6 +465,43 @@ describe('BridgeToNative', () => {
                 expect(mockedNativeNavigationAndTitleServiceInstance.setTitle).toHaveBeenCalledWith(
                     nativeTitle,
                 );
+            });
+        });
+
+        describe('WebFeatures methods', () => {
+            it('should call `webFeaturesService.getGeoConfiguration` and return its promise', () => {
+                const result = Promise.resolve({ permission: 'allowed', userCoordinate: null });
+
+                mockedWebFeaturesServiceInstance.getGeoConfiguration.mockReturnValueOnce(result);
+
+                expect(bridge.getGeoConfiguration()).toBe(result);
+                expect(mockedWebFeaturesServiceInstance.getGeoConfiguration).toHaveBeenCalledTimes(
+                    1,
+                );
+            });
+
+            it('should call `webFeaturesService.vibrate` with options', () => {
+                const options = { type: 'medium' as const, intensity: 0.5 };
+
+                bridge.vibrate(options);
+                expect(mockedWebFeaturesServiceInstance.vibrate).toHaveBeenCalledWith(options);
+            });
+
+            it('should call `webFeaturesService.setSheetDragArea` with area', () => {
+                bridge.setSheetDragArea('navigationBar');
+                expect(mockedWebFeaturesServiceInstance.setSheetDragArea).toHaveBeenCalledWith(
+                    'navigationBar',
+                );
+            });
+
+            it('should call `webFeaturesService.hideTabbar`', () => {
+                bridge.hideTabbar();
+                expect(mockedWebFeaturesServiceInstance.hideTabbar).toHaveBeenCalledTimes(1);
+            });
+
+            it('should call `webFeaturesService.showTabbar` with selectedId', () => {
+                bridge.showTabbar('main');
+                expect(mockedWebFeaturesServiceInstance.showTabbar).toHaveBeenCalledWith('main');
             });
         });
     });
