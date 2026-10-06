@@ -386,6 +386,7 @@ export class BridgeToNative {
      *
      * @param options.type Тип тактильного отклика.
      * @param options.intensity Интенсивность `0...1` (только для impact-типов).
+     *  B2N пробрасывает значение в натив без валидации диапазона.
      */
     vibrate(options: WebFeaturesHapticsOptions) {
         this.webFeaturesService.vibrate(options);

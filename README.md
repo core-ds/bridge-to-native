@@ -177,6 +177,14 @@ preparePdfUrl(target, 'https://example.com/file.pdf', 'pdfFile', 'Выписка
 - методы без ответа (`vibrate`, `setSheetDragArea`, `hideTabbar`, `showTabbar`) — **ничего не делают**;
 - `getGeoConfiguration` — возвращает **отклонённый** промис.
 
+| Метод | Описание | Результат нативного вызова |
+| --- | --- | --- |
+| `getGeoConfiguration()` | Конфигурация геолокации (call, асинхронный ответ) | `Promise<{ permission, userCoordinate }>` |
+| `vibrate({ type, intensity? })` | Тактильный отклик (fire-and-forget) | — |
+| `setSheetDragArea(area)` | Область перетаскивания нативной шторы (fire-and-forget) | — |
+| `hideTabbar()` | Скрыть нативный таббар (fire-and-forget) | — |
+| `showTabbar(selectedId?)` | Показать таббар и, при `selectedId`, выбрать вкладку (fire-and-forget) | — |
+
 ```js
 // Тактильный отклик.
 window.b2n.vibrate({ type: 'medium', intensity: 0.5 }); // intensity — опционально, 0...1
@@ -201,6 +209,7 @@ try {
 
 Типы тактильного отклика (`type`): impact — `light`, `medium`, `heavy`, `soft`, `rigid`
 (учитывают `intensity`); notification — `success`, `warning`, `error`; selection — `selection`.
+B2N пробрасывает `intensity` в натив **без валидации диапазона** — решение принимает нативный слой.
 
 `vibrate`, `hideTabbar` и `showTabbar` дополнительно управляются нативными фича-тоглами
 (`webViewHapticsIOS` и `mainSuperAppIOS`). Если тогл выключен, натив игнорирует команду, и веб
