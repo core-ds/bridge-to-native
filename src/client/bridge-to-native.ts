@@ -1,16 +1,19 @@
 /* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
 
 import { ExternalLinksService } from './services-and-utils/external-links-service';
+import { NativeMessagesService } from './services-and-utils/native-messages-service';
 import { NativeNavigationAndTitleService } from './services-and-utils/native-navigation-and-title-service';
 import { NativeParamsService } from './services-and-utils/native-params-service';
 import {
     type BrowserHistoryApiWrappers,
+    type HapticsOptions,
     type HistoryPushStateParams,
     type HistoryReplaceStateParams,
     type LocationAssignParam,
     type LogError,
     type NativeFeatureKey,
     type PdfType,
+    type SheetDragArea,
 } from './types';
 
 /**
@@ -32,6 +35,8 @@ export class BridgeToNative {
             logError?: LogError;
         },
     ) {}
+
+    private nativeMessagesService = new NativeMessagesService();
 
     private nativeParamsService = new NativeParamsService(this.options?.logError);
 
@@ -349,5 +354,51 @@ export class BridgeToNative {
      */
     setTitle(nativeTitle: string) {
         this.nativeNavigationAndTitleService.setTitle(nativeTitle);
+    }
+
+    /**
+     * Возвращает статус доступа к геолокации и, при наличии разрешения, координаты пользователя
+     *
+     * @param data пустой объект или null
+     */
+    getGeoConfiguration(data: Record<string, never> | null = {}) {
+        return this.nativeMessagesService.getGeoConfiguration(data);
+    }
+
+    /**
+     * Воспроизводит тактильный отклик
+     *
+     * @param type Тип тактильного отклика
+     * @param intensity Интенсивность в диапазоне 0...1. Применяется только для impact-типов.Если не передана — используется значение по умолчанию
+     */
+    vibrate(options: HapticsOptions) {
+        this.nativeMessagesService.vibrate(options);
+    }
+
+    /**
+     * Задаёт область шторы, за которую можно её перетаскивать
+     *
+     * @param area Область шторы, за которую можно её перетаскивать
+     * - `wholeSheet` — вся штора (значение по умолчанию в нативе);
+     * - `navigationBar` — только навигационная панель шторы.
+     */
+    setSheetDragArea(area: SheetDragArea) {
+        this.nativeMessagesService.setSheetDragArea(area);
+    }
+
+    /**
+     * Скрывает нативный таббар
+     */
+    hideTabbar() {
+        this.nativeMessagesService.hideTabbar();
+    }
+
+    /**
+     * Показывает нативный таббар и, при переданном selectedId, выбирает вкладку
+     *
+     * @param selectedId id вкладки, которую выбрать при показе таббара. Если null или не передан — текущая вкладка не меняется
+     */
+    showTabbar(selectedId?: string | null) {
+        this.nativeMessagesService.showTabbar(selectedId);
     }
 }

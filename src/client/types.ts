@@ -35,3 +35,42 @@ export type NativeFeaturesFromVersion = Readonly<{
 export type PdfType = 'pdfFile' | 'base64' | 'binary';
 
 export type Theme = 'light' | 'dark';
+
+export type NativeBridgeMessage = {
+    kind: 'call' | 'send';
+    action: string;
+    requestId: string;
+    data: object | null;
+};
+
+export type NativeBridgeResponse = {
+    data: GeoConfiguration | null;
+    error: { code: number; message?: string; details?: unknown } | null;
+};
+
+export type HapticsOptions = {
+    type:
+        | 'light'
+        | 'medium'
+        | 'heavy'
+        | 'soft'
+        | 'rigid'
+        | 'success'
+        | 'warning'
+        | 'error'
+        | 'selection';
+    intensity?: number;
+};
+
+export type GeoConfiguration = {
+    /**
+     * allowed — доступ разрешён;
+     * denied — доступ запрещён;
+     * notDetermined — пользователь ещё не принял решение;
+     * restricted — доступ ограничен
+     */
+    permission: 'allowed' | 'denied' | 'notDetermined' | 'restricted';
+    userCoordinate: { latitude: number; longitude: number } | null;
+};
+
+export type SheetDragArea = 'wholeSheet' | 'navigationBar';
