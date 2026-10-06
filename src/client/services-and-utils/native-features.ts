@@ -1,5 +1,5 @@
-import { NATIVE_FEATURES_FROM_VERSION } from '../constants';
-import { type Environment, type NativeFeatureKey } from '../types';
+import { NATIVE_FEATURES_FROM_VERSION, WEB_FEATURES_FROM_VERSION } from '../constants';
+import { type Environment, type NativeFeatureKey, type WebFeatureAction } from '../types';
 
 const VERSION_FORMAT_PATTERN = /^\d+\.\d+\.\d+$/;
 
@@ -37,6 +37,27 @@ export const canUseNativeFeature = (
     feature: NativeFeatureKey,
 ) => {
     const { fromVersion } = NATIVE_FEATURES_FROM_VERSION[platform][feature];
+
+    return isVersionHigherOrEqual(
+        isValidVersionFormat(appVersion) ? appVersion : '0.0.0',
+        fromVersion,
+    );
+};
+
+/**
+ * Проверяет, поддерживает ли NA указанной платформы и версии фичу WebFeatures.
+ * Фичи WebFeatures доступны только на iOS. Версия в неизвестном формате считается `0.0.0`.
+ */
+export const canUseWebFeature = (
+    platform: Environment,
+    appVersion: string,
+    action: WebFeatureAction,
+) => {
+    if (platform !== 'ios') {
+        return false;
+    }
+
+    const { fromVersion } = WEB_FEATURES_FROM_VERSION[action];
 
     return isVersionHigherOrEqual(
         isValidVersionFormat(appVersion) ? appVersion : '0.0.0',

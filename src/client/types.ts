@@ -35,3 +35,45 @@ export type NativeFeaturesFromVersion = Readonly<{
 export type PdfType = 'pdfFile' | 'base64' | 'binary';
 
 export type Theme = 'light' | 'dark';
+
+export type WebFeatureAction =
+    | 'geo.configuration'
+    | 'haptics.vibrate'
+    | 'sheet.setDragArea'
+    | 'tabbar.hide'
+    | 'tabbar.show';
+
+export type WebFeaturesGeoPermission = 'allowed' | 'denied' | 'notDetermined' | 'restricted';
+
+export type WebFeaturesUserCoordinate = {
+    latitude: number;
+    longitude: number;
+};
+
+export type WebFeaturesGeoConfiguration = {
+    permission: WebFeaturesGeoPermission;
+    userCoordinate: WebFeaturesUserCoordinate | null;
+};
+
+export type WebFeaturesHapticsType =
+    | 'light'
+    | 'medium'
+    | 'heavy'
+    | 'soft'
+    | 'rigid'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'selection';
+
+export type WebFeaturesHapticsOptions = {
+    type: WebFeaturesHapticsType;
+    intensity?: number;
+};
+
+export type WebFeaturesSheetDragArea = 'wholeSheet' | 'navigationBar';
+
+export type WebFeaturesCallbackPayload = {
+    data: unknown;
+    error: { code: number; message: string } | null;
+};

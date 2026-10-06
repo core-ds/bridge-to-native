@@ -1,5 +1,6 @@
 import {
     canUseNativeFeature,
+    canUseWebFeature,
     isValidVersionFormat,
     isVersionHigherOrEqual,
 } from '../../../src/client/services-and-utils/native-features';
@@ -60,6 +61,23 @@ describe('native-features', () => {
             'should return for %s `%s` feature `%s` → `%s`',
             (platform, appVersion, feature, expected) => {
                 expect(canUseNativeFeature(platform, appVersion, feature)).toBe(expected);
+            },
+        );
+    });
+
+    describe('canUseWebFeature', () => {
+        it.each([
+            ['ios', '16.99.99', 'geo.configuration', false],
+            ['ios', '17.0.0', 'geo.configuration', true],
+            ['ios', '17.2.0', 'haptics.vibrate', true],
+            ['ios', 'unknown', 'geo.configuration', false],
+            ['ios', '17.0.0', 'tabbar.show', true],
+            ['android', '17.0.0', 'geo.configuration', false],
+            ['android', '99.0.0', 'haptics.vibrate', false],
+        ] as const)(
+            'should return for %s `%s` action `%s` → `%s`',
+            (platform, appVersion, action, expected) => {
+                expect(canUseWebFeature(platform, appVersion, action)).toBe(expected);
             },
         );
     });
