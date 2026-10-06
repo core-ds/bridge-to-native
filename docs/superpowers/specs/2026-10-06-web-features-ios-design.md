@@ -107,11 +107,16 @@ src/client/services-and-utils/
 
 Единая ответственность — отправка сообщений в натив и обработка ответов на call.
 
+- Разрешает способ отправки: если WA определил `window.nativeBridge.send` —
+  используется он; иначе B2N отправляет напрямую через платформенный транспорт
+  (iOS → `window.webkit.messageHandlers.bridge.postMessage`,
+  Android → `window.Android.send(JSON.stringify(body))`).
+  Глобалы B2N не мутирует.
 - `send(action, data): void` — отправляет `kind: 'send'`, fire-and-forget.
 - `call<Data>(action, data): Promise<Data>` — отправляет `kind: 'call'`,
   возвращает `Promise`, который:
   - резолвится `data` при `{ data, error: null }`;
-  - реджектится при `error`, при отсутствии моста и по таймауту.
+  - реджектится при `error`, при отсутствии транспорта и по таймауту.
 - Генерирует `requestId` (`crypto.randomUUID()` с фолбэком на счётчик).
 - Держит `Map<requestId, { resolve, reject, timeoutId }>` ожидающих вызовов.
 - Устанавливает `window.webBridge.callback`, маршрутизирует ответы по `requestId`.
@@ -141,13 +146,13 @@ export type WebFeatureAction =
 
 // constants.ts
 export const WEB_FEATURES_FROM_VERSION: Readonly<
-  Record<WebFeatureAction, { ios: string }>
+  Record<WebFeatureAction, { fromVersion: string }>
 > = {
-  'geo.configuration': { ios: '17.0.0' },
-  'haptics.vibrate': { ios: '17.0.0' },
-  'sheet.setDragArea': { ios: '17.0.0' },
-  'tabbar.hide': { ios: '17.0.0' },
-  'tabbar.show': { ios: '17.0.0' },
+  'geo.configuration': { fromVersion: '17.0.0' },
+  'haptics.vibrate': { fromVersion: '17.0.0' },
+  'sheet.setDragArea': { fromVersion: '17.0.0' },
+  'tabbar.hide': { fromVersion: '17.0.0' },
+  'tabbar.show': { fromVersion: '17.0.0' },
 };
 ```
 
@@ -201,22 +206,16 @@ type WebFeaturesSheetDragArea = 'wholeSheet' | 'navigationBar';
 
 ```ts
 interface Window {
-  Android?: {
-    setPageSettings: (params: string) => void;
-    send?: (body: string) => void; // транспорт WebFeatures (в текущей задаче не используется)
-  };
+  /** Транспорт «веб → натив». Определяет WA (см. документ WebFeatures). */
   nativeBridge?: { send: (action, requestId, data, kind) => void };
+  /** Канал ответов «натив → веб». Обработчик `callback` устанавливает B2N. */
   webBridge?: { callback?: (requestId, payload) => void };
-  webkit?: {
-    messageHandlers?: {
-      bridge?: { postMessage: (body: unknown) => void };
-    };
-  };
 }
 ```
 
 `window.nativeBridge` B2N **не создаёт** — по контракту его определяет WA; B2N
 лишь использует его, если он есть (доступ к мосту через `window.nativeBridge.send`).
+Если моста нет: `send` пишет ошибку в консоль, `call` — реджектится.
 
 ### 4.6 Изменяемые файлы
 
