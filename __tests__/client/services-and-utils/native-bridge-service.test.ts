@@ -27,7 +27,7 @@ describe('NativeBridgeService', () => {
     });
 
     describe('send', () => {
-        it('should send via webkit when window.nativeBridge is absent', () => {
+        it('should send via webkit through the iOS bridge', () => {
             const postMessage = jest.fn();
 
             setWindow({ webkit: { messageHandlers: { bridge: { postMessage } } } });
@@ -45,38 +45,19 @@ describe('NativeBridgeService', () => {
             );
         });
 
-        it('should prefer window.nativeBridge.send when defined', () => {
-            const nativeSend = jest.fn();
-            const postMessage = jest.fn();
-
-            setWindow({
-                nativeBridge: { send: nativeSend },
-                webkit: { messageHandlers: { bridge: { postMessage } } },
-            });
-
-            const inst = new NativeBridgeService();
-
-            inst.send('haptics.vibrate', { type: 'medium' });
-
-            expect(nativeSend).toHaveBeenCalledWith(
-                'haptics.vibrate',
-                expect.any(String),
-                { type: 'medium' },
-                'send',
-            );
-            expect(postMessage).not.toHaveBeenCalled();
-        });
-
-        it('should send via Android when nativeBridge and webkit are absent', () => {
+        it('should send via Android when webkit is absent', () => {
             const androidSend = jest.fn();
 
-            setWindow({ Android: { send: androidSend } });
+            const androidCall = jest.fn();
+
+            setWindow({ Android: { send: androidSend, call: androidCall } });
 
             const inst = new NativeBridgeService();
 
             inst.send('tabbar.hide', {});
 
             expect(androidSend).toHaveBeenCalledTimes(1);
+            expect(androidCall).not.toHaveBeenCalled();
 
             const [rawBody] = androidSend.mock.calls[0];
             const body = JSON.parse(rawBody as string);
@@ -116,24 +97,56 @@ describe('NativeBridgeService', () => {
             await expect(inst.call('geo.configuration', {})).rejects.toThrow();
         });
 
-        it('should reject when window.Android exists without send', async () => {
-            setWindow({ Android: {} });
+        it('should reject when Android.call is absent even if send exists', async () => {
+            const send = jest.fn();
+
+            setWindow({ Android: { send } });
 
             const inst = new NativeBridgeService();
 
             await expect(inst.call('geo.configuration', {})).rejects.toThrow();
+            expect(send).not.toHaveBeenCalled();
+        });
+
+        it('should call Android.call with JSON including kind and resolve the response', async () => {
+            const call = jest.fn();
+            const send = jest.fn();
+
+            setWindow({ Android: { call, send } });
+
+            const inst = new NativeBridgeService();
+            const promise = inst.call('geo.configuration', {});
+            const body = JSON.parse(call.mock.calls[0][0]);
+
+            expect(body).toEqual({
+                kind: 'call',
+                action: 'geo.configuration',
+                requestId: expect.any(String),
+                data: {},
+            });
+            expect(send).not.toHaveBeenCalled();
+            window.webBridge?.callback?.(body.requestId, {
+                data: { permission: 'denied', userCoordinate: null },
+                error: null,
+            });
+            await expect(promise).resolves.toEqual({ permission: 'denied', userCoordinate: null });
         });
 
         it('should resolve on webBridge.callback success', async () => {
             const nativeSend = jest.fn();
 
-            setWindow({ nativeBridge: { send: nativeSend } });
+            setWindow({ webkit: { messageHandlers: { bridge: { postMessage: nativeSend } } } });
 
             const inst = new NativeBridgeService();
             const promise = inst.call('geo.configuration', {});
-            const requestId = nativeSend.mock.calls[0][1] as string;
+            const requestId = nativeSend.mock.calls[0][0].requestId as string;
 
-            expect(nativeSend).toHaveBeenCalledWith('geo.configuration', requestId, {}, 'call');
+            expect(nativeSend).toHaveBeenCalledWith({
+                action: 'geo.configuration',
+                requestId,
+                data: {},
+                kind: 'call',
+            });
 
             window.webBridge?.callback?.(requestId, {
                 data: { permission: 'allowed', userCoordinate: null },
@@ -149,11 +162,11 @@ describe('NativeBridgeService', () => {
         it('should reject on webBridge.callback error', async () => {
             const nativeSend = jest.fn();
 
-            setWindow({ nativeBridge: { send: nativeSend } });
+            setWindow({ webkit: { messageHandlers: { bridge: { postMessage: nativeSend } } } });
 
             const inst = new NativeBridgeService();
             const promise = inst.call('geo.configuration', {});
-            const requestId = nativeSend.mock.calls[0][1] as string;
+            const requestId = nativeSend.mock.calls[0][0].requestId as string;
 
             window.webBridge?.callback?.(requestId, {
                 data: null,
@@ -168,7 +181,7 @@ describe('NativeBridgeService', () => {
 
             const nativeSend = jest.fn();
 
-            setWindow({ nativeBridge: { send: nativeSend } });
+            setWindow({ webkit: { messageHandlers: { bridge: { postMessage: nativeSend } } } });
 
             const inst = new NativeBridgeService();
             const promise = inst.call('geo.configuration', {});
@@ -181,14 +194,14 @@ describe('NativeBridgeService', () => {
         it('should route independent responses for concurrent calls', async () => {
             const nativeSend = jest.fn();
 
-            setWindow({ nativeBridge: { send: nativeSend } });
+            setWindow({ webkit: { messageHandlers: { bridge: { postMessage: nativeSend } } } });
 
             const inst = new NativeBridgeService();
             const first = inst.call('geo.configuration', {});
             const second = inst.call('geo.configuration', {});
 
-            const firstId = nativeSend.mock.calls[0][1] as string;
-            const secondId = nativeSend.mock.calls[1][1] as string;
+            const firstId = nativeSend.mock.calls[0][0].requestId as string;
+            const secondId = nativeSend.mock.calls[1][0].requestId as string;
 
             expect(firstId).not.toBe(secondId);
 

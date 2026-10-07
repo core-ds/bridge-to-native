@@ -3,5 +3,5 @@
         "noEmit": true,
         "types": ["jest", "node"]
     },
-    "include": ["**/*.test.ts"]
+    "include": ["**/*.test.ts", "../src/client/global.d.ts"]
 }

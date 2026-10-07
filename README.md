@@ -177,13 +177,13 @@ preparePdfUrl(target, 'https://example.com/file.pdf', 'pdfFile', 'Выписка
 - методы без ответа (`vibrate`, `setSheetDragArea`, `hideTabbar`, `showTabbar`) — **ничего не делают**;
 - `getGeoConfiguration` — возвращает **отклонённый** промис.
 
-| Метод | Описание | Результат нативного вызова |
-| --- | --- | --- |
-| `getGeoConfiguration()` | Конфигурация геолокации (call, асинхронный ответ) | `Promise<{ permission, userCoordinate }>` |
-| `vibrate({ type, intensity? })` | Тактильный отклик (fire-and-forget) | — |
-| `setSheetDragArea(area)` | Область перетаскивания нативной шторы (fire-and-forget) | — |
-| `hideTabbar()` | Скрыть нативный таббар (fire-and-forget) | — |
-| `showTabbar(selectedId?)` | Показать таббар и, при `selectedId`, выбрать вкладку (fire-and-forget) | — |
+| Метод                           | Описание                                                               | Результат нативного вызова                |
+| ------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
+| `getGeoConfiguration()`         | Конфигурация геолокации (call, асинхронный ответ)                      | `Promise<{ permission, userCoordinate }>` |
+| `vibrate({ type, intensity? })` | Тактильный отклик (fire-and-forget)                                    | —                                         |
+| `setSheetDragArea(area)`        | Область перетаскивания нативной шторы (fire-and-forget)                | —                                         |
+| `hideTabbar()`                  | Скрыть нативный таббар (fire-and-forget)                               | —                                         |
+| `showTabbar(selectedId?)`       | Показать таббар и, при `selectedId`, выбрать вкладку (fire-and-forget) | —                                         |
 
 ```js
 // Тактильный отклик.
@@ -214,9 +214,6 @@ B2N пробрасывает `intensity` в натив **без валидаци
 `vibrate`, `hideTabbar` и `showTabbar` дополнительно управляются нативными фича-тоглами
 (`webViewHapticsIOS` и `mainSuperAppIOS`). Если тогл выключен, натив игнорирует команду, и веб
 это определить не может.
-
-Именованные типы WebFeatures не экспортируются из публичных точек входа. Их можно выводить из
-сигнатур методов, например: `Awaited<ReturnType<BridgeToNative['getGeoConfiguration']>>`.
 
 ---
 

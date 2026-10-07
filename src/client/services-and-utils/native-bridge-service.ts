@@ -38,8 +38,7 @@ const generateRequestId = () => {
  * Отправляет сообщения (`send` / `call`) и обрабатывает асинхронные ответы на `call`
  * через `window.webBridge.callback`.
  *
- * `window.nativeBridge` B2N не создаёт: использует его, если WA определил,
- * иначе отправляет напрямую через платформенный мост.
+ * Отправляет сообщения напрямую через мост соответствующей платформы.
  */
 export class NativeBridgeService {
     private pendingCalls = new Map<string, PendingCall>();
@@ -87,7 +86,7 @@ export class NativeBridgeService {
             data,
         };
 
-        if (!this.hasTransport()) {
+        if (!this.hasTransport(BRIDGE_KIND_CALL)) {
             this.reportNoTransport('call', action);
 
             return Promise.reject(
@@ -136,14 +135,15 @@ export class NativeBridgeService {
     }
 
     /**
-     * Проверяет доступность хоть одного транспорта.
+     * Проверяет доступность транспорта для указанного типа сообщения.
      */
     // eslint-disable-next-line class-methods-use-this -- единая точка доступа к глобалам window.
-    private hasTransport() {
+    private hasTransport(kind: BridgeKind) {
         return Boolean(
-            window.nativeBridge?.send ||
-                window.webkit?.messageHandlers?.bridge?.postMessage ||
-                window.Android?.send,
+            window.webkit?.messageHandlers?.bridge?.postMessage ||
+                (kind === BRIDGE_KIND_CALL
+                    ? typeof window.Android?.call === 'function'
+                    : typeof window.Android?.send === 'function'),
         );
     }
 
@@ -154,19 +154,19 @@ export class NativeBridgeService {
      */
     // eslint-disable-next-line class-methods-use-this -- единая точка доступа к глобалам window.
     private dispatch(body: BridgeMessageBody) {
-        if (window.nativeBridge?.send) {
-            window.nativeBridge.send(body.action, body.requestId, body.data, body.kind);
-
-            return true;
-        }
-
         if (window.webkit?.messageHandlers?.bridge?.postMessage) {
             window.webkit.messageHandlers.bridge.postMessage(body);
 
             return true;
         }
 
-        if (window.Android?.send) {
+        if (body.kind === BRIDGE_KIND_CALL && typeof window.Android?.call === 'function') {
+            window.Android.call(JSON.stringify(body));
+
+            return true;
+        }
+
+        if (body.kind === BRIDGE_KIND_SEND && typeof window.Android?.send === 'function') {
             window.Android.send(JSON.stringify(body));
 
             return true;
