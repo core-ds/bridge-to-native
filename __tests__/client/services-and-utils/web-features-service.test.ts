@@ -33,7 +33,7 @@ describe('WebFeaturesService', () => {
                 } else if (method === 'hideTabbar') {
                     service.hideTabbar();
                 } else {
-                    service.showTabbar('main');
+                    service.showTabbar();
                 }
 
                 expect(bridge.send).not.toHaveBeenCalled();
@@ -46,7 +46,7 @@ describe('WebFeaturesService', () => {
             service.vibrate({ type: 'medium' });
             service.setSheetDragArea('navigationBar');
             service.hideTabbar();
-            service.showTabbar('main');
+            service.showTabbar();
 
             expect(bridge.send).not.toHaveBeenCalled();
         });
@@ -99,14 +99,6 @@ describe('WebFeaturesService', () => {
             service.hideTabbar();
 
             expect(bridge.send).toHaveBeenCalledWith('tabbar.hide', {});
-        });
-
-        it('should call bridge.send with tabbar.show and selectedId', () => {
-            const { service, bridge } = createService('ios', '17.0.0');
-
-            service.showTabbar('main');
-
-            expect(bridge.send).toHaveBeenCalledWith('tabbar.show', { selectedId: 'main' });
         });
 
         it('should call bridge.send with tabbar.show without selectedId', () => {

@@ -1,4 +1,4 @@
-import { type LogError, type WebFeatureAction, type WebFeaturesCallbackPayload } from '../types';
+import { type LogError, type ModernAction, type WebFeaturesCallbackPayload } from '../types';
 
 export const CALL_TIMEOUT_MS = 10_000;
 
@@ -9,7 +9,7 @@ const BRIDGE_KIND_CALL: BridgeKind = 'call';
 
 type BridgeMessageBody = {
     kind: BridgeKind;
-    action: WebFeatureAction;
+    action: ModernAction;
     requestId: string;
     data: unknown;
 };
@@ -34,11 +34,6 @@ const generateRequestId = () => {
 
 /**
  * Сервис-транспорт для взаимодействия WA с NA через WebFeatures-мост.
- *
- * Отправляет сообщения (`send` / `call`) и обрабатывает асинхронные ответы на `call`
- * через `window.webBridge.callback`.
- *
- * Отправляет сообщения напрямую через мост соответствующей платформы.
  */
 export class NativeBridgeService {
     private pendingCalls = new Map<string, PendingCall>();
@@ -59,7 +54,7 @@ export class NativeBridgeService {
     /**
      * Отправляет fire-and-forget сообщение в NA (без ожидания ответа).
      */
-    send(action: WebFeatureAction, data: unknown) {
+    send(action: ModernAction, data: unknown) {
         const body: BridgeMessageBody = {
             kind: BRIDGE_KIND_SEND,
             action,
@@ -77,7 +72,7 @@ export class NativeBridgeService {
      *
      * @throws Если транспорт недоступен или ответ не пришёл за {@link CALL_TIMEOUT_MS}.
      */
-    call<Data>(action: WebFeatureAction, data: unknown): Promise<Data> {
+    call<Data>(action: ModernAction, data: unknown): Promise<Data> {
         const requestId = generateRequestId();
         const body: BridgeMessageBody = {
             kind: BRIDGE_KIND_CALL,
@@ -86,7 +81,7 @@ export class NativeBridgeService {
             data,
         };
 
-        if (!this.hasTransport(BRIDGE_KIND_CALL)) {
+        if (!this.hasTransport()) {
             this.reportNoTransport('call', action);
 
             return Promise.reject(
@@ -135,16 +130,11 @@ export class NativeBridgeService {
     }
 
     /**
-     * Проверяет доступность транспорта для указанного типа сообщения.
+     * Проверяет доступность нативного webkit-моста iOS.
      */
     // eslint-disable-next-line class-methods-use-this -- единая точка доступа к глобалам window.
-    private hasTransport(kind: BridgeKind) {
-        return Boolean(
-            window.webkit?.messageHandlers?.bridge?.postMessage ||
-                (kind === BRIDGE_KIND_CALL
-                    ? typeof window.Android?.call === 'function'
-                    : typeof window.Android?.send === 'function'),
-        );
+    private hasTransport() {
+        return Boolean(window.webkit?.messageHandlers?.bridge?.postMessage);
     }
 
     /**
@@ -160,22 +150,10 @@ export class NativeBridgeService {
             return true;
         }
 
-        if (body.kind === BRIDGE_KIND_CALL && typeof window.Android?.call === 'function') {
-            window.Android.call(JSON.stringify(body));
-
-            return true;
-        }
-
-        if (body.kind === BRIDGE_KIND_SEND && typeof window.Android?.send === 'function') {
-            window.Android.send(JSON.stringify(body));
-
-            return true;
-        }
-
         return false;
     }
 
-    private reportNoTransport(kind: BridgeKind, action: WebFeatureAction) {
+    private reportNoTransport(kind: BridgeKind, action: ModernAction) {
         const message = `NativeBridgeService: native bridge is not available, "${action}" (${kind}) was not sent`;
 
         this.logError?.(message, { action, kind });

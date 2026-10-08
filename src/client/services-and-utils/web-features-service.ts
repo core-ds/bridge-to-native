@@ -1,5 +1,5 @@
 import {
-    type WebFeatureAction,
+    type ModernAction,
     type WebFeaturesGeoConfiguration,
     type WebFeaturesHapticsOptions,
     type WebFeaturesSheetDragArea,
@@ -21,11 +21,6 @@ export class WebFeaturesService {
         private nativeBridgeService: NativeBridgeService,
     ) {}
 
-    /**
-     * Возвращает статус доступа к геолокации и, при наличии разрешения, координаты пользователя
-     *
-     * @throws Если фича недоступна в текущем окружении или NA вернул ошибку.
-     */
     getGeoConfiguration(): Promise<WebFeaturesGeoConfiguration> {
         if (!this.isAvailable('geo.configuration')) {
             return Promise.reject(
@@ -36,9 +31,6 @@ export class WebFeaturesService {
         return this.nativeBridgeService.call<WebFeaturesGeoConfiguration>('geo.configuration', {});
     }
 
-    /**
-     * Воспроизводит тактильный отклик.
-     */
     vibrate({ type, intensity }: WebFeaturesHapticsOptions) {
         if (!this.isAvailable('haptics.vibrate')) {
             return;
@@ -50,9 +42,6 @@ export class WebFeaturesService {
         });
     }
 
-    /**
-     * Задаёт область шторы, за которую можно её перетаскивать.
-     */
     setSheetDragArea(area: WebFeaturesSheetDragArea) {
         if (!this.isAvailable('sheet.setDragArea')) {
             return;
@@ -61,9 +50,6 @@ export class WebFeaturesService {
         this.nativeBridgeService.send('sheet.setDragArea', { area });
     }
 
-    /**
-     * Скрывает нативный таббар.
-     */
     hideTabbar() {
         if (!this.isAvailable('tabbar.hide')) {
             return;
@@ -72,21 +58,15 @@ export class WebFeaturesService {
         this.nativeBridgeService.send('tabbar.hide', {});
     }
 
-    /**
-     * Показывает нативный таббар и, при переданном `selectedId`, выбирает вкладку.
-     */
-    showTabbar(selectedId?: string) {
+    showTabbar() {
         if (!this.isAvailable('tabbar.show')) {
             return;
         }
 
-        this.nativeBridgeService.send(
-            'tabbar.show',
-            selectedId === undefined ? {} : { selectedId },
-        );
+        this.nativeBridgeService.send('tabbar.show', {});
     }
 
-    private isAvailable(action: WebFeatureAction) {
+    private isAvailable(action: ModernAction) {
         return canUseWebFeature(
             this.nativeParamsService.environment,
             this.nativeParamsService.appVersion,

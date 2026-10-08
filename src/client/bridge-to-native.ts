@@ -146,19 +146,6 @@ export class BridgeToNative {
     }
 
     /**
-     * Запрашивает текущую конфигурацию геолокации WebFeatures.
-     *
-     * ВАЖНО!
-     * Доступно только в iOS начиная с версии АМ `17.0.0`.
-     * В несовместимом окружении возвращённый промис будет отклонён.
-     *
-     * @returns Промис с `permission` и `userCoordinate` (`null`, если доступ не разрешён).
-     */
-    getGeoConfiguration(): Promise<WebFeaturesGeoConfiguration> {
-        return this.webFeaturesService.getGeoConfiguration();
-    }
-
-    /**
      * Делает один шаг назад по браузерной истории и модифицирует внутреннее состояние B2N,
      * чтобы в дальнейшем зарегистрировать этот переход в NA.
      *
@@ -377,16 +364,26 @@ export class BridgeToNative {
     }
 
     /**
-     * Воспроизводит тактильный отклик WebFeatures.
+     * Возвращает статус доступа к геолокации и, при наличии разрешения, координаты пользователя
      *
-     * ВАЖНО!
-     * Доступно только в iOS начиная с версии АМ `17.0.0`.
-     * В несовместимом окружении вызов игнорируется.
-     * Управляется нативным фича-тоглом `webViewHapticsIOS`.
+     * @returns Promise с конфигурацией геолокации:
+     *  `permission`: `allowed` — доступ разрешён; `denied` — запрещён;
+     *  `notDetermined` — решение ещё не принято; `restricted` — доступ ограничен.
+     *  `userCoordinate`: `{ latitude, longitude }` или `null`, если доступ не разрешён.
+     *  Отказ в доступе — успешный ответ с соответствующим permission, а не ошибка запроса.
+     */
+    getGeoConfiguration(): Promise<WebFeaturesGeoConfiguration> {
+        return this.webFeaturesService.getGeoConfiguration();
+    }
+
+    /**
+     * Воспроизводит тактильный отклик
      *
-     * @param options.type Тип тактильного отклика.
+     * @param options.type Тип тактильного отклика:
+     *  impact — `light`, `medium`, `heavy`, `soft`, `rigid`;
+     *  notification — `success`, `warning`, `error`; selection — `selection`.
      * @param options.intensity Интенсивность `0...1` (только для impact-типов).
-     *  B2N пробрасывает значение в натив без валидации диапазона.
+     *  Если не передана, NA использует значение по умолчанию.
      */
     vibrate(options: WebFeaturesHapticsOptions) {
         this.webFeaturesService.vibrate(options);
@@ -395,39 +392,24 @@ export class BridgeToNative {
     /**
      * Задаёт область нативной шторы, за которую можно её перетаскивать.
      *
-     * ВАЖНО!
-     * Доступно только в iOS начиная с версии АМ `17.0.0`.
-     * В несовместимом окружении вызов игнорируется.
-     *
-     * @param area Область перетаскивания шторы.
+     * @param area `wholeSheet` — перетаскивание за любую часть шторы (по умолчанию в NA);
+     *  `navigationBar` — только за навигационную панель шторы.
      */
     setSheetDragArea(area: WebFeaturesSheetDragArea) {
         this.webFeaturesService.setSheetDragArea(area);
     }
 
     /**
-     * Скрывает нативный таббар.
-     *
-     * ВАЖНО!
-     * Доступно только в iOS начиная с версии АМ `17.0.0`.
-     * В несовместимом окружении вызов игнорируется.
-     * Управляется нативным фича-тоглом `mainSuperAppIOS`.
+     * Скрывает нативный таббар
      */
     hideTabbar() {
         this.webFeaturesService.hideTabbar();
     }
 
     /**
-     * Показывает нативный таббар и, при переданном `selectedId`, выбирает вкладку.
-     *
-     * ВАЖНО!
-     * Доступно только в iOS начиная с версии АМ `17.0.0`.
-     * В несовместимом окружении вызов игнорируется.
-     * Управляется нативным фича-тоглом `mainSuperAppIOS`.
-     *
-     * @param selectedId id вкладки, которую выбрать при показе.
+     * Показывает нативный таббар (будет активна вкладка, которая была активна при скрытии)
      */
-    showTabbar(selectedId?: string) {
-        this.webFeaturesService.showTabbar(selectedId);
+    showTabbar() {
+        this.webFeaturesService.showTabbar();
     }
 }

@@ -36,7 +36,7 @@ export type PdfType = 'pdfFile' | 'base64' | 'binary';
 
 export type Theme = 'light' | 'dark';
 
-export type WebFeatureAction =
+export type ModernAction =
     | 'geo.configuration'
     | 'haptics.vibrate'
     | 'sheet.setDragArea'

@@ -499,9 +499,9 @@ describe('BridgeToNative', () => {
                 expect(mockedWebFeaturesServiceInstance.hideTabbar).toHaveBeenCalledTimes(1);
             });
 
-            it('should call `webFeaturesService.showTabbar` with selectedId', () => {
-                bridge.showTabbar('main');
-                expect(mockedWebFeaturesServiceInstance.showTabbar).toHaveBeenCalledWith('main');
+            it('should call `webFeaturesService.showTabbar` without arguments', () => {
+                bridge.showTabbar();
+                expect(mockedWebFeaturesServiceInstance.showTabbar).toHaveBeenCalledWith();
             });
         });
     });

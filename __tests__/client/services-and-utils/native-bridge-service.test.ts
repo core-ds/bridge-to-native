@@ -45,34 +45,8 @@ describe('NativeBridgeService', () => {
             );
         });
 
-        it('should send via Android when webkit is absent', () => {
-            const androidSend = jest.fn();
-
-            const androidCall = jest.fn();
-
-            setWindow({ Android: { send: androidSend, call: androidCall } });
-
-            const inst = new NativeBridgeService();
-
-            inst.send('tabbar.hide', {});
-
-            expect(androidSend).toHaveBeenCalledTimes(1);
-            expect(androidCall).not.toHaveBeenCalled();
-
-            const [rawBody] = androidSend.mock.calls[0];
-            const body = JSON.parse(rawBody as string);
-
-            expect(body).toEqual(
-                expect.objectContaining({
-                    kind: 'send',
-                    action: 'tabbar.hide',
-                    data: {},
-                }),
-            );
-        });
-
-        it('should not throw when window.Android exists without send', () => {
-            setWindow({ Android: {} });
+        it('should not throw when only the legacy Android bridge exists', () => {
+            setWindow({ Android: { setPageSettings: jest.fn() } });
 
             const inst = new NativeBridgeService();
 
@@ -97,39 +71,12 @@ describe('NativeBridgeService', () => {
             await expect(inst.call('geo.configuration', {})).rejects.toThrow();
         });
 
-        it('should reject when Android.call is absent even if send exists', async () => {
-            const send = jest.fn();
-
-            setWindow({ Android: { send } });
+        it('should reject when only the legacy Android bridge exists', async () => {
+            setWindow({ Android: { setPageSettings: jest.fn() } });
 
             const inst = new NativeBridgeService();
 
             await expect(inst.call('geo.configuration', {})).rejects.toThrow();
-            expect(send).not.toHaveBeenCalled();
-        });
-
-        it('should call Android.call with JSON including kind and resolve the response', async () => {
-            const call = jest.fn();
-            const send = jest.fn();
-
-            setWindow({ Android: { call, send } });
-
-            const inst = new NativeBridgeService();
-            const promise = inst.call('geo.configuration', {});
-            const body = JSON.parse(call.mock.calls[0][0]);
-
-            expect(body).toEqual({
-                kind: 'call',
-                action: 'geo.configuration',
-                requestId: expect.any(String),
-                data: {},
-            });
-            expect(send).not.toHaveBeenCalled();
-            window.webBridge?.callback?.(body.requestId, {
-                data: { permission: 'denied', userCoordinate: null },
-                error: null,
-            });
-            await expect(promise).resolves.toEqual({ permission: 'denied', userCoordinate: null });
         });
 
         it('should resolve on webBridge.callback success', async () => {
@@ -148,6 +95,7 @@ describe('NativeBridgeService', () => {
                 kind: 'call',
             });
 
+            // @ts-expect-error -- Объект через который происходит взаимодействие натив -> веб
             window.webBridge?.callback?.(requestId, {
                 data: { permission: 'allowed', userCoordinate: null },
                 error: null,
@@ -168,6 +116,7 @@ describe('NativeBridgeService', () => {
             const promise = inst.call('geo.configuration', {});
             const requestId = nativeSend.mock.calls[0][0].requestId as string;
 
+            // @ts-expect-error -- Объект через который происходит взаимодействие натив -> веб
             window.webBridge?.callback?.(requestId, {
                 data: null,
                 error: { code: 1, message: 'geo unavailable' },
@@ -204,8 +153,9 @@ describe('NativeBridgeService', () => {
             const secondId = nativeSend.mock.calls[1][0].requestId as string;
 
             expect(firstId).not.toBe(secondId);
-
+            // @ts-expect-error -- Объект через который происходит взаимодействие натив -> веб
             window.webBridge?.callback?.(secondId, { data: { order: 'second' }, error: null });
+            // @ts-expect-error -- Объект через который происходит взаимодействие натив -> веб
             window.webBridge?.callback?.(firstId, { data: { order: 'first' }, error: null });
 
             await expect(first).resolves.toEqual({ order: 'first' });
@@ -222,6 +172,7 @@ describe('NativeBridgeService', () => {
             // eslint-disable-next-line no-new
             new NativeBridgeService();
 
+            // @ts-expect-error -- Объект через который происходит взаимодействие натив -> веб
             window.webBridge?.callback?.('unknown-id', { data: null, error: null });
 
             expect(existing).toHaveBeenCalledWith('unknown-id', { data: null, error: null });

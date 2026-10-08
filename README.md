@@ -169,51 +169,20 @@ preparePdfUrl(target, 'https://example.com/file.pdf', 'pdfFile', 'Выписка
 
 ---
 
-## WebFeatures (iOS)
+## Дополнительные методы взаимодействия с NA
 
-Методы взаимодействия с модулем **WebFeatures** нативного приложения. Доступны **только на iOS**
-начиная с версии АМ **17.0.0**. На Android и в более старых версиях iOS:
+В `BridgeToNative` добавлены методы `getGeoConfiguration`, `vibrate`, `setSheetDragArea`,
+`hideTabbar` и `showTabbar`: для получения конфигурации геолокации, тактильного отклика,
+настройки перетаскивания нативной шторы и управления таббаром. Описание методов и их
+ограничений находится в [фасаде `BridgeToNative`](./src/client/bridge-to-native.ts).
 
-- методы без ответа (`vibrate`, `setSheetDragArea`, `hideTabbar`, `showTabbar`) — **ничего не делают**;
-- `getGeoConfiguration` — возвращает **отклонённый** промис.
-
-| Метод                           | Описание                                                               | Результат нативного вызова                |
-| ------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
-| `getGeoConfiguration()`         | Конфигурация геолокации (call, асинхронный ответ)                      | `Promise<{ permission, userCoordinate }>` |
-| `vibrate({ type, intensity? })` | Тактильный отклик (fire-and-forget)                                    | —                                         |
-| `setSheetDragArea(area)`        | Область перетаскивания нативной шторы (fire-and-forget)                | —                                         |
-| `hideTabbar()`                  | Скрыть нативный таббар (fire-and-forget)                               | —                                         |
-| `showTabbar(selectedId?)`       | Показать таббар и, при `selectedId`, выбрать вкладку (fire-and-forget) | —                                         |
+В новой версии с мини-приложениями можно столкнуться с багом при наличии перетаскиваемых элементов в WA.
+Шторка может перехватывать жесты, и ранее работавшее перетаскивание в WA может перестать работать.
+Для таких экранов ограничьте область перетаскивания только через навигационную панель:
 
 ```js
-// Тактильный отклик.
-window.b2n.vibrate({ type: 'medium', intensity: 0.5 }); // intensity — опционально, 0...1
-
-// Область перетаскивания нативной шторы.
-window.b2n.setSheetDragArea('navigationBar'); // 'wholeSheet' (по умолчанию) | 'navigationBar'
-
-// Управление таббаром.
-window.b2n.hideTabbar();
-window.b2n.showTabbar('main'); // selectedId — опционально
-
-// Конфигурация геолокации (асинхронный ответ из натива).
-try {
-    const { permission, userCoordinate } = await window.b2n.getGeoConfiguration();
-
-    // permission: 'allowed' | 'denied' | 'notDetermined' | 'restricted'
-    // userCoordinate: { latitude, longitude } | null (только при permission === 'allowed')
-} catch (error) {
-    // Фича недоступна в окружении, таймаут ответа или ошибка натива.
-}
+window.b2n.setSheetDragArea('navigationBar');
 ```
-
-Типы тактильного отклика (`type`): impact — `light`, `medium`, `heavy`, `soft`, `rigid`
-(учитывают `intensity`); notification — `success`, `warning`, `error`; selection — `selection`.
-B2N пробрасывает `intensity` в натив **без валидации диапазона** — решение принимает нативный слой.
-
-`vibrate`, `hideTabbar` и `showTabbar` дополнительно управляются нативными фича-тоглами
-(`webViewHapticsIOS` и `mainSuperAppIOS`). Если тогл выключен, натив игнорирует команду, и веб
-это определить не может.
 
 ---
 
