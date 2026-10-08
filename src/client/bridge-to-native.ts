@@ -350,15 +350,4 @@ export class BridgeToNative {
     setTitle(nativeTitle: string) {
         this.nativeNavigationAndTitleService.setTitle(nativeTitle);
     }
-
-    /**
-     * Подписывается на `window.onpopstate` и вызывает `callBack` с флагом,
-     * помечена ли запись истории, на которую произошёл переход, маркером
-     * `HISTORY_STATE_B2N_MARKER`.
-     *
-     * @param callBack Колбэк-функция, вызывается при срабатывании `popstate`.
-     */
-    handleGoBack(callBack: () => void) {
-        return this.nativeNavigationAndTitleService.handleGoBack(callBack);
-    }
 }

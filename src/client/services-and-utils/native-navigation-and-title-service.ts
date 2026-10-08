@@ -172,6 +172,7 @@ export class NativeNavigationAndTitleService {
         this.nativeHistoryStack = [nativeTitle];
         this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
+        this.setSystemBackClose();
     }
 
     setTitle(nativeTitle: string) {
@@ -207,6 +208,13 @@ export class NativeNavigationAndTitleService {
      * после нажатия на кнопку «Назад» в NA, вызова `history.back()` и `history.go(-x)`.
      */
     private handleClientSideNavigationBack(event?: PopStateEvent) {
+        const eventState = event?.state as Record<string, unknown> | null;
+
+        // Если попали на запись, помеченную маркером `HISTORY_STATE_B2N_MARKER` -  закрываем WV напрямую, маркер проставляется в setInitialView
+        if (eventState?.[HISTORY_STATE_B2N_MARKER]) {
+            closeWebviewUtil();
+            return;
+        }
         this.isGoBackLocked = false;
 
         const statePageId = (event?.state as Record<string, unknown> | null)?.[
@@ -422,15 +430,17 @@ export class NativeNavigationAndTitleService {
     }
 
     /**
-     * Помечает текущую запись истории маркером `HISTORY_STATE_B2N_MARKER` и добавляет
-     * поверх неё буферную запись (`pushState(null)`), которая примет на себя
-     * первое системное «назад»
+     * Только для Android: создаёт буфер для перехвата системного «назад».
+     * Текущая запись истории помечается спец-стейтом `HISTORY_STATE_B2N_MARKER` —
+     * сигналом нужно закрыть WV.
      */
-    private markStateForSystemBack() {
-        const currentState = window.history.state;
+    private setSystemBackClose() {
+        if (this.nativeParamsService.environment !== 'android') return;
+
+        const savedState = window.history.state;
 
         const markedState = {
-            ...currentState,
+            ...this.createStateWithPageId(savedState, this.nativeHistoryStack.length),
             [HISTORY_STATE_B2N_MARKER]: true,
         };
 
@@ -441,24 +451,10 @@ export class NativeNavigationAndTitleService {
         }
 
         if (this.browserHistoryApiWrappers?.push) {
-            this.browserHistoryApiWrappers.push(undefined, null);
+            this.browserHistoryApiWrappers.push(undefined, savedState);
         } else {
-            window.history.pushState(null, '');
+            window.history.pushState(savedState, '');
         }
-
         this.setHistoryStatePageId();
-    }
-
-    handleGoBack(callBack: (marked: boolean) => void) {
-        this.markStateForSystemBack();
-        const onPopState = () => {
-            const { state } = window.history;
-
-            callBack(Boolean(state?.[HISTORY_STATE_B2N_MARKER]));
-        };
-
-        window.addEventListener('popstate', onPopState);
-
-        return () => window.removeEventListener('popstate', onPopState);
     }
 }
