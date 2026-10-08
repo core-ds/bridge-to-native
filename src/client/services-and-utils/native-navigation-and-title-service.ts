@@ -1,6 +1,7 @@
-/* eslint max-lines: ["error", {"max": 360, "skipComments": true}] */
+/* eslint max-lines: ["error", {"max": 400, "skipComments": true}] */
 
 import {
+    HISTORY_STATE_B2N_MARKER,
     HISTORY_STATE_KEY_B2N_PAGE_ID,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
@@ -171,6 +172,7 @@ export class NativeNavigationAndTitleService {
         this.nativeHistoryStack = [nativeTitle];
         this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
+        this.setSystemBackClose();
     }
 
     setTitle(nativeTitle: string) {
@@ -206,6 +208,13 @@ export class NativeNavigationAndTitleService {
      * после нажатия на кнопку «Назад» в NA, вызова `history.back()` и `history.go(-x)`.
      */
     private handleClientSideNavigationBack(event?: PopStateEvent) {
+        const eventState = event?.state as Record<string, unknown> | null;
+
+        // Если попали на запись, помеченную маркером `HISTORY_STATE_B2N_MARKER` -  закрываем WV напрямую, маркер проставляется в setInitialView
+        if (eventState?.[HISTORY_STATE_B2N_MARKER]) {
+            closeWebviewUtil();
+            return;
+        }
         this.isGoBackLocked = false;
 
         const statePageId = (event?.state as Record<string, unknown> | null)?.[
@@ -418,5 +427,34 @@ export class NativeNavigationAndTitleService {
             ...(isPlainObject(state) ? state : {}),
             [HISTORY_STATE_KEY_B2N_PAGE_ID]: pageId,
         };
+    }
+
+    /**
+     * Только для Android: создаёт буфер для перехвата системного «назад».
+     * Текущая запись истории помечается спец-стейтом `HISTORY_STATE_B2N_MARKER` —
+     * сигналом нужно закрыть WV.
+     */
+    private setSystemBackClose() {
+        if (this.nativeParamsService.environment !== 'android') return;
+
+        const savedState = window.history.state;
+
+        const markedState = {
+            ...this.createStateWithPageId(savedState, this.nativeHistoryStack.length),
+            [HISTORY_STATE_B2N_MARKER]: true,
+        };
+
+        if (this.browserHistoryApiWrappers?.replace) {
+            this.browserHistoryApiWrappers.replace(undefined, markedState);
+        } else {
+            window.history.replaceState(markedState, '');
+        }
+
+        if (this.browserHistoryApiWrappers?.push) {
+            this.browserHistoryApiWrappers.push(undefined, savedState);
+        } else {
+            window.history.pushState(savedState, '');
+        }
+        this.setHistoryStatePageId();
     }
 }
