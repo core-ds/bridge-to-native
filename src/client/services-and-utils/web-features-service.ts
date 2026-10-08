@@ -10,12 +10,13 @@ import { canUseWebFeature } from './native-features';
 import { type NativeParamsService } from './native-params-service';
 
 /**
- * Доменный сервис фич WebFeatures (iOS, АМ ≥ 17.0.0).
+ * Сервис команд для взаимодействия WA с NA (iOS, АМ ≥ 17.0.0):
+ * геолокация, тактильный отклик, нативная штора и таббар.
  *
  * Инкапсулирует гейт доступности по платформе и версии NA и формирует
  * данные для вызовов через {@link NativeBridgeService}.
  */
-export class WebFeaturesService {
+export class NativeCommandsService {
     constructor(
         private nativeParamsService: NativeParamsService,
         private nativeBridgeService: NativeBridgeService,

@@ -45,7 +45,7 @@ const mockedNativeBridgeServiceInstance = {
 
 const MockedNativeBridgeServiceConstructor = jest.fn(() => mockedNativeBridgeServiceInstance);
 
-const mockedWebFeaturesServiceInstance = {
+const mockedNativeCommandsServiceInstance = {
     getGeoConfiguration: jest.fn(),
     vibrate: jest.fn(),
     setSheetDragArea: jest.fn(),
@@ -53,7 +53,7 @@ const mockedWebFeaturesServiceInstance = {
     showTabbar: jest.fn(),
 };
 
-const MockedWebFeaturesServiceConstructor = jest.fn(() => mockedWebFeaturesServiceInstance);
+const MockedNativeCommandsServiceConstructor = jest.fn(() => mockedNativeCommandsServiceInstance);
 
 jest.mock('../../src/client/services-and-utils/external-links-service', () => ({
     __esModule: true,
@@ -85,8 +85,8 @@ jest.mock('../../src/client/services-and-utils/native-bridge-service', () => ({
 
 jest.mock('../../src/client/services-and-utils/web-features-service', () => ({
     __esModule: true,
-    get WebFeaturesService() {
-        return MockedWebFeaturesServiceConstructor;
+    get NativeCommandsService() {
+        return MockedNativeCommandsServiceConstructor;
     },
 }));
 
@@ -158,8 +158,8 @@ describe('BridgeToNative', () => {
             expect(MockedNativeBridgeServiceConstructor).toHaveBeenCalledWith(logError);
         });
 
-        it('should pass `nativeParamsService` and `nativeBridgeService` to `WebFeaturesService`', () => {
-            expect(MockedWebFeaturesServiceConstructor).toHaveBeenCalledWith(
+        it('should pass `nativeParamsService` and `nativeBridgeService` to `NativeCommandsService`', () => {
+            expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
                 mockedNativeBridgeServiceInstance,
             );
@@ -469,39 +469,39 @@ describe('BridgeToNative', () => {
         });
 
         describe('WebFeatures methods', () => {
-            it('should call `webFeaturesService.getGeoConfiguration` and return its promise', () => {
+            it('should call `NativeCommandsService.getGeoConfiguration` and return its promise', () => {
                 const result = Promise.resolve({ permission: 'allowed', userCoordinate: null });
 
-                mockedWebFeaturesServiceInstance.getGeoConfiguration.mockReturnValueOnce(result);
+                mockedNativeCommandsServiceInstance.getGeoConfiguration.mockReturnValueOnce(result);
 
                 expect(bridge.getGeoConfiguration()).toBe(result);
-                expect(mockedWebFeaturesServiceInstance.getGeoConfiguration).toHaveBeenCalledTimes(
-                    1,
-                );
+                expect(
+                    mockedNativeCommandsServiceInstance.getGeoConfiguration,
+                ).toHaveBeenCalledTimes(1);
             });
 
-            it('should call `webFeaturesService.vibrate` with options', () => {
+            it('should call `NativeCommandsService.vibrate` with options', () => {
                 const options = { type: 'medium' as const, intensity: 0.5 };
 
                 bridge.vibrate(options);
-                expect(mockedWebFeaturesServiceInstance.vibrate).toHaveBeenCalledWith(options);
+                expect(mockedNativeCommandsServiceInstance.vibrate).toHaveBeenCalledWith(options);
             });
 
-            it('should call `webFeaturesService.setSheetDragArea` with area', () => {
+            it('should call `NativeCommandsService.setSheetDragArea` with area', () => {
                 bridge.setSheetDragArea('navigationBar');
-                expect(mockedWebFeaturesServiceInstance.setSheetDragArea).toHaveBeenCalledWith(
+                expect(mockedNativeCommandsServiceInstance.setSheetDragArea).toHaveBeenCalledWith(
                     'navigationBar',
                 );
             });
 
-            it('should call `webFeaturesService.hideTabbar`', () => {
+            it('should call `NativeCommandsService.hideTabbar`', () => {
                 bridge.hideTabbar();
-                expect(mockedWebFeaturesServiceInstance.hideTabbar).toHaveBeenCalledTimes(1);
+                expect(mockedNativeCommandsServiceInstance.hideTabbar).toHaveBeenCalledTimes(1);
             });
 
-            it('should call `webFeaturesService.showTabbar` without arguments', () => {
+            it('should call `NativeCommandsService.showTabbar` without arguments', () => {
                 bridge.showTabbar();
-                expect(mockedWebFeaturesServiceInstance.showTabbar).toHaveBeenCalledWith();
+                expect(mockedNativeCommandsServiceInstance.showTabbar).toHaveBeenCalledWith();
             });
         });
     });

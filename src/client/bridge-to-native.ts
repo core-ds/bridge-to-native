@@ -4,7 +4,7 @@ import { ExternalLinksService } from './services-and-utils/external-links-servic
 import { NativeBridgeService } from './services-and-utils/native-bridge-service';
 import { NativeNavigationAndTitleService } from './services-and-utils/native-navigation-and-title-service';
 import { NativeParamsService } from './services-and-utils/native-params-service';
-import { WebFeaturesService } from './services-and-utils/web-features-service';
+import { NativeCommandsService } from './services-and-utils/web-features-service';
 import {
     type BrowserHistoryApiWrappers,
     type HistoryPushStateParams,
@@ -53,7 +53,7 @@ export class BridgeToNative {
 
     private nativeBridgeService = new NativeBridgeService(this.options?.logError);
 
-    private webFeaturesService = new WebFeaturesService(
+    private NativeCommandsService = new NativeCommandsService(
         this.nativeParamsService,
         this.nativeBridgeService,
     );
@@ -373,7 +373,7 @@ export class BridgeToNative {
      *  Отказ в доступе — успешный ответ с соответствующим permission, а не ошибка запроса.
      */
     getGeoConfiguration(): Promise<WebFeaturesGeoConfiguration> {
-        return this.webFeaturesService.getGeoConfiguration();
+        return this.NativeCommandsService.getGeoConfiguration();
     }
 
     /**
@@ -386,7 +386,7 @@ export class BridgeToNative {
      *  Если не передана, NA использует значение по умолчанию.
      */
     vibrate(options: WebFeaturesHapticsOptions) {
-        this.webFeaturesService.vibrate(options);
+        this.NativeCommandsService.vibrate(options);
     }
 
     /**
@@ -396,20 +396,20 @@ export class BridgeToNative {
      *  `navigationBar` — только за навигационную панель шторы.
      */
     setSheetDragArea(area: WebFeaturesSheetDragArea) {
-        this.webFeaturesService.setSheetDragArea(area);
+        this.NativeCommandsService.setSheetDragArea(area);
     }
 
     /**
      * Скрывает нативный таббар
      */
     hideTabbar() {
-        this.webFeaturesService.hideTabbar();
+        this.NativeCommandsService.hideTabbar();
     }
 
     /**
      * Показывает нативный таббар (будет активна вкладка, которая была активна при скрытии)
      */
     showTabbar() {
-        this.webFeaturesService.showTabbar();
+        this.NativeCommandsService.showTabbar();
     }
 }

@@ -1,6 +1,6 @@
 import { type NativeBridgeService } from '../../../src/client/services-and-utils/native-bridge-service';
 import { type NativeParamsService } from '../../../src/client/services-and-utils/native-params-service';
-import { WebFeaturesService } from '../../../src/client/services-and-utils/web-features-service';
+import { NativeCommandsService } from '../../../src/client/services-and-utils/web-features-service';
 
 const createService = (environment: 'android' | 'ios', appVersion: string) => {
     const nativeBridgeService = {
@@ -14,12 +14,12 @@ const createService = (environment: 'android' | 'ios', appVersion: string) => {
     } as NativeParamsService;
 
     return {
-        service: new WebFeaturesService(nativeParamsService, nativeBridgeService),
+        service: new NativeCommandsService(nativeParamsService, nativeBridgeService),
         bridge: nativeBridgeService,
     };
 };
 
-describe('WebFeaturesService', () => {
+describe('NativeCommandsService', () => {
     describe('send methods gating', () => {
         it.each(['vibrate', 'setSheetDragArea', 'hideTabbar', 'showTabbar'] as const)(
             'should no-op `%s` on android',

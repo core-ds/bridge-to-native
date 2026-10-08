@@ -33,7 +33,7 @@ const generateRequestId = () => {
 };
 
 /**
- * Сервис-транспорт для взаимодействия WA с NA через WebFeatures-мост.
+ * Сервис-транспорт для взаимодействия WA с NA.
  */
 export class NativeBridgeService {
     private pendingCalls = new Map<string, PendingCall>();
