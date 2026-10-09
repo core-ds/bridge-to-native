@@ -1,4 +1,4 @@
-import { type NativeFeaturesFromVersion } from './types';
+import { type ModernAction, type NativeFeaturesFromVersion } from './types';
 
 export const ANDROID_APP_ID = 'alfabank';
 
@@ -31,3 +31,12 @@ export const VERSION_TO_IOS_APP_ID = {
     '13.5.0': 'assistmekz',
     '14.5.0': 'smartfinancementor',
 } as const;
+
+export const NATIVE_COMMANDS_FROM_VERSION: Readonly<Record<ModernAction, { fromVersion: string }>> =
+    {
+        'geo.configuration': { fromVersion: '17.0.0' },
+        'haptics.vibrate': { fromVersion: '17.0.0' },
+        'sheet.setDragArea': { fromVersion: '17.0.0' },
+        'tabbar.hide': { fromVersion: '17.0.0' },
+        'tabbar.show': { fromVersion: '17.0.0' },
+    };

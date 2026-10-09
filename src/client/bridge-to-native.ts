@@ -1,16 +1,20 @@
 /* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
 
 import { ExternalLinksService } from './services-and-utils/external-links-service';
+import { NativeCommandsService } from './services-and-utils/native-commands-service';
 import { NativeNavigationAndTitleService } from './services-and-utils/native-navigation-and-title-service';
 import { NativeParamsService } from './services-and-utils/native-params-service';
 import {
     type BrowserHistoryApiWrappers,
+    type GeoConfiguration,
+    type HapticsOptions,
     type HistoryPushStateParams,
     type HistoryReplaceStateParams,
     type LocationAssignParam,
     type LogError,
     type NativeFeatureKey,
     type PdfType,
+    type SheetDragArea,
 } from './types';
 
 /**
@@ -25,11 +29,14 @@ export class BridgeToNative {
      *  будут использованы стандартные `History: pushState()` и `History: go()`.
      * @param options.logError Функция с помощью которой B2N может залогировать ошибку,
      *  если не передать, B2N не будет логировать ошибки.
+     * @param options.isSheetWebview Признак открытия WV в шторе. Отвечает за доступность
+     * новых методов взаимодействия с нативом. По умолчанию true.
      */
     constructor(
         private options?: {
             browserHistoryApiWrappers?: BrowserHistoryApiWrappers;
             logError?: LogError;
+            isSheetWebview?: boolean;
         },
     ) {}
 
@@ -44,6 +51,12 @@ export class BridgeToNative {
         this.nativeParamsService,
         this.options?.browserHistoryApiWrappers,
         this.options?.logError,
+    );
+
+    private nativeCommandsService = new NativeCommandsService(
+        this.nativeParamsService,
+        this.options?.logError,
+        this.options?.isSheetWebview ?? true,
     );
 
     /**
@@ -349,5 +362,64 @@ export class BridgeToNative {
      */
     setTitle(nativeTitle: string) {
         this.nativeNavigationAndTitleService.setTitle(nativeTitle);
+    }
+
+    /**
+     * Возвращает статус доступа к геолокации и, при наличии разрешения, координаты пользователя.
+     * Работает только на iOS в версиях `17.0.0` и выше.
+     * В Android нужно использовать Web API.
+     *
+     * @returns Promise с конфигурацией геолокации:
+     *  `permission`: `allowed` — доступ разрешён; `denied` — запрещён;
+     *  `notDetermined` — решение ещё не принято; `restricted` — доступ ограничен.
+     *  `userCoordinate`: `{ latitude, longitude }` или `null`, если доступ не разрешён.
+     *  Отказ в доступе — успешный ответ с соответствующим permission, а не ошибка запроса.
+     */
+    getGeoConfiguration(): Promise<GeoConfiguration> {
+        return this.nativeCommandsService.getGeoConfiguration();
+    }
+
+    /**
+     * Воспроизводит тактильный отклик.
+     * Работает только на iOS в версиях `17.0.0` и выше.
+     *
+     * @param isFTEnabled Значение фича-тогла webViewHapticsIOS;
+     *  при false команда не отправляется.
+     * @param options.type Тип тактильного отклика.
+     * @param options.intensity Интенсивность от 0 до 1, применяется только
+     *  к impact-типам. Если не передана, NA использует значение по умолчанию.
+     */
+    vibrate(options: HapticsOptions, isFTEnabled: boolean) {
+        this.nativeCommandsService.vibrate(options, isFTEnabled);
+    }
+
+    /**
+     * Задаёт область нативной шторы, за которую можно её перетаскивать.
+     * Работает только на iOS в версиях `17.0.0` и выше.
+     *
+     * @param area
+     *    `wholeSheet` — перетаскивание за любую часть шторы (по умолчанию в NA),
+     *     данная опция может конфликтовать с `drag` обработчиками в вебе.
+     */
+    setSheetDragArea(area: SheetDragArea) {
+        this.nativeCommandsService.setSheetDragArea(area);
+    }
+
+    /**
+     * Скрывает нативный таббар.
+     * Метод имеет смысл только на iOS в версиях `17.0.0` и выше, в которых WV-модуль
+     * может открываться с таббаром внизу.
+     */
+    hideTabbar() {
+        this.nativeCommandsService.hideTabbar();
+    }
+
+    /**
+     * Показывает нативный таббар (будет активна вкладка, которая была активна при скрытии).
+     * Метод имеет смысл только на iOS в версиях `17.0.0` и выше, в которых WV-модуль
+     * может открываться с таббаром внизу.
+     */
+    showTabbar() {
+        this.nativeCommandsService.showTabbar();
     }
 }
