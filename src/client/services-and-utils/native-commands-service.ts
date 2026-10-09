@@ -21,6 +21,7 @@ export class NativeCommandsService {
     constructor(
         private nativeParamsService: NativeParamsService,
         logError?: LogError,
+        private isSheetWebview = true,
     ) {
         this.modernBridgeService = new ModernBridgeService(logError);
     }
@@ -39,8 +40,8 @@ export class NativeCommandsService {
         return this.modernBridgeService.call<GeoConfiguration>('geo.configuration', {});
     }
 
-    vibrate({ type, intensity }: HapticsOptions) {
-        if (!this.isAvailable('haptics.vibrate')) {
+    vibrate({ type, intensity }: HapticsOptions, isFTEnabled: boolean) {
+        if (!isFTEnabled || !this.isAvailable('haptics.vibrate')) {
             return;
         }
 
@@ -75,10 +76,13 @@ export class NativeCommandsService {
     }
 
     private isAvailable(action: ModernAction) {
-        return canUseNativeCommand(
-            this.nativeParamsService.environment,
-            this.nativeParamsService.appVersion,
-            action,
+        return (
+            this.isSheetWebview &&
+            canUseNativeCommand(
+                this.nativeParamsService.environment,
+                this.nativeParamsService.appVersion,
+                action,
+            )
         );
     }
 }

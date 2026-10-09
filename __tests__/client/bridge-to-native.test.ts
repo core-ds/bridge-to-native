@@ -144,6 +144,7 @@ describe('BridgeToNative', () => {
             expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
                 logError,
+                true,
             );
         });
 
@@ -151,6 +152,7 @@ describe('BridgeToNative', () => {
             expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
                 undefined,
+                true,
             );
         });
     });
@@ -472,8 +474,11 @@ describe('BridgeToNative', () => {
             it('should call `NativeCommandsService.vibrate` with options', () => {
                 const options = { type: 'medium' as const, intensity: 0.5 };
 
-                bridge.vibrate(options);
-                expect(mockedNativeCommandsServiceInstance.vibrate).toHaveBeenCalledWith(options);
+                bridge.vibrate(options, true);
+                expect(mockedNativeCommandsServiceInstance.vibrate).toHaveBeenCalledWith(
+                    options,
+                    true,
+                );
             });
 
             it('should call `NativeCommandsService.setSheetDragArea` with area', () => {
@@ -493,5 +498,26 @@ describe('BridgeToNative', () => {
                 expect(mockedNativeCommandsServiceInstance.showTabbar).toHaveBeenCalledWith();
             });
         });
+    });
+});
+
+describe('Native command feature flags in the facade', () => {
+    it('passes the common flag and individual toggles', () => {
+        const bridge = new BridgeToNative({ isSheetWebview: false });
+
+        expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
+            expect.anything(),
+            undefined,
+            false,
+        );
+        bridge.vibrate({ type: 'medium' }, false);
+        bridge.hideTabbar();
+        bridge.showTabbar();
+        expect(mockedNativeCommandsServiceInstance.vibrate).toHaveBeenCalledWith(
+            { type: 'medium' },
+            false,
+        );
+        expect(mockedNativeCommandsServiceInstance.hideTabbar).toHaveBeenCalledWith();
+        expect(mockedNativeCommandsServiceInstance.showTabbar).toHaveBeenCalledWith();
     });
 });
