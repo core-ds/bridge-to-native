@@ -38,13 +38,6 @@ const mockedNativeParamsServiceInstance = {
 
 const MockedNativeParamsServiceConstructor = jest.fn(() => mockedNativeParamsServiceInstance);
 
-const mockedNativeBridgeServiceInstance = {
-    send: jest.fn(),
-    call: jest.fn(),
-};
-
-const MockedNativeBridgeServiceConstructor = jest.fn(() => mockedNativeBridgeServiceInstance);
-
 const mockedNativeCommandsServiceInstance = {
     getGeoConfiguration: jest.fn(),
     vibrate: jest.fn(),
@@ -76,14 +69,7 @@ jest.mock('../../src/client/services-and-utils/native-params-service', () => ({
     },
 }));
 
-jest.mock('../../src/client/services-and-utils/native-bridge-service', () => ({
-    __esModule: true,
-    get NativeBridgeService() {
-        return MockedNativeBridgeServiceConstructor;
-    },
-}));
-
-jest.mock('../../src/client/services-and-utils/web-features-service', () => ({
+jest.mock('../../src/client/services-and-utils/native-commands-service', () => ({
     __esModule: true,
     get NativeCommandsService() {
         return MockedNativeCommandsServiceConstructor;
@@ -149,19 +135,22 @@ describe('BridgeToNative', () => {
             );
         });
 
-        it('should pass `logError` to `NativeBridgeService`', () => {
+        it('should pass `logError` to `NativeCommandsService`', () => {
             const logError = jest.fn();
 
             // eslint-disable-next-line no-new
             new BridgeToNative({ logError });
 
-            expect(MockedNativeBridgeServiceConstructor).toHaveBeenCalledWith(logError);
-        });
-
-        it('should pass `nativeParamsService` and `nativeBridgeService` to `NativeCommandsService`', () => {
             expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
-                mockedNativeBridgeServiceInstance,
+                logError,
+            );
+        });
+
+        it('should pass `nativeParamsService` and logger to `NativeCommandsService`', () => {
+            expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
+                mockedNativeParamsServiceInstance,
+                undefined,
             );
         });
     });
@@ -468,7 +457,7 @@ describe('BridgeToNative', () => {
             });
         });
 
-        describe('WebFeatures methods', () => {
+        describe('Native commands', () => {
             it('should call `NativeCommandsService.getGeoConfiguration` and return its promise', () => {
                 const result = Promise.resolve({ permission: 'allowed', userCoordinate: null });
 

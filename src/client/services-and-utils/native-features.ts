@@ -1,4 +1,4 @@
-import { NATIVE_FEATURES_FROM_VERSION, WEB_FEATURES_FROM_VERSION } from '../constants';
+import { NATIVE_COMMANDS_FROM_VERSION, NATIVE_FEATURES_FROM_VERSION } from '../constants';
 import { type Environment, type ModernAction, type NativeFeatureKey } from '../types';
 
 const VERSION_FORMAT_PATTERN = /^\d+\.\d+\.\d+$/;
@@ -45,12 +45,12 @@ export const canUseNativeFeature = (
 };
 
 /**
- * Проверяет доступность команды  для указанной платформы и версии NA.
+ * Проверяет доступность команды для указанной платформы и версии NA.
  *
  * Проверяемые команды поддерживаются только на iOS.
  * Версия в неизвестном формате считается `0.0.0`.
  */
-export const canUseWebFeature = (
+export const canUseNativeCommand = (
     platform: Environment,
     appVersion: string,
     action: ModernAction,
@@ -59,7 +59,7 @@ export const canUseWebFeature = (
         return false;
     }
 
-    const { fromVersion } = WEB_FEATURES_FROM_VERSION[action];
+    const { fromVersion } = NATIVE_COMMANDS_FROM_VERSION[action];
 
     return isVersionHigherOrEqual(
         isValidVersionFormat(appVersion) ? appVersion : '0.0.0',

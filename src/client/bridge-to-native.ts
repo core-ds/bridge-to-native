@@ -1,21 +1,20 @@
 /* eslint max-lines: ["error", {"skipComments": true}] */ // Много комментариев.
 
 import { ExternalLinksService } from './services-and-utils/external-links-service';
-import { NativeBridgeService } from './services-and-utils/native-bridge-service';
+import { NativeCommandsService } from './services-and-utils/native-commands-service';
 import { NativeNavigationAndTitleService } from './services-and-utils/native-navigation-and-title-service';
 import { NativeParamsService } from './services-and-utils/native-params-service';
-import { NativeCommandsService } from './services-and-utils/web-features-service';
 import {
     type BrowserHistoryApiWrappers,
+    type GeoConfiguration,
+    type HapticsOptions,
     type HistoryPushStateParams,
     type HistoryReplaceStateParams,
     type LocationAssignParam,
     type LogError,
     type NativeFeatureKey,
     type PdfType,
-    type WebFeaturesGeoConfiguration,
-    type WebFeaturesHapticsOptions,
-    type WebFeaturesSheetDragArea,
+    type SheetDragArea,
 } from './types';
 
 /**
@@ -51,11 +50,9 @@ export class BridgeToNative {
         this.options?.logError,
     );
 
-    private nativeBridgeService = new NativeBridgeService(this.options?.logError);
-
-    private NativeCommandsService = new NativeCommandsService(
+    private nativeCommandsService = new NativeCommandsService(
         this.nativeParamsService,
-        this.nativeBridgeService,
+        this.options?.logError,
     );
 
     /**
@@ -364,7 +361,9 @@ export class BridgeToNative {
     }
 
     /**
-     * Возвращает статус доступа к геолокации и, при наличии разрешения, координаты пользователя
+     * Возвращает статус доступа к геолокации и, при наличии разрешения, координаты пользователя.
+     * Работает только на iOS в версиях `17.0.0` и выше.
+     * В Android нужно использовать Web API.
      *
      * @returns Promise с конфигурацией геолокации:
      *  `permission`: `allowed` — доступ разрешён; `denied` — запрещён;
@@ -372,44 +371,48 @@ export class BridgeToNative {
      *  `userCoordinate`: `{ latitude, longitude }` или `null`, если доступ не разрешён.
      *  Отказ в доступе — успешный ответ с соответствующим permission, а не ошибка запроса.
      */
-    getGeoConfiguration(): Promise<WebFeaturesGeoConfiguration> {
-        return this.NativeCommandsService.getGeoConfiguration();
+    getGeoConfiguration(): Promise<GeoConfiguration> {
+        return this.nativeCommandsService.getGeoConfiguration();
     }
 
     /**
-     * Воспроизводит тактильный отклик
+     * Воспроизводит тактильный отклик.
+     * Работает только на iOS в версиях `17.0.0` и выше.
      *
-     * @param options.type Тип тактильного отклика:
-     *  impact — `light`, `medium`, `heavy`, `soft`, `rigid`;
-     *  notification — `success`, `warning`, `error`; selection — `selection`.
-     * @param options.intensity Интенсивность `0...1` (только для impact-типов).
-     *  Если не передана, NA использует значение по умолчанию.
+     * @param options.type Тип тактильного отклика.
+     * @param options.intensity Интенсивность от 0 до 1, применяется только
+     *  к impact-типам. Если не передана, NA использует значение по умолчанию.
      */
-    vibrate(options: WebFeaturesHapticsOptions) {
-        this.NativeCommandsService.vibrate(options);
+    vibrate(options: HapticsOptions) {
+        this.nativeCommandsService.vibrate(options);
     }
 
     /**
      * Задаёт область нативной шторы, за которую можно её перетаскивать.
      *
-     * @param area `wholeSheet` — перетаскивание за любую часть шторы (по умолчанию в NA);
-     *  `navigationBar` — только за навигационную панель шторы.
+     * @param area
+     *    `wholeSheet` — перетаскивание за любую часть шторы (по умолчанию в NA),
+     *     данная опция может конфликтовать с `drag` обработчиками в вебе.
      */
-    setSheetDragArea(area: WebFeaturesSheetDragArea) {
-        this.NativeCommandsService.setSheetDragArea(area);
+    setSheetDragArea(area: SheetDragArea) {
+        this.nativeCommandsService.setSheetDragArea(area);
     }
 
     /**
-     * Скрывает нативный таббар
+     * Скрывает нативный таббар.
+     * Метод имеет смысл только на iOS в версиях `17.0.0` и выше, в которых WV-модуль
+     * может открываться с таббаром внизу.
      */
     hideTabbar() {
-        this.NativeCommandsService.hideTabbar();
+        this.nativeCommandsService.hideTabbar();
     }
 
     /**
-     * Показывает нативный таббар (будет активна вкладка, которая была активна при скрытии)
+     * Показывает нативный таббар (будет активна вкладка, которая была активна при скрытии).
+     * Метод имеет смысл только на iOS в версиях `17.0.0` и выше, в которых WV-модуль
+     * может открываться с таббаром внизу.
      */
     showTabbar() {
-        this.NativeCommandsService.showTabbar();
+        this.nativeCommandsService.showTabbar();
     }
 }

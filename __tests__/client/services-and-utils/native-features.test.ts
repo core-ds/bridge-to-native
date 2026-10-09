@@ -1,6 +1,6 @@
 import {
+    canUseNativeCommand,
     canUseNativeFeature,
-    canUseWebFeature,
     isValidVersionFormat,
     isVersionHigherOrEqual,
 } from '../../../src/client/services-and-utils/native-features';
@@ -65,7 +65,7 @@ describe('native-features', () => {
         );
     });
 
-    describe('canUseWebFeature', () => {
+    describe('canUseNativeCommand', () => {
         it.each([
             ['ios', '16.99.99', 'geo.configuration', false],
             ['ios', '17.0.0', 'geo.configuration', true],
@@ -77,7 +77,7 @@ describe('native-features', () => {
         ] as const)(
             'should return for %s `%s` action `%s` → `%s`',
             (platform, appVersion, action, expected) => {
-                expect(canUseWebFeature(platform, appVersion, action)).toBe(expected);
+                expect(canUseNativeCommand(platform, appVersion, action)).toBe(expected);
             },
         );
     });

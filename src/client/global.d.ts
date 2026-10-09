@@ -1,4 +1,4 @@
-import { type WebFeaturesCallbackPayload } from './types';
+import { type CallbackPayload } from './types';
 
 declare global {
     interface Window {
@@ -7,7 +7,7 @@ declare global {
         };
         /** Канал ответов «натив → веб». Обработчик устанавливает B2N. */
         webBridge?: {
-            callback?: (requestId: string, payload: WebFeaturesCallbackPayload) => void;
+            callback?: (requestId: string, payload: CallbackPayload) => void;
         };
         /** Нативный webkit-мост iOS. */
         webkit?: {

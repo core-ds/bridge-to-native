@@ -1,4 +1,4 @@
-import { type LogError, type ModernAction, type WebFeaturesCallbackPayload } from '../types';
+import { type CallbackPayload, type LogError, type ModernAction } from '../types';
 
 export const CALL_TIMEOUT_MS = 10_000;
 
@@ -35,10 +35,10 @@ const generateRequestId = () => {
 /**
  * Сервис-транспорт для взаимодействия WA с NA.
  */
-export class NativeBridgeService {
+export class ModernBridgeService {
     private pendingCalls = new Map<string, PendingCall>();
 
-    private savedCallback?: (requestId: string, payload: WebFeaturesCallbackPayload) => void;
+    private savedCallback?: (requestId: string, payload: CallbackPayload) => void;
 
     constructor(private logError?: LogError) {
         this.handleCallback = this.handleCallback.bind(this);
@@ -85,14 +85,14 @@ export class NativeBridgeService {
             this.reportNoTransport('call', action);
 
             return Promise.reject(
-                new Error(`NativeBridgeService: transport is not available for "${action}"`),
+                new Error(`ModernBridgeService: transport is not available for "${action}"`),
             );
         }
 
         return new Promise<Data>((resolve, reject) => {
             const timeoutId = setTimeout(() => {
                 this.pendingCalls.delete(requestId);
-                reject(new Error(`NativeBridgeService: request "${action}" timed out`));
+                reject(new Error(`ModernBridgeService: request "${action}" timed out`));
             }, CALL_TIMEOUT_MS);
 
             this.pendingCalls.set(requestId, {
@@ -105,7 +105,7 @@ export class NativeBridgeService {
         });
     }
 
-    private handleCallback(requestId: string, payload: WebFeaturesCallbackPayload) {
+    private handleCallback(requestId: string, payload: CallbackPayload) {
         const pending = this.pendingCalls.get(requestId);
 
         if (!pending) {
@@ -154,7 +154,7 @@ export class NativeBridgeService {
     }
 
     private reportNoTransport(kind: BridgeKind, action: ModernAction) {
-        const message = `NativeBridgeService: native bridge is not available, "${action}" (${kind}) was not sent`;
+        const message = `ModernBridgeService: native bridge is not available, "${action}" (${kind}) was not sent`;
 
         this.logError?.(message, { action, kind });
         // eslint-disable-next-line no-console -- сообщаем потребителю о недоступности моста.

@@ -43,19 +43,19 @@ export type ModernAction =
     | 'tabbar.hide'
     | 'tabbar.show';
 
-export type WebFeaturesGeoPermission = 'allowed' | 'denied' | 'notDetermined' | 'restricted';
+export type GeoPermission = 'allowed' | 'denied' | 'notDetermined' | 'restricted';
 
-export type WebFeaturesUserCoordinate = {
+export type UserCoordinate = {
     latitude: number;
     longitude: number;
 };
 
-export type WebFeaturesGeoConfiguration = {
-    permission: WebFeaturesGeoPermission;
-    userCoordinate: WebFeaturesUserCoordinate | null;
+export type GeoConfiguration = {
+    permission: GeoPermission;
+    userCoordinate: UserCoordinate | null;
 };
 
-export type WebFeaturesHapticsType =
+export type HapticsType =
     | 'light'
     | 'medium'
     | 'heavy'
@@ -66,14 +66,14 @@ export type WebFeaturesHapticsType =
     | 'error'
     | 'selection';
 
-export type WebFeaturesHapticsOptions = {
-    type: WebFeaturesHapticsType;
+export type HapticsOptions = {
+    type: HapticsType;
     intensity?: number;
 };
 
-export type WebFeaturesSheetDragArea = 'wholeSheet' | 'navigationBar';
+export type SheetDragArea = 'wholeSheet' | 'navigationBar';
 
-export type WebFeaturesCallbackPayload = {
+export type CallbackPayload = {
     data: unknown;
     error: { code: number; message: string } | null;
 };

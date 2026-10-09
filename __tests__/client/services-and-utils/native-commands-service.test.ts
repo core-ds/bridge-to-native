@@ -1,12 +1,17 @@
-import { type NativeBridgeService } from '../../../src/client/services-and-utils/native-bridge-service';
+import { NativeCommandsService } from '../../../src/client/services-and-utils/native-commands-service';
 import { type NativeParamsService } from '../../../src/client/services-and-utils/native-params-service';
-import { NativeCommandsService } from '../../../src/client/services-and-utils/web-features-service';
+
+const mockedModernBridgeService = { send: jest.fn(), call: jest.fn() };
+const MockedModernBridgeServiceConstructor = jest.fn(() => mockedModernBridgeService);
+
+jest.mock('../../../src/client/services-and-utils/modern-bridge-service', () => ({
+    get ModernBridgeService() {
+        return MockedModernBridgeServiceConstructor;
+    },
+}));
 
 const createService = (environment: 'android' | 'ios', appVersion: string) => {
-    const nativeBridgeService = {
-        send: jest.fn(),
-        call: jest.fn(),
-    } as unknown as NativeBridgeService;
+    jest.clearAllMocks();
 
     const nativeParamsService = {
         environment,
@@ -14,8 +19,8 @@ const createService = (environment: 'android' | 'ios', appVersion: string) => {
     } as NativeParamsService;
 
     return {
-        service: new NativeCommandsService(nativeParamsService, nativeBridgeService),
-        bridge: nativeBridgeService,
+        service: new NativeCommandsService(nativeParamsService),
+        bridge: mockedModernBridgeService,
     };
 };
 
@@ -132,7 +137,7 @@ describe('NativeCommandsService', () => {
                 userCoordinate: { latitude: 55.7558, longitude: 37.6173 },
             };
 
-            (bridge.call as jest.Mock).mockResolvedValueOnce(nativeData);
+            bridge.call.mockResolvedValueOnce(nativeData);
 
             await expect(service.getGeoConfiguration()).resolves.toEqual(nativeData);
             expect(bridge.call).toHaveBeenCalledWith('geo.configuration', {});
@@ -142,7 +147,7 @@ describe('NativeCommandsService', () => {
             const { service, bridge } = createService('ios', '17.0.0');
             const nativeData = { permission: 'denied' as const, userCoordinate: null };
 
-            (bridge.call as jest.Mock).mockResolvedValueOnce(nativeData);
+            bridge.call.mockResolvedValueOnce(nativeData);
 
             await expect(service.getGeoConfiguration()).resolves.toEqual(nativeData);
         });

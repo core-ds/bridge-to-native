@@ -1,9 +1,9 @@
 import {
     CALL_TIMEOUT_MS,
-    NativeBridgeService,
-} from '../../../src/client/services-and-utils/native-bridge-service';
+    ModernBridgeService,
+} from '../../../src/client/services-and-utils/modern-bridge-service';
 
-describe('NativeBridgeService', () => {
+describe('ModernBridgeService', () => {
     const originalWindow = window;
 
     const setWindow = (props: Record<string, unknown>) => {
@@ -32,7 +32,7 @@ describe('NativeBridgeService', () => {
 
             setWindow({ webkit: { messageHandlers: { bridge: { postMessage } } } });
 
-            const inst = new NativeBridgeService();
+            const inst = new ModernBridgeService();
 
             inst.send('haptics.vibrate', { type: 'medium' });
 
@@ -48,7 +48,7 @@ describe('NativeBridgeService', () => {
         it('should not throw when only the legacy Android bridge exists', () => {
             setWindow({ Android: { setPageSettings: jest.fn() } });
 
-            const inst = new NativeBridgeService();
+            const inst = new ModernBridgeService();
 
             expect(() => inst.send('haptics.vibrate', { type: 'medium' })).not.toThrow();
         });
@@ -56,7 +56,7 @@ describe('NativeBridgeService', () => {
         it('should not throw when no transport is available', () => {
             setWindow({});
 
-            const inst = new NativeBridgeService();
+            const inst = new ModernBridgeService();
 
             expect(() => inst.send('haptics.vibrate', { type: 'medium' })).not.toThrow();
         });
@@ -66,7 +66,7 @@ describe('NativeBridgeService', () => {
         it('should reject when no transport is available', async () => {
             setWindow({});
 
-            const inst = new NativeBridgeService();
+            const inst = new ModernBridgeService();
 
             await expect(inst.call('geo.configuration', {})).rejects.toThrow();
         });
@@ -74,7 +74,7 @@ describe('NativeBridgeService', () => {
         it('should reject when only the legacy Android bridge exists', async () => {
             setWindow({ Android: { setPageSettings: jest.fn() } });
 
-            const inst = new NativeBridgeService();
+            const inst = new ModernBridgeService();
 
             await expect(inst.call('geo.configuration', {})).rejects.toThrow();
         });
@@ -84,7 +84,7 @@ describe('NativeBridgeService', () => {
 
             setWindow({ webkit: { messageHandlers: { bridge: { postMessage: nativeSend } } } });
 
-            const inst = new NativeBridgeService();
+            const inst = new ModernBridgeService();
             const promise = inst.call('geo.configuration', {});
             const requestId = nativeSend.mock.calls[0][0].requestId as string;
 
@@ -112,7 +112,7 @@ describe('NativeBridgeService', () => {
 
             setWindow({ webkit: { messageHandlers: { bridge: { postMessage: nativeSend } } } });
 
-            const inst = new NativeBridgeService();
+            const inst = new ModernBridgeService();
             const promise = inst.call('geo.configuration', {});
             const requestId = nativeSend.mock.calls[0][0].requestId as string;
 
@@ -132,7 +132,7 @@ describe('NativeBridgeService', () => {
 
             setWindow({ webkit: { messageHandlers: { bridge: { postMessage: nativeSend } } } });
 
-            const inst = new NativeBridgeService();
+            const inst = new ModernBridgeService();
             const promise = inst.call('geo.configuration', {});
 
             jest.advanceTimersByTime(CALL_TIMEOUT_MS);
@@ -145,7 +145,7 @@ describe('NativeBridgeService', () => {
 
             setWindow({ webkit: { messageHandlers: { bridge: { postMessage: nativeSend } } } });
 
-            const inst = new NativeBridgeService();
+            const inst = new ModernBridgeService();
             const first = inst.call('geo.configuration', {});
             const second = inst.call('geo.configuration', {});
 
@@ -170,7 +170,7 @@ describe('NativeBridgeService', () => {
             setWindow({ webBridge: { callback: existing } });
 
             // eslint-disable-next-line no-new
-            new NativeBridgeService();
+            new ModernBridgeService();
 
             // @ts-expect-error -- Объект через который происходит взаимодействие натив -> веб
             window.webBridge?.callback?.('unknown-id', { data: null, error: null });
