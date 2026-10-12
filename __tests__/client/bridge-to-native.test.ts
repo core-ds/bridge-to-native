@@ -144,7 +144,7 @@ describe('BridgeToNative', () => {
             expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
                 logError,
-                true,
+                undefined,
             );
         });
 
@@ -152,7 +152,7 @@ describe('BridgeToNative', () => {
             expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
                 undefined,
-                true,
+                undefined,
             );
         });
     });
@@ -474,11 +474,8 @@ describe('BridgeToNative', () => {
             it('should call `NativeCommandsService.vibrate` with options', () => {
                 const options = { type: 'medium' as const, intensity: 0.5 };
 
-                bridge.vibrate(options, true);
-                expect(mockedNativeCommandsServiceInstance.vibrate).toHaveBeenCalledWith(
-                    options,
-                    true,
-                );
+                bridge.vibrate(options);
+                expect(mockedNativeCommandsServiceInstance.vibrate).toHaveBeenCalledWith(options);
             });
 
             it('should call `NativeCommandsService.setSheetDragArea` with area', () => {
@@ -503,20 +500,21 @@ describe('BridgeToNative', () => {
 
 describe('Native command feature flags in the facade', () => {
     it('passes the common flag and individual toggles', () => {
-        const bridge = new BridgeToNative({ isSheetWebview: false });
+        const bridge = new BridgeToNative({
+            featureToggles: ['mainSuperAppIOS', 'webViewHapticsIOS'],
+        });
 
         expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
             expect.anything(),
             undefined,
-            false,
+            ['mainSuperAppIOS', 'webViewHapticsIOS'],
         );
-        bridge.vibrate({ type: 'medium' }, false);
+        bridge.vibrate({ type: 'medium' });
         bridge.hideTabbar();
         bridge.showTabbar();
-        expect(mockedNativeCommandsServiceInstance.vibrate).toHaveBeenCalledWith(
-            { type: 'medium' },
-            false,
-        );
+        expect(mockedNativeCommandsServiceInstance.vibrate).toHaveBeenCalledWith({
+            type: 'medium',
+        });
         expect(mockedNativeCommandsServiceInstance.hideTabbar).toHaveBeenCalledWith();
         expect(mockedNativeCommandsServiceInstance.showTabbar).toHaveBeenCalledWith();
     });

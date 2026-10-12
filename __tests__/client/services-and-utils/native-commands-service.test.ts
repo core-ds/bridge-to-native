@@ -1,5 +1,6 @@
 import { NativeCommandsService } from '../../../src/client/services-and-utils/native-commands-service';
 import { type NativeParamsService } from '../../../src/client/services-and-utils/native-params-service';
+import { type FSs } from '../../../src/client/types';
 
 const mockedModernBridgeService = { send: jest.fn(), call: jest.fn() };
 const MockedModernBridgeServiceConstructor = jest.fn(() => mockedModernBridgeService);
@@ -13,7 +14,7 @@ jest.mock('../../../src/client/services-and-utils/modern-bridge-service', () => 
 const createService = (
     environment: 'android' | 'ios',
     appVersion: string,
-    isSheetWebview = true,
+    featureToggles: FSs[] | undefined = ['mainSuperAppIOS', 'webViewHapticsIOS'],
 ) => {
     jest.clearAllMocks();
 
@@ -23,7 +24,7 @@ const createService = (
     } as NativeParamsService;
 
     return {
-        service: new NativeCommandsService(nativeParamsService, undefined, isSheetWebview),
+        service: new NativeCommandsService(nativeParamsService, undefined, featureToggles),
         bridge: mockedModernBridgeService,
     };
 };
@@ -36,7 +37,7 @@ describe('NativeCommandsService', () => {
                 const { service, bridge } = createService('android', '17.0.0');
 
                 if (method === 'vibrate') {
-                    service.vibrate({ type: 'medium' }, true);
+                    service.vibrate({ type: 'medium' });
                 } else if (method === 'setSheetDragArea') {
                     service.setSheetDragArea('navigationBar');
                 } else if (method === 'hideTabbar') {
@@ -52,7 +53,7 @@ describe('NativeCommandsService', () => {
         it('should no-op send methods below iOS 17.0.0', () => {
             const { service, bridge } = createService('ios', '16.99.99');
 
-            service.vibrate({ type: 'medium' }, true);
+            service.vibrate({ type: 'medium' });
             service.setSheetDragArea('navigationBar');
             service.hideTabbar();
             service.showTabbar();
@@ -65,7 +66,7 @@ describe('NativeCommandsService', () => {
         it('should call bridge.send with haptics.vibrate and options on iOS 17', () => {
             const { service, bridge } = createService('ios', '17.0.0');
 
-            service.vibrate({ type: 'medium', intensity: 0.5 }, true);
+            service.vibrate({ type: 'medium', intensity: 0.5 });
 
             expect(bridge.send).toHaveBeenCalledWith('haptics.vibrate', {
                 type: 'medium',
@@ -76,7 +77,7 @@ describe('NativeCommandsService', () => {
         it('should omit intensity when not provided', () => {
             const { service, bridge } = createService('ios', '17.0.0');
 
-            service.vibrate({ type: 'light' }, true);
+            service.vibrate({ type: 'light' });
 
             expect(bridge.send).toHaveBeenCalledWith('haptics.vibrate', { type: 'light' });
         });
@@ -84,7 +85,7 @@ describe('NativeCommandsService', () => {
         it('should pass intensity for notification type as-is', () => {
             const { service, bridge } = createService('ios', '17.0.0');
 
-            service.vibrate({ type: 'success', intensity: 0.5 }, true);
+            service.vibrate({ type: 'success', intensity: 0.5 });
 
             expect(bridge.send).toHaveBeenCalledWith('haptics.vibrate', {
                 type: 'success',
@@ -160,9 +161,9 @@ describe('NativeCommandsService', () => {
 
 describe('Native command feature flags', () => {
     it('disables every command when the common flag is false', async () => {
-        const { service, bridge } = createService('ios', '17.0.0', false);
+        const { service, bridge } = createService('ios', '17.0.0', ['webViewHapticsIOS']);
 
-        service.vibrate({ type: 'medium' }, true);
+        service.vibrate({ type: 'medium' });
         service.setSheetDragArea('navigationBar');
         service.hideTabbar();
         service.showTabbar();
@@ -172,9 +173,9 @@ describe('Native command feature flags', () => {
     });
 
     it('disables haptics without disabling other commands', async () => {
-        const { service, bridge } = createService('ios', '17.0.0');
+        const { service, bridge } = createService('ios', '17.0.0', ['mainSuperAppIOS']);
 
-        service.vibrate({ type: 'medium' }, false);
+        service.vibrate({ type: 'medium' });
         expect(bridge.send).not.toHaveBeenCalled();
         service.hideTabbar();
         service.showTabbar();
@@ -190,10 +191,13 @@ describe('Native command feature flags', () => {
         expect(bridge.call).toHaveBeenCalledWith('geo.configuration', {});
     });
 
-    it('sends commands when individual toggles are explicitly enabled', () => {
-        const { service, bridge } = createService('ios', '17.0.0');
+    it('sends commands when toggles are explicitly enabled', () => {
+        const { service, bridge } = createService('ios', '17.0.0', [
+            'mainSuperAppIOS',
+            'webViewHapticsIOS',
+        ]);
 
-        service.vibrate({ type: 'light' }, true);
+        service.vibrate({ type: 'light' });
         service.hideTabbar();
         service.showTabbar();
         expect(bridge.send).toHaveBeenCalledTimes(3);
