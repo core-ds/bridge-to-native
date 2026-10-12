@@ -172,7 +172,7 @@ export class NativeNavigationAndTitleService {
         this.nativeHistoryStack = [nativeTitle];
         this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
-        this.setSystemBackClose();
+        this.fixAndroidSystemBackClose();
     }
 
     setTitle(nativeTitle: string) {
@@ -430,9 +430,15 @@ export class NativeNavigationAndTitleService {
     }
 
     /**
-     * Только для Android: создаёт буфер для перехвата системного «назад».
+     * Только для Android:  обходит особенность системной кнопки/жеста «Назад»,
+     * которая в Android имеет собственную логику и игнорирует сигналы из WA,
+     * связанные с `setPageSettings`.
+     * Создаёт буфер для перехвата системного «назад».
      * Текущая запись истории помечается спец-стейтом `HISTORY_STATE_B2N_MARKER` —
      * сигналом нужно закрыть WV.
+     *
+     * Если пользователь не взаимодействовал со страницей, «костыль» может не сработать из-за механизма Chromium
+     *  «Original History Manipulation Intervention»
      */
     private fixAndroidSystemBackClose() {
         if (this.nativeParamsService.environment !== 'android') return;
