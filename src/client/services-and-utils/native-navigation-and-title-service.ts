@@ -434,7 +434,7 @@ export class NativeNavigationAndTitleService {
      * Текущая запись истории помечается спец-стейтом `HISTORY_STATE_B2N_MARKER` —
      * сигналом нужно закрыть WV.
      */
-    private setSystemBackClose() {
+    private fixAndroidSystemBackClose() {
         if (this.nativeParamsService.environment !== 'android') return;
 
         const savedState = window.history.state;
