@@ -1,10 +1,10 @@
 # 1.6.0 ([3aa0b71](https://github.com/core-ds/bridge-to-native/commit/3aa0b71)) (13-10-2026)
-## minor
+## Features
 - Добавлены методы `getGeoConfiguration`, `vibrate`, `setSheetDragArea`, `hideTabbar` и `showTabbar` для взаимодействия с нативным приложением на iOS начиная с версии 17.0.0.
 - Добавлена опция конструктора `featureToggles` — массив включённых ФТ. Для новых методов требуется mainSuperAppIOS, для вибрации дополнительно — webViewHapticsIOS.
 
 # 1.5.2 ([b0d149b](https://github.com/core-ds/bridge-to-native/commit/b0d149b)) (02-10-2026)
-## Bugfixes
+## Features
 
 * Добавлена проверка линтером на этапе CI и вывод ошибок в комментарии линтера
 
@@ -37,7 +37,7 @@
 * `replaceHistoryState` — новый метод обёртка над `history.replaceState`.
 * Сняты ограничение для методов `navigateServerSide` и `goBackAFewSteps`.
 
-### Условия при которых снимаются ограничения для `navigateServerSide` и `goBackAFewSteps` 
+### Условия при которых снимаются ограничения для `navigateServerSide` и `goBackAFewSteps`
 
 * Все WA, навигация между которыми происходит с помощью `navigateServerSide` и `goBackAFewSteps`, должны использовать B2N версии `1.4.0` и выше.
 * Необходимо заменить в потребителях B2N прямой вызов `history.replaceState` (или обертки над ним типа `history.push` из ReactRouter) на метод `replaceHistoryState` из B2N.
