@@ -1,3 +1,8 @@
+# 1.6.0 ([3aa0b71](https://github.com/core-ds/bridge-to-native/commit/3aa0b71)) (13-10-2026)
+## minor
+- Добавлены методы `getGeoConfiguration`, `vibrate`, `setSheetDragArea`, `hideTabbar` и `showTabbar` для взаимодействия с нативным приложением на iOS начиная с версии 17.0.0.
+- Добавлена опция конструктора `featureToggles` — массив включённых ФТ. Для новых методов требуется mainSuperAppIOS, для вибрации дополнительно — webViewHapticsIOS.
+
 # 1.5.2 ([b0d149b](https://github.com/core-ds/bridge-to-native/commit/b0d149b)) (02-10-2026)
 ## Bugfixes
 
