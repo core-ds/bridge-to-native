@@ -1,5 +1,4 @@
 import {
-    type FSs,
     type GeoConfiguration,
     type HapticsOptions,
     type LogError,
@@ -22,7 +21,6 @@ export class NativeCommandsService {
     constructor(
         private nativeParamsService: NativeParamsService,
         logError?: LogError,
-        private featureToggles?: FSs[],
     ) {
         this.modernBridgeService = new ModernBridgeService(logError);
     }
@@ -42,10 +40,7 @@ export class NativeCommandsService {
     }
 
     vibrate({ type, intensity }: HapticsOptions) {
-        if (
-            (this.featureToggles ?? []).indexOf('webViewHapticsIOS') === -1 ||
-            !this.isAvailable('haptics.vibrate')
-        ) {
+        if (!this.isAvailable('haptics.vibrate')) {
             return;
         }
 
@@ -80,13 +75,16 @@ export class NativeCommandsService {
     }
 
     private isAvailable(action: ModernAction) {
-        return (
-            (this.featureToggles ?? []).indexOf('mainSuperAppIOS') !== -1 &&
-            canUseNativeCommand(
-                this.nativeParamsService.environment,
-                this.nativeParamsService.appVersion,
-                action,
-            )
-        );
+        const { environment, appVersion } = this.nativeParamsService;
+        const available = canUseNativeCommand(environment, appVersion, action);
+
+        if (!available) {
+            // eslint-disable-next-line no-console -- предупреждаем о неподдерживаемом окружении.
+            console.warn(
+                `NativeCommandsService: "${action}" requires iOS and NA version 17.0.0 or later; current platform: ${environment}, version: ${appVersion}`,
+            );
+        }
+
+        return available;
     }
 }

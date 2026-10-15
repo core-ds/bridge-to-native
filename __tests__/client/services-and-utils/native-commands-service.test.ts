@@ -1,6 +1,5 @@
 import { NativeCommandsService } from '../../../src/client/services-and-utils/native-commands-service';
 import { type NativeParamsService } from '../../../src/client/services-and-utils/native-params-service';
-import { type FSs } from '../../../src/client/types';
 
 const mockedModernBridgeService = { send: jest.fn(), call: jest.fn() };
 const MockedModernBridgeServiceConstructor = jest.fn(() => mockedModernBridgeService);
@@ -11,11 +10,7 @@ jest.mock('../../../src/client/services-and-utils/modern-bridge-service', () => 
     },
 }));
 
-const createService = (
-    environment: 'android' | 'ios',
-    appVersion: string,
-    featureToggles: FSs[] | undefined = ['mainSuperAppIOS', 'webViewHapticsIOS'],
-) => {
+const createService = (environment: 'android' | 'ios', appVersion: string) => {
     jest.clearAllMocks();
 
     const nativeParamsService = {
@@ -24,7 +19,7 @@ const createService = (
     } as NativeParamsService;
 
     return {
-        service: new NativeCommandsService(nativeParamsService, undefined, featureToggles),
+        service: new NativeCommandsService(nativeParamsService),
         bridge: mockedModernBridgeService,
     };
 };
@@ -159,47 +154,49 @@ describe('NativeCommandsService', () => {
     });
 });
 
-describe('Native command feature flags', () => {
-    it('disables every command when the common flag is false', async () => {
-        const { service, bridge } = createService('ios', '17.0.0', ['webViewHapticsIOS']);
+describe('Native command availability warnings', () => {
+    afterEach(() => jest.restoreAllMocks());
 
-        service.vibrate({ type: 'medium' });
+    it.each([
+        ['android', '17.0.0'],
+        ['ios', '16.0.0'],
+        ['ios', 'invalid'],
+    ] as const)('warns for every command on %s %s', async (platform, version) => {
+        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const { service, bridge } = createService(platform, version);
+
+        service.vibrate({ type: 'light' });
         service.setSheetDragArea('navigationBar');
         service.hideTabbar();
         service.showTabbar();
         await expect(service.getGeoConfiguration()).rejects.toThrow('unavailable');
+        expect(warn).toHaveBeenCalledTimes(5);
+        for (const action of [
+            'haptics.vibrate',
+            'sheet.setDragArea',
+            'tabbar.hide',
+            'tabbar.show',
+            'geo.configuration',
+        ]) {
+            expect(warn).toHaveBeenCalledWith(expect.stringContaining(action));
+        }
         expect(bridge.send).not.toHaveBeenCalled();
         expect(bridge.call).not.toHaveBeenCalled();
     });
 
-    it('disables haptics without disabling other commands', async () => {
-        const { service, bridge } = createService('ios', '17.0.0', ['mainSuperAppIOS']);
+    it('does not warn or require feature toggles on supported iOS version', async () => {
+        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const { service, bridge } = createService('ios', '17.0.0');
 
-        service.vibrate({ type: 'medium' });
-        expect(bridge.send).not.toHaveBeenCalled();
-        service.hideTabbar();
-        service.showTabbar();
-        expect(bridge.send).toHaveBeenCalledWith('tabbar.hide', {});
-        expect(bridge.send).toHaveBeenCalledWith('tabbar.show', {});
-        service.setSheetDragArea('navigationBar');
         bridge.call.mockResolvedValueOnce({ permission: 'denied', userCoordinate: null });
-        await expect(service.getGeoConfiguration()).resolves.toEqual({
-            permission: 'denied',
-            userCoordinate: null,
-        });
-        expect(bridge.send).toHaveBeenCalledWith('sheet.setDragArea', { area: 'navigationBar' });
-        expect(bridge.call).toHaveBeenCalledWith('geo.configuration', {});
-    });
-
-    it('sends commands when toggles are explicitly enabled', () => {
-        const { service, bridge } = createService('ios', '17.0.0', [
-            'mainSuperAppIOS',
-            'webViewHapticsIOS',
-        ]);
-
         service.vibrate({ type: 'light' });
+        service.setSheetDragArea('navigationBar');
         service.hideTabbar();
         service.showTabbar();
-        expect(bridge.send).toHaveBeenCalledTimes(3);
+        await expect(service.getGeoConfiguration()).resolves.toMatchObject({
+            permission: 'denied',
+        });
+        expect(bridge.send).toHaveBeenCalledTimes(4);
+        expect(warn).not.toHaveBeenCalled();
     });
 });
