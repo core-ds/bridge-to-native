@@ -1,3 +1,8 @@
+# 1.6.1 ([b33641d](https://github.com/core-ds/bridge-to-native/commit/b33641d)) (15-10-2026)
+## Bugfixes
+
+- Удален массив ФТ передаваемый в конструктор, поскольку у веб-приложения нет доступа к нативным фича-тоглам. Проверка ФТ заменена ворнингом при вызове методов на Android или iOS ниже 17.0.0
+
 # 1.6.0 ([3aa0b71](https://github.com/core-ds/bridge-to-native/commit/3aa0b71)) (13-10-2026)
 ## Features
 - Добавлены методы `getGeoConfiguration`, `vibrate`, `setSheetDragArea`, `hideTabbar` и `showTabbar` для взаимодействия с нативным приложением на iOS начиная с версии 17.0.0.
