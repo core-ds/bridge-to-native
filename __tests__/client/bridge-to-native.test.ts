@@ -144,14 +144,12 @@ describe('BridgeToNative', () => {
             expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
                 logError,
-                undefined,
             );
         });
 
         it('should pass `nativeParamsService` and logger to `NativeCommandsService`', () => {
             expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
                 mockedNativeParamsServiceInstance,
-                undefined,
                 undefined,
             );
         });
@@ -495,27 +493,5 @@ describe('BridgeToNative', () => {
                 expect(mockedNativeCommandsServiceInstance.showTabbar).toHaveBeenCalledWith();
             });
         });
-    });
-});
-
-describe('Native command feature flags in the facade', () => {
-    it('passes the common flag and individual toggles', () => {
-        const bridge = new BridgeToNative({
-            featureToggles: ['mainSuperAppIOS', 'webViewHapticsIOS'],
-        });
-
-        expect(MockedNativeCommandsServiceConstructor).toHaveBeenCalledWith(
-            expect.anything(),
-            undefined,
-            ['mainSuperAppIOS', 'webViewHapticsIOS'],
-        );
-        bridge.vibrate({ type: 'medium' });
-        bridge.hideTabbar();
-        bridge.showTabbar();
-        expect(mockedNativeCommandsServiceInstance.vibrate).toHaveBeenCalledWith({
-            type: 'medium',
-        });
-        expect(mockedNativeCommandsServiceInstance.hideTabbar).toHaveBeenCalledWith();
-        expect(mockedNativeCommandsServiceInstance.showTabbar).toHaveBeenCalledWith();
     });
 });

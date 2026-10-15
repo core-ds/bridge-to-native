@@ -6,7 +6,6 @@ import { NativeNavigationAndTitleService } from './services-and-utils/native-nav
 import { NativeParamsService } from './services-and-utils/native-params-service';
 import {
     type BrowserHistoryApiWrappers,
-    type FSs,
     type GeoConfiguration,
     type HapticsOptions,
     type HistoryPushStateParams,
@@ -30,14 +29,11 @@ export class BridgeToNative {
      *  будут использованы стандартные `History: pushState()` и `History: go()`.
      * @param options.logError Функция с помощью которой B2N может залогировать ошибку,
      *  если не передать, B2N не будет логировать ошибки.
-     * @param options.featureToggles Список включённых фича-тоглов, передаваемый WA.
-     *  Без списка или без mainSuperAppIOS часть команд недоступна.
      */
     constructor(
         private options?: {
             browserHistoryApiWrappers?: BrowserHistoryApiWrappers;
             logError?: LogError;
-            featureToggles?: FSs[];
         },
     ) {}
 
@@ -57,7 +53,6 @@ export class BridgeToNative {
     private nativeCommandsService = new NativeCommandsService(
         this.nativeParamsService,
         this.options?.logError,
-        this.options?.featureToggles,
     );
 
     /**
@@ -384,7 +379,7 @@ export class BridgeToNative {
      * Воспроизводит тактильный отклик.
      * Работает только на iOS в версиях `17.0.0` и выше.
      *
-     * Требует mainSuperAppIOS и webViewHapticsIOS в списке featureToggles.
+     * Требует включённых нативных фича-тоглов mainSuperAppIOS и webViewHapticsIOS.
      * @param options.type Тип тактильного отклика.
      * @param options.intensity Интенсивность от 0 до 1, применяется только
      *  к impact-типам. Если не передана, NA использует значение по умолчанию.

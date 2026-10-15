@@ -77,5 +77,3 @@ export type CallbackPayload = {
     data: unknown;
     error: { code: number; message: string } | null;
 };
-
-export type FSs = 'mainSuperAppIOS' | 'webViewHapticsIOS';
