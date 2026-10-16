@@ -19,7 +19,7 @@ export function appendFromCurrentQueryParamForIos(nativeUrl: string): string {
 
     params.set(QUERY_FROM_CURRENT_KEY, QUERY_FROM_CURRENT_VALUE);
 
-    return `${base}?${params.toString()}`;
+    return `${base}?${params.toString().replace(/\+/g, '%20')}`;
 }
 
 export const closeWebviewUtil = () => {
