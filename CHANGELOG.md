@@ -1,3 +1,8 @@
+# 1.6.2 ([04ca4f8](https://github.com/core-ds/bridge-to-native/commit/04ca4f8)) (19-10-2026)
+## Bugfixes
+
+- После преобразования _UrlSearchParams.toString_ принудительно возвращаем пробелы вместо %20, так как иначе они преобразовывались в знак плюс "+"
+
 # 1.6.1 ([b33641d](https://github.com/core-ds/bridge-to-native/commit/b33641d)) (15-10-2026)
 ## Bugfixes
 
