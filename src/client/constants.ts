@@ -22,14 +22,20 @@ export const NATIVE_FEATURES_FROM_VERSION: NativeFeaturesFromVersion = {
     },
 } as const;
 
+export const MAXIMUM_PUBLIC_IOS_VERSION = '16.4.0';
+export const FALLBACK_IOS_APP_ID = 'alfabank';
+
 export const VERSION_TO_IOS_APP_ID = {
-    '0.0.0': 'alfabank',
-    '12.22.0': 'aconcierge',
-    '12.26.0': 'kittycash',
-    '13.2.0': 'triptally',
-    '13.4.0': 'cashline',
-    '13.5.0': 'assistmekz',
+    '16.4.0': 'advance',
+    '16.2.0': 'aholder',
+    '15.2.0': 'kluch',
+    '14.8.0': 'splitactivities',
     '14.5.0': 'smartfinancementor',
+    '13.5.0': 'assistmekz',
+    '13.4.0': 'cashline',
+    '13.2.0': 'triptally',
+    '12.26.0': 'kittycash',
+    '12.22.0': 'aconcierge',
 } as const;
 
 export const NATIVE_COMMANDS_FROM_VERSION: Readonly<Record<ModernAction, { fromVersion: string }>> =
