@@ -22,11 +22,13 @@ export const NATIVE_FEATURES_FROM_VERSION: NativeFeaturesFromVersion = {
     },
 } as const;
 
+export const MAXIMUM_PUBLIC_IOS_VERSION = '16.4.0';
+export const FALLBACK_IOS_APP_ID = 'alfabank';
+
 export const VERSION_TO_IOS_APP_ID = {
     '16.4.0': 'advance',
     '16.2.0': 'aholder',
     '15.2.0': 'kluch',
-    '14.10.0': 'alfabank', // было выпущено 2 приложения на одну версию, должен быть fallback
     '14.8.0': 'splitactivities',
     '14.5.0': 'smartfinancementor',
     '13.5.0': 'assistmekz',
@@ -35,9 +37,6 @@ export const VERSION_TO_IOS_APP_ID = {
     '12.26.0': 'kittycash',
     '12.22.0': 'aconcierge',
 } as const;
-
-export const MAXIMUM_KNOWN_IOS_VERSION = '16.4.0';
-export const FALLBACK_IOS_APP_ID = 'alfabank';
 
 export const NATIVE_COMMANDS_FROM_VERSION: Readonly<Record<ModernAction, { fromVersion: string }>> =
     {

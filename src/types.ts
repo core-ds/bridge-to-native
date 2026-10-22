@@ -1,8 +1,8 @@
 export type NativeParams = {
     appVersion: string;
     title?: string;
-    // В ранних версиях iOS приложение не пробрасывет схему приложения в URL в прод окружении.
-    // Для таких версий есть мэппинг `./constants` → `versionToIosAppId`.
+    // Схема iOS из query `applicationId`. Если отсутствует — точный ключ
+    // в `VERSION_TO_IOS_APP_ID`, иначе `FALLBACK_IOS_APP_ID`.
     iosAppId?: string;
     theme: string;
     nextPageId: number | null;

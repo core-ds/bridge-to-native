@@ -3,7 +3,7 @@ import { type NativeParams } from '../../types';
 import {
     ANDROID_APP_ID,
     FALLBACK_IOS_APP_ID,
-    MAXIMUM_KNOWN_IOS_VERSION,
+    MAXIMUM_PUBLIC_IOS_VERSION,
     VERSION_TO_IOS_APP_ID,
 } from '../constants';
 import { type Environment, type LogError, type NativeFeatureKey, type Theme } from '../types';
@@ -79,7 +79,7 @@ export class NativeParamsService {
             return knownIosAppId;
         }
 
-        if (isVersionHigherOrEqual(MAXIMUM_KNOWN_IOS_VERSION, this.appVersion)) {
+        if (isVersionHigherOrEqual(MAXIMUM_PUBLIC_IOS_VERSION, this.appVersion)) {
             return this.getApplicationIdByVersion();
         }
 
@@ -87,12 +87,10 @@ export class NativeParamsService {
     }
 
     private getApplicationIdByVersion() {
-        const matchingVersion = Object.keys(VERSION_TO_IOS_APP_ID).find((version) =>
-            this.isCurrentVersionHigherOrEqual(version),
-        );
-
-        if (matchingVersion) {
-            return VERSION_TO_IOS_APP_ID[matchingVersion as keyof typeof VERSION_TO_IOS_APP_ID];
+        // Только точное совпадение с ключом: версии между порогами (например 14.3.0
+        // при наличии 14.5.0) не должны наследовать чужую схему.
+        if (this.appVersion in VERSION_TO_IOS_APP_ID) {
+            return VERSION_TO_IOS_APP_ID[this.appVersion as keyof typeof VERSION_TO_IOS_APP_ID];
         }
 
         return FALLBACK_IOS_APP_ID;

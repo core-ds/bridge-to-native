@@ -1,3 +1,4 @@
+import { FALLBACK_IOS_APP_ID } from '../../../src/client/constants';
 import { NativeParamsService } from '../../../src/client/services-and-utils/native-params-service';
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../../src/query-and-headers-keys';
 
@@ -279,41 +280,32 @@ describe('NativeParamsService', () => {
             const inst = new NativeParamsService();
 
             // @ts-expect-error -- Проверка private метода
-            expect(inst.getAppId()).toBe('alfabank');
+            expect(inst.getAppId()).toBe(FALLBACK_IOS_APP_ID);
             // @ts-expect-error -- Проверка private метода
-            expect(inst.getAppId('aconcierge')).toBe('alfabank');
+            expect(inst.getAppId('aconcierge')).toBe(FALLBACK_IOS_APP_ID);
         });
 
         it.each([
-            ['1.0.0', 'alfabank'],
-            ['12.0.0', 'alfabank'],
-            ['12.21.0', 'alfabank'],
-            ['12.21.99', 'alfabank'],
+            ['1.0.0', FALLBACK_IOS_APP_ID],
+            ['12.21.99', FALLBACK_IOS_APP_ID],
             ['12.22.0', 'aconcierge'],
-            ['12.22.1', 'aconcierge'],
-            ['12.25.0', 'aconcierge'],
-            ['12.25.99', 'aconcierge'],
+            ['12.22.1', FALLBACK_IOS_APP_ID],
             ['12.26.0', 'kittycash'],
-            ['13.1.99', 'kittycash'],
+            ['13.1.99', FALLBACK_IOS_APP_ID],
             ['13.2.0', 'triptally'],
-            ['13.3.99', 'triptally'],
             ['13.4.0', 'cashline'],
-            ['13.4.99', 'cashline'],
             ['13.5.0', 'assistmekz'],
-            ['14.4.99', 'assistmekz'],
+            ['14.3.0', FALLBACK_IOS_APP_ID],
+            ['14.4.99', FALLBACK_IOS_APP_ID],
             ['14.5.0', 'smartfinancementor'],
-            ['14.7.99', 'smartfinancementor'],
+            ['14.7.99', FALLBACK_IOS_APP_ID],
             ['14.8.0', 'splitactivities'],
-            ['14.9.99', 'splitactivities'],
-            ['14.10.0', 'alfabank'],
-            ['15.1.99', 'alfabank'],
+            ['14.10.0', FALLBACK_IOS_APP_ID],
             ['15.2.0', 'kluch'],
-            ['16.1.99', 'kluch'],
             ['16.2.0', 'aholder'],
-            ['16.3.99', 'aholder'],
             ['16.4.0', 'advance'],
-            ['16.4.1', 'alfabank'],
-            ['17.0.0', 'alfabank'],
+            ['16.4.1', FALLBACK_IOS_APP_ID],
+            ['17.0.0', FALLBACK_IOS_APP_ID],
         ])(
             'should detect app scheme for version `%s` as `%s` while parameter is not passed',
             (appVersion, appId) => {
