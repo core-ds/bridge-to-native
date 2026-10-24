@@ -58,6 +58,16 @@ describe('validateUrl', () => {
         },
     );
 
+    it.each([
+        'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fweb.alfabank.ru%2Fapi%2Fv1%2Ftravel-router%2Fredirect%2Ftravel-main%3FpageFrom%3Dloyalty_category',
+        'alfabank:///dashboard/pfm',
+        'alfabank:pfm',
+        'aweassist://pfm',
+        'intent://scan/#Intent;scheme=zxing;end',
+    ])('should return URL for safe native link `%s`', (link) => {
+        expect(validateUrl(link)).toEqual(new URL(link));
+    });
+
     it('should return URL for valid URL instance', () => {
         const link = new URL('https://example.com/path');
 
