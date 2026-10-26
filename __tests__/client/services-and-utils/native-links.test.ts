@@ -9,15 +9,7 @@ import { type NativeAppTarget } from '../../../src/client/types';
 const ANDROID: NativeAppTarget = { platform: 'android', appId: 'alfabank' };
 const IOS: NativeAppTarget = { platform: 'ios', appId: 'aweassist' };
 
-const UNSAFE_LINKS = [
-    // eslint-disable-next-line no-script-url -- проверяем, что javascript:-схема отклоняется
-    'javascript:alert(1)',
-    'data:text/html,hello',
-    '/relative/path',
-    'bad-url',
-];
-
-const NATIVE_DEEPLINK = 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F';
+const INVALID_LINKS = ['/relative/path', 'bad-url'];
 
 describe('native-links', () => {
     describe('prepareNativeDeeplinkUrl', () => {
@@ -91,22 +83,11 @@ describe('native-links', () => {
                 'New',
                 'webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F%3Fb2n-title%3DNew',
             ],
-            ['alfabank://webFeature', undefined, 'webFeature'],
-            [
-                NATIVE_DEEPLINK,
-                undefined,
-                'webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
-            ],
-            [
-                NATIVE_DEEPLINK,
-                'Custom Title',
-                'webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
-            ],
         ])('should prepare `%s` with title `%s`', (link, nativeTitle, expected) => {
             expect(prepareOpenInNewWebviewDeeplink(link, nativeTitle)).toBe(expected);
         });
 
-        it.each(UNSAFE_LINKS)('should throw for `%s`', (link) => {
+        it.each(INVALID_LINKS)('should throw for `%s`', (link) => {
             expect(() => prepareOpenInNewWebviewDeeplink(link)).toThrow(`invalid url: ${link}`);
         });
     });
@@ -135,20 +116,6 @@ describe('native-links', () => {
                 false,
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F%3Fq%3D1',
             ],
-            [ANDROID, NATIVE_DEEPLINK, true, `${NATIVE_DEEPLINK}&openInBrowser=true`],
-            [IOS, NATIVE_DEEPLINK, true, `${NATIVE_DEEPLINK}&openInBrowser=true`],
-            [
-                ANDROID,
-                NATIVE_DEEPLINK,
-                false,
-                'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
-            ],
-            [
-                IOS,
-                NATIVE_DEEPLINK,
-                false,
-                'aweassist://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F&fromCurrent=true',
-            ],
         ])(
             'should prepare for %o link `%s` with `linksInBrowser=%s`',
             (target, link, linksInBrowser, expected) => {
@@ -156,14 +123,13 @@ describe('native-links', () => {
             },
         );
 
-        it.each(UNSAFE_LINKS.flatMap((link) => [true, false].map((flag) => [link, flag] as const)))(
-            'should throw for `%s` with `linksInBrowser=%s`',
-            (link, linksInBrowser) => {
-                expect(() => prepareOpenInBrowserUrl(ANDROID, link, linksInBrowser)).toThrow(
-                    `invalid url: ${link}`,
-                );
-            },
-        );
+        it.each(
+            INVALID_LINKS.flatMap((link) => [true, false].map((flag) => [link, flag] as const)),
+        )('should throw for `%s` with `linksInBrowser=%s`', (link, linksInBrowser) => {
+            expect(() => prepareOpenInBrowserUrl(ANDROID, link, linksInBrowser)).toThrow(
+                `invalid url: ${link}`,
+            );
+        });
     });
 
     describe('preparePdfUrl', () => {

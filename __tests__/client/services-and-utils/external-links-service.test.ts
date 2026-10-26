@@ -180,40 +180,6 @@ describe('ExternalLinksService', () => {
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
             );
         });
-
-        it('should open already prepared native deeplink in browser for NA versions that support it', () => {
-            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
-
-            // @ts-expect-error –– Мокаем приватный метод
-            jest.spyOn(inst.nativeParamsService, 'canUseNativeFeature').mockImplementation(
-                () => true,
-            );
-
-            const link =
-                'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fweb.alfabank.ru%2Fapi%2Fv1%2Ftravel-router%2Fredirect%2Ftravel-main%3FpageFrom%3Dloyalty_category';
-
-            expect(() => inst.openInBrowser(link)).not.toThrow();
-            expect(locationReplaceSpy).toHaveBeenCalledWith(`${link}&openInBrowser=true`);
-        });
-
-        it('should not block next navigation when `location.replace` throws', () => {
-            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
-
-            // @ts-expect-error –– Мокаем приватный метод
-            jest.spyOn(inst.nativeParamsService, 'canUseNativeFeature').mockImplementation(
-                () => true,
-            );
-
-            const link = 'https://ya.ru';
-
-            locationReplaceSpy.mockImplementationOnce(() => {
-                throw new SyntaxError('Unexpected string literal');
-            });
-
-            expect(() => inst.openInBrowser(link)).toThrow(SyntaxError);
-            expect(() => inst.openInBrowser(link)).not.toThrow();
-            expect(locationReplaceSpy).toHaveBeenCalledTimes(2);
-        });
     });
 
     describe('method `openInNewWebview`', () => {
@@ -238,15 +204,6 @@ describe('ExternalLinksService', () => {
             expect(locationReplaceSpy).toHaveBeenCalledWith(
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F%3Fb2n-title%3DCustom%2BTitle',
             );
-        });
-
-        it('should open already prepared native deeplink without wrapping it', () => {
-            const inst = new ExternalLinksService(mockedNativeParamsServiceInstance);
-            const link =
-                'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fweb.alfabank.ru%2Fpartner-offers%2Fafisha-transfer';
-
-            inst.openInNewWebview(link);
-            expect(locationReplaceSpy).toHaveBeenCalledWith(link);
         });
 
         it('should close current WV before opening a new one', () => {

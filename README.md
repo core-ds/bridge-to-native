@@ -169,10 +169,8 @@ preparePdfUrl(target, 'https://example.com/file.pdf', 'pdfFile', 'Выписка
 
 - `prepareNativeDeeplinkUrl` отрезает у диплинка один из префиксов `/`, `alfabank:///dashboard/`, `alfabank:///`,
   `alfabank://`, `https://online.alfabank.ru/`; остальные схемы и хосты не трогает. На iOS добавляет `fromCurrent=true`.
-- `prepareOpenInBrowserUrl` и `prepareOpenInNewWebviewDeeplink` принимают абсолютные `http(s)` URL
-  и безопасные нативные диплинки (например, `alfabank://webFeature?...`). Готовый нативный диплинк
-  не оборачивается повторно в `webFeature`, а открывается напрямую. Бросают `invalid url: …`
-  для `javascript:`, `data:`, `file:`, `blob:`, `vbscript:`, `ftp:` и URL с логином/паролем.
+- `prepareOpenInBrowserUrl` и `prepareOpenInNewWebviewDeeplink` бросают `invalid url: …` для всего,
+  кроме абсолютных `http(s)` URL без логина и пароля.
 - `isVersionHigherOrEqual` сравнивает версии формата `x.y.z` покомпонентно, как числа; версия
   в другом формате даёт `false`. Нужен для гейтов по версии NA за пределами известных фич.
 
