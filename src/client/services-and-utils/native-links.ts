@@ -7,6 +7,10 @@ import { appendFromCurrentQueryParamForIos, validateUrl } from './utils';
 const QUERY_OPEN_IN_BROWSER_KEY = 'openInBrowser';
 const QUERY_OPEN_IN_BROWSER_VALUE = 'true';
 
+const NATIVE_SCHEME_PATTERN = /^[a-z][a-z\d+.-]*:(?:\/\/)?/i;
+
+const isHttpUrl = (url: URL) => url.protocol === 'http:' || url.protocol === 'https:';
+
 /*
  * Чистые функции сборки URL, по которым NA открывает свои экраны.
  * Используются `ExternalLinksService` и экспортируются для окружений,
@@ -38,12 +42,18 @@ export const prepareNativeDeeplinkUrl = (
 
 /**
  * Собирает диплинк (без схемы) на открытие ссылки в новом WV.
+ * Готовый нативный диплинк (например, `alfabank://webFeature?...`) не оборачивается
+ * повторно, а возвращается как есть без схемы.
  * Результат передаётся в `prepareNativeDeeplinkUrl` или `handleNativeDeeplink`.
  *
- * @throws Если `link` не абсолютный http(s) URL.
+ * @throws Если `link` не абсолютный http(s) URL и не безопасный нативный диплинк.
  */
 export const prepareOpenInNewWebviewDeeplink = (link: string, nativeTitle = '') => {
     const url = parseUrl(link);
+
+    if (!isHttpUrl(url)) {
+        return link.trim().replace(NATIVE_SCHEME_PATTERN, '');
+    }
 
     if (nativeTitle) {
         url.searchParams.set(QUERY_B2N_TITLE, nativeTitle);

@@ -109,7 +109,14 @@ export class ExternalLinksService {
 
     private navigateByNativeApp(url: string) {
         this.navigationByNativeAppInProgress = true;
-        window.location.replace(url);
+
+        try {
+            window.location.replace(url);
+        } catch (error) {
+            this.navigationByNativeAppInProgress = false;
+
+            throw error;
+        }
 
         setTimeout(() => {
             this.navigationByNativeAppInProgress = false;

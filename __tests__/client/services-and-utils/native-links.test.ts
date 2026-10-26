@@ -91,15 +91,16 @@ describe('native-links', () => {
                 'New',
                 'webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F%3Fb2n-title%3DNew',
             ],
-            [
-                'alfabank://webFeature',
-                undefined,
-                'webFeature?type=recommendation&url=alfabank%3A%2F%2FwebFeature',
-            ],
+            ['alfabank://webFeature', undefined, 'webFeature'],
             [
                 NATIVE_DEEPLINK,
                 undefined,
-                'webFeature?type=recommendation&url=alfabank%3A%2F%2FwebFeature%3Ftype%3Drecommendation%26url%3Dhttps%253A%252F%252Fya.ru%252F',
+                'webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
+            ],
+            [
+                NATIVE_DEEPLINK,
+                'Custom Title',
+                'webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
             ],
         ])('should prepare `%s` with title `%s`', (link, nativeTitle, expected) => {
             expect(prepareOpenInNewWebviewDeeplink(link, nativeTitle)).toBe(expected);
@@ -140,7 +141,13 @@ describe('native-links', () => {
                 ANDROID,
                 NATIVE_DEEPLINK,
                 false,
-                'alfabank://webFeature?type=recommendation&url=alfabank%3A%2F%2FwebFeature%3Ftype%3Drecommendation%26url%3Dhttps%253A%252F%252Fya.ru%252F',
+                'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F',
+            ],
+            [
+                IOS,
+                NATIVE_DEEPLINK,
+                false,
+                'aweassist://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F&fromCurrent=true',
             ],
         ])(
             'should prepare for %o link `%s` with `linksInBrowser=%s`',
