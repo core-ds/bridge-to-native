@@ -62,7 +62,7 @@ function buildNativeParams(
     // чтобы подмешать их к URL при переходе в другое веб-приложение
     // в рамках одной вебвью-сессии.
     const originalWebviewParamsFromQuery = extractNativeServiceQueries(request);
-    // Сначала query потом если там ничего нет берем из cookie
+    // Сначала query, потом, если там ничего нет, берем из cookie.
     const originalWebviewParams =
         originalWebviewParamsFromQuery || nativeParamsFromCookie?.originalWebviewParams || '';
 
