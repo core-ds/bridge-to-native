@@ -75,7 +75,6 @@ export class NativeParamsService {
         }
 
         const keys = Object.keys(VERSION_TO_IOS_APP_ID);
-
         const rightKey =
             [...keys].reverse().find((version) => this.isCurrentVersionHigherOrEqual(version)) ||
             keys[0];
