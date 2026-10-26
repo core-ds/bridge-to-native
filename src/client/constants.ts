@@ -22,7 +22,7 @@ export const NATIVE_FEATURES_FROM_VERSION: NativeFeaturesFromVersion = {
     },
 } as const;
 
-export const MAXIMUM_PUBLIC_IOS_VERSION = '16.4.0';
+export const MAXIMUM_KNOWN_PUBLIC_IOS_VERSION = '16.4.0';
 export const FALLBACK_IOS_APP_ID = 'alfabank';
 
 export const VERSION_TO_IOS_APP_ID = {
