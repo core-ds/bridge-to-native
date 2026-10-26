@@ -92,6 +92,7 @@ export const preparePdfUrl = (
     const params = new URLSearchParams();
 
     params.append('type', type);
+
     params.append('url', decodeURIComponent(url));
 
     if (title) {
