@@ -1,11 +1,6 @@
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../query-and-headers-keys';
 import { type NativeParams } from '../../types';
-import {
-    ANDROID_APP_ID,
-    FALLBACK_IOS_APP_ID,
-    MAXIMUM_PUBLIC_IOS_VERSION,
-    VERSION_TO_IOS_APP_ID,
-} from '../constants';
+import { ANDROID_APP_ID, FALLBACK_IOS_APP_ID, VERSION_TO_IOS_APP_ID } from '../constants';
 import { type Environment, type LogError, type NativeFeatureKey, type Theme } from '../types';
 
 import {
@@ -79,11 +74,7 @@ export class NativeParamsService {
             return knownIosAppId;
         }
 
-        if (isVersionHigherOrEqual(MAXIMUM_PUBLIC_IOS_VERSION, this.appVersion)) {
-            return this.getApplicationIdByVersion();
-        }
-
-        return FALLBACK_IOS_APP_ID;
+        return this.getApplicationIdByVersion();
     }
 
     private getApplicationIdByVersion() {
