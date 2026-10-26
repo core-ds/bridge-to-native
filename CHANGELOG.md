@@ -1,3 +1,8 @@
+# 1.6.3 ([83198d6](https://github.com/core-ds/bridge-to-native/commit/83198d6)) (26-10-2026)
+## Bugfixes
+
+- Исправлена проверка диплинков с нативными схемами для методов `openInBrowser`, `prepareOpenInBrowserUrl` и `prepareOpenInNewWebviewDeeplink`, запрещенные протоколы по прежнему отклоняются.
+
 # 1.6.2 ([04ca4f8](https://github.com/core-ds/bridge-to-native/commit/04ca4f8)) (19-10-2026)
 ## Bugfixes
 
