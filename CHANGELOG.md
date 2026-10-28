@@ -1,3 +1,13 @@
+# 1.6.4 ([bf14d71](https://github.com/core-ds/bridge-to-native/commit/bf14d71)) (28-10-2026)
+## Bugfixes
+ - Исправлено перетирание cookie `originalWebviewParams` и `iosAppId`
+ - Доработана логика выбора схемы по версии
+      1. Версия сравнивается точно, тк как обезлички по confluence 
+      (spaces/AM/pages/1386789296/Обезличенные+приложения+Версии) с точными версиями
+      2. В любых других кейсах возвращается fallback схема
+
+**Full Changelog**: https://github.com/core-ds/bridge-to-native/compare/1.6.3...1.6.4
+
 # 1.6.3 ([83198d6](https://github.com/core-ds/bridge-to-native/commit/83198d6)) (26-10-2026)
 ## Bugfixes
 
