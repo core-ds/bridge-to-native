@@ -61,7 +61,10 @@ function buildNativeParams(
     // Прихраним «сервисные» query-параметры от нативного приложения,
     // чтобы подмешать их к URL при переходе в другое веб-приложение
     // в рамках одной вебвью-сессии.
-    const originalWebviewParams = extractNativeServiceQueries(request);
+    const originalWebviewParamsFromQuery = extractNativeServiceQueries(request);
+    // Сначала query, потом, если там ничего нет, берем из cookie.
+    const originalWebviewParams =
+        originalWebviewParamsFromQuery || nativeParamsFromCookie?.originalWebviewParams || '';
 
     // Чтобы понять, как парсится запрос, см. описания констант в `src/server/constants.ts`
     const [nextPageId, iosAppIdQuery, iosAppVersionQuery, theme, title, deprecatedTitle] =
@@ -91,6 +94,10 @@ function buildNativeParams(
         const [, appIdSubsting] = iosAppIdQuery.match(iosAppIdPattern) as string[]; // кастинг ок — в условии блока регулярка проверена
 
         nativeParams.iosAppId = appIdSubsting;
+    }
+    // Вторым приоритетом берем iosAppId из cookie
+    else if (nativeParamsFromCookie?.iosAppId) {
+        nativeParams.iosAppId = nativeParamsFromCookie.iosAppId;
     }
 
     // Версия приложения может приехать прямо в текущем request (в query-параметре `device_app_version`
