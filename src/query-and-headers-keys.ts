@@ -62,3 +62,6 @@ export const QUERY_NATIVE_THEME = 'theme';
 
 // Ключ sessionStorage,в котором клиентская часть B2N сохраняет состояние синхронизации с NA.
 export const SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK = 'bridgeToNativeHistoryStack';
+
+//  Маркер в `history.state`, помечающий запись как буферную для перехвата системного «назад»
+export const HISTORY_STATE_B2N_MARKER = 'history_state_b2n_marker';
