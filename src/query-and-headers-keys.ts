@@ -58,6 +58,8 @@ export const QUERY_NATIVE_IOS_APPID = 'applicationId';
 export const QUERY_NATIVE_IOS_APPVERSION = 'device_app_version';
 
 // NA на обеих платформах в этом параметре передаёт активную тему (светлая/тёмная).
+// Если параметра нет в текущем запросе, серверная часть B2N берёт тему из cookie
+// `bridgeToNativeData`, чтобы сохранить её при навигации и возврате с другого origin.
 export const QUERY_NATIVE_THEME = 'theme';
 
 // Ключ sessionStorage,в котором клиентская часть B2N сохраняет состояние синхронизации с NA.
