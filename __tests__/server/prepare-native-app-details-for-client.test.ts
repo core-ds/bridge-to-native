@@ -42,6 +42,60 @@ describe('prepareNativeAppDetailsForClient', () => {
         );
     });
 
+    it('should keep theme from cookie if query parameter is not provided', () => {
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers({
+                Cookie: `bridgeToNativeData=${encodeURIComponent(
+                    JSON.stringify({ theme: 'dark' }),
+                )}`,
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`theme${ENCODED_PARTS['":"']}dark`),
+        );
+    });
+
+    it('should prefer theme from query parameter over cookie', () => {
+        const mockedRequest = {
+            url: 'http://example.com?theme=dark',
+            headers: new Headers({
+                Cookie: `bridgeToNativeData=${encodeURIComponent(
+                    JSON.stringify({ theme: 'light' }),
+                )}`,
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`theme${ENCODED_PARTS['":"']}dark`),
+        );
+    });
+
+    it('should set default theme to light if neither query parameter nor cookie provides it', () => {
+        const mockedRequest = {
+            url: 'http://example.com',
+            headers: new Headers({
+                Cookie: `bridgeToNativeData=${encodeURIComponent(
+                    JSON.stringify({ appVersion: '1.2.3' }),
+                )}`,
+            }),
+        } as Request;
+
+        prepareNativeAppDetailsForClient(mockedRequest, setResonseHeader);
+
+        expect(setResonseHeader).toBeCalledWith(
+            'Set-Cookie',
+            expect.stringContaining(`theme${ENCODED_PARTS['":"']}light`),
+        );
+    });
+
     it('should set nextPageId from query parameter when greater than 1', () => {
         const mockedRequest = {
             url: 'http://example.com?b2n-next-page-id=2',
