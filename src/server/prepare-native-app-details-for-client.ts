@@ -81,7 +81,7 @@ function buildNativeParams(
         getHeaderValue(request, HEADER_KEY_WV_LAUNCH_TIME),
     );
 
-    // Тема, как и версия приложения, может приехать только при открытии WV.
+    // Тема передаётся в query-параметрах при открытии WV.
     // При внутренних переходах / возврате с другого origin query теряется,
     // поэтому сохраняем ранее вычисленную тему в cookie и берём её как фолбэк.
     const actualTheme = theme || nativeParamsFromCookie?.theme || 'light';
