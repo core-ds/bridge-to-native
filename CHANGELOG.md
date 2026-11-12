@@ -1,6 +1,8 @@
 # 1.6.5 ([5d3ab28](https://github.com/core-ds/bridge-to-native/commit/5d3ab28)) (12-11-2026)
+
 ## Bugfixes
-* Сохранение темы при возврате из внешнего webview
+
+- Сохранение темы при возврате из внешнего webview
 
 # 1.6.4 ([bf14d71](https://github.com/core-ds/bridge-to-native/commit/bf14d71)) (28-10-2026)
 ## Bugfixes
