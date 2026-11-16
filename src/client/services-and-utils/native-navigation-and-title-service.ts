@@ -1,12 +1,13 @@
 /* eslint max-lines: ["error", {"max": 400, "skipComments": true}] */
 
 import {
+    HISTORY_STATE_B2N_BACK_BUFFER,
+    HISTORY_STATE_B2N_MARKER,
     HISTORY_STATE_KEY_B2N_PAGE_ID,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
     QUERY_NATIVE_IOS_APPVERSION,
     SS_KEY_BRIDGE_TO_NATIVE_HISTORY_STACK,
-    HISTORY_STATE_B2N_MARKER,
 } from '../../query-and-headers-keys';
 import {
     type BrowserHistoryApiWrappers,
@@ -210,9 +211,11 @@ export class NativeNavigationAndTitleService {
     private handleClientSideNavigationBack(event?: PopStateEvent) {
         const eventState = event?.state as Record<string, unknown> | null;
 
-        // Если попали на запись, помеченную маркером `HISTORY_STATE_B2N_MARKER` -  закрываем WV напрямую, маркер проставляется в setInitialView
+        // Попали на запись, помеченную `HISTORY_STATE_B2N_MARKER`
+        // значит, системный «Назад» на первом экране Android, закрываем WV программно.
         if (eventState?.[HISTORY_STATE_B2N_MARKER]) {
             closeWebviewUtil();
+
             return;
         }
 
@@ -269,6 +272,7 @@ export class NativeNavigationAndTitleService {
         this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
         this.setHistoryStatePageId();
+        this.fixAndroidSystemBackClose();
     }
 
     private initializeForBackward(pageId: number, title: string) {
@@ -445,24 +449,24 @@ export class NativeNavigationAndTitleService {
     private fixAndroidSystemBackClose() {
         if (this.nativeParamsService.environment !== 'android') return;
 
-        const savedState = window.history.state;
+        const pageId = Math.max(this.nativeHistoryStack.length, 1);
 
-        const markedState = {
-            ...this.createStateWithPageId(savedState, this.nativeHistoryStack.length),
-            [HISTORY_STATE_B2N_MARKER]: true,
-        };
+        if (pageId > 1) return;
 
-        if (this.browserHistoryApiWrappers?.replace) {
-            this.browserHistoryApiWrappers.replace(undefined, markedState);
-        } else {
-            window.history.replaceState(markedState, '');
-        }
+        const currentState = window.history.state as Record<string, unknown> | null;
 
-        if (this.browserHistoryApiWrappers?.push) {
-            this.browserHistoryApiWrappers.push(undefined, savedState);
-        } else {
-            window.history.pushState(savedState, '');
-        }
-        this.setHistoryStatePageId();
+        if (currentState?.[HISTORY_STATE_B2N_BACK_BUFFER]) return;
+
+        const {
+            [HISTORY_STATE_B2N_MARKER]: marker,
+            [HISTORY_STATE_B2N_BACK_BUFFER]: backBuffer,
+            ...restoredState
+        } = this.createStateWithPageId(currentState, pageId);
+
+        const markedState = { ...restoredState, [HISTORY_STATE_B2N_MARKER]: true };
+        const bufferState = { ...restoredState, [HISTORY_STATE_B2N_BACK_BUFFER]: true };
+
+        window.history.replaceState(markedState, '');
+        window.history.pushState(bufferState, '');
     }
 }
