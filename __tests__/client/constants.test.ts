@@ -10,14 +10,7 @@ describe('BridgeToAm constants', () => {
             });
         });
 
-        it('should have `"0.0.0": "alfabank"` as the first entry', () => {
-            const [firstVersion, firstAppId] = Object.entries(VERSION_TO_IOS_APP_ID)[0];
-
-            expect(firstVersion).toBe('0.0.0');
-            expect(firstAppId).toBe('alfabank');
-        });
-
-        it('should have entries in ASC order by keys', () => {
+        it('should have entries in DESC order by keys', () => {
             // Кейс содержит логику, что вроде бы плохо. Но он важен именно
             // в таком виде, т.к. содержит проверку, что в будущем константу
             // будут заполнять правильно.
@@ -29,7 +22,7 @@ describe('BridgeToAm constants', () => {
 
                 for (let i = 0; i < aComponents.length; i++) {
                     if (aComponents[i] !== bComponents[i]) {
-                        return Number(aComponents[i]) - Number(bComponents[i]);
+                        return Number(bComponents[i]) - Number(aComponents[i]);
                     }
                 }
 

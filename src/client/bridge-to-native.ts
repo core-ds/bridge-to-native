@@ -274,6 +274,7 @@ export class BridgeToNative {
      * iOS      13.3.0
      *
      * @param link Абсолютная ссылка со всеми компонентами (включая протокол).
+     *  Можно передать как `http(s)`-URL, так и готовый нативный диплинк.
      */
     openInBrowser(link: string) {
         this.externalLinksService.openInBrowser(link);

@@ -13,10 +13,11 @@ const UNSAFE_LINKS = [
     // eslint-disable-next-line no-script-url -- проверяем, что javascript:-схема отклоняется
     'javascript:alert(1)',
     'data:text/html,hello',
-    'alfabank://webFeature',
     '/relative/path',
     'bad-url',
 ];
+
+const NATIVE_DEEPLINK = 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F';
 
 describe('native-links', () => {
     describe('prepareNativeDeeplinkUrl', () => {
@@ -90,6 +91,16 @@ describe('native-links', () => {
                 'New',
                 'webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F%3Fb2n-title%3DNew',
             ],
+            [
+                'alfabank://webFeature',
+                undefined,
+                'webFeature?type=recommendation&url=alfabank%3A%2F%2FwebFeature',
+            ],
+            [
+                NATIVE_DEEPLINK,
+                undefined,
+                'webFeature?type=recommendation&url=alfabank%3A%2F%2FwebFeature%3Ftype%3Drecommendation%26url%3Dhttps%253A%252F%252Fya.ru%252F',
+            ],
         ])('should prepare `%s` with title `%s`', (link, nativeTitle, expected) => {
             expect(prepareOpenInNewWebviewDeeplink(link, nativeTitle)).toBe(expected);
         });
@@ -122,6 +133,14 @@ describe('native-links', () => {
                 'https://ya.ru/?q=1',
                 false,
                 'alfabank://webFeature?type=recommendation&url=https%3A%2F%2Fya.ru%2F%3Fq%3D1',
+            ],
+            [ANDROID, NATIVE_DEEPLINK, true, `${NATIVE_DEEPLINK}&openInBrowser=true`],
+            [IOS, NATIVE_DEEPLINK, true, `${NATIVE_DEEPLINK}&openInBrowser=true`],
+            [
+                ANDROID,
+                NATIVE_DEEPLINK,
+                false,
+                'alfabank://webFeature?type=recommendation&url=alfabank%3A%2F%2FwebFeature%3Ftype%3Drecommendation%26url%3Dhttps%253A%252F%252Fya.ru%252F',
             ],
         ])(
             'should prepare for %o link `%s` with `linksInBrowser=%s`',

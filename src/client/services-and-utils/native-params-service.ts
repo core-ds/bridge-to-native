@@ -1,6 +1,6 @@
 import { COOKIE_KEY_BRIDGE_TO_NATIVE_DATA } from '../../query-and-headers-keys';
 import { type NativeParams } from '../../types';
-import { ANDROID_APP_ID, VERSION_TO_IOS_APP_ID } from '../constants';
+import { ANDROID_APP_ID, FALLBACK_IOS_APP_ID, VERSION_TO_IOS_APP_ID } from '../constants';
 import { type Environment, type LogError, type NativeFeatureKey, type Theme } from '../types';
 
 import {
@@ -74,13 +74,17 @@ export class NativeParamsService {
             return knownIosAppId;
         }
 
-        const keys = Object.keys(VERSION_TO_IOS_APP_ID);
+        return this.getApplicationIdByVersion();
+    }
 
-        const rightKey =
-            [...keys].reverse().find((version) => this.isCurrentVersionHigherOrEqual(version)) ||
-            keys[0];
+    private getApplicationIdByVersion() {
+        // Только точное совпадение с ключом: версии между порогами (например 14.3.0
+        // при наличии 14.5.0) не должны наследовать чужую схему.
+        if (this.appVersion in VERSION_TO_IOS_APP_ID) {
+            return VERSION_TO_IOS_APP_ID[this.appVersion as keyof typeof VERSION_TO_IOS_APP_ID];
+        }
 
-        return VERSION_TO_IOS_APP_ID[rightKey as keyof typeof VERSION_TO_IOS_APP_ID];
+        return FALLBACK_IOS_APP_ID;
     }
 
     private readNativeParamsCookie() {
