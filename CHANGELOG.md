@@ -1,3 +1,7 @@
+# 1.6.6 ([6e4bf0a](https://github.com/core-ds/bridge-to-native/commit/6e4bf0a)) (17-11-2026)
+## Bugfixes
+- Добавлен фикс  только для Android, который обходит особенность системной кнопки/жеста «Назад»
+
 # 1.6.5 ([5d3ab28](https://github.com/core-ds/bridge-to-native/commit/5d3ab28)) (12-11-2026)
 
 ## Bugfixes
