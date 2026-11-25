@@ -1,8 +1,6 @@
-/* eslint max-lines: ["error", {"max": 400, "skipComments": true}] */
+/* eslint max-lines: ["error", {"max": 360, "skipComments": true}] */
 
 import {
-    HISTORY_STATE_B2N_BACK_BUFFER,
-    HISTORY_STATE_B2N_MARKER,
     HISTORY_STATE_KEY_B2N_PAGE_ID,
     QUERY_B2N_NEXT_PAGEID,
     QUERY_B2N_TITLE,
@@ -173,7 +171,6 @@ export class NativeNavigationAndTitleService {
         this.nativeHistoryStack = [nativeTitle];
         this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
-        this.fixAndroidSystemBackClose();
     }
 
     setTitle(nativeTitle: string) {
@@ -209,16 +206,6 @@ export class NativeNavigationAndTitleService {
      * после нажатия на кнопку «Назад» в NA, вызова `history.back()` и `history.go(-x)`.
      */
     private handleClientSideNavigationBack(event?: PopStateEvent) {
-        const eventState = event?.state as Record<string, unknown> | null;
-
-        // Попали на запись, помеченную `HISTORY_STATE_B2N_MARKER`
-        // значит, системный «Назад» на первом экране Android, закрываем WV программно.
-        if (eventState?.[HISTORY_STATE_B2N_MARKER]) {
-            closeWebviewUtil();
-
-            return;
-        }
-
         this.isGoBackLocked = false;
 
         const statePageId = (event?.state as Record<string, unknown> | null)?.[
@@ -272,7 +259,6 @@ export class NativeNavigationAndTitleService {
         this.saveNativeHistoryStack();
         this.syncHistoryWithNative();
         this.setHistoryStatePageId();
-        this.fixAndroidSystemBackClose();
     }
 
     private initializeForBackward(pageId: number, title: string) {
@@ -432,41 +418,5 @@ export class NativeNavigationAndTitleService {
             ...(isPlainObject(state) ? state : {}),
             [HISTORY_STATE_KEY_B2N_PAGE_ID]: pageId,
         };
-    }
-
-    /**
-     * Только для Android:  обходит особенность системной кнопки/жеста «Назад»,
-     * которая в Android имеет собственную логику и игнорирует сигналы из WA,
-     * связанные с `setPageSettings`.
-     * Создаёт буфер для перехвата системного «назад».
-     * Текущая запись истории помечается спец-стейтом `HISTORY_STATE_B2N_MARKER` —
-     * сигналом нужно закрыть WV.
-     *
-     * Если пользователь не взаимодействовал со страницей, «костыль» может не сработать из-за механизма Chromium
-     *  «Original History Manipulation Intervention»
-     */
-
-    private fixAndroidSystemBackClose() {
-        if (this.nativeParamsService.environment !== 'android') return;
-
-        const pageId = Math.max(this.nativeHistoryStack.length, 1);
-
-        if (pageId > 1) return;
-
-        const currentState = window.history.state as Record<string, unknown> | null;
-
-        if (currentState?.[HISTORY_STATE_B2N_BACK_BUFFER]) return;
-
-        const {
-            [HISTORY_STATE_B2N_MARKER]: marker,
-            [HISTORY_STATE_B2N_BACK_BUFFER]: backBuffer,
-            ...restoredState
-        } = this.createStateWithPageId(currentState, pageId);
-
-        const markedState = { ...restoredState, [HISTORY_STATE_B2N_MARKER]: true };
-        const bufferState = { ...restoredState, [HISTORY_STATE_B2N_BACK_BUFFER]: true };
-
-        window.history.replaceState(markedState, '');
-        window.history.pushState(bufferState, '');
     }
 }
